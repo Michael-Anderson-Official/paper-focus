@@ -113,10 +113,95 @@
     text-align: center;
     cursor: default;
   }
+  .pot-card { cursor: pointer; }
+  .pot-card:active { transform: translateY(1px); }
   .pot-card svg { width: 56px; height: 56px; }
+  .pot-card .pc-name { font-size: 11px; color: var(--today-ring); font-weight: 600; margin-top: 3px; line-height: 1.3; }
   .pot-card .pc-breed { font-size: 9px; color: var(--ink-soft); margin-top: 3px; line-height: 1.3; }
   .pot-card .pc-min { font-size: 11px; color: var(--ink-strong); font-weight: 600; margin-top: 1px; }
   .pot-card .pc-date { font-size: 9px; color: var(--ink-soft); }
+
+  /* ---- マイル ---- */
+  .mileage-stat { margin-top: 4px; font-size: 12px; color: var(--ink-soft); }
+  .mileage-stat b { color: #b98a2e; }
+
+  /* ---- タブ（おうち／図鑑） ---- */
+  .tab-bar { display: flex; gap: 6px; padding: 0 14px; margin-bottom: 6px; flex: none; }
+  .tab-btn {
+    flex: 1;
+    padding: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(120, 100, 60, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .tab-btn.active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
+
+  /* ---- 図鑑 ---- */
+  .roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 10px;
+  }
+  .roster-card {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(120, 100, 60, 0.2);
+    border-radius: 10px;
+    padding: 8px 4px 6px;
+    text-align: center;
+  }
+  .roster-card svg { width: 52px; height: 52px; }
+  .roster-card.locked svg { filter: grayscale(1) brightness(0.7); opacity: 0.6; }
+  .roster-card .rc-name { font-size: 9px; color: var(--ink-soft); margin-top: 2px; line-height: 1.3; min-height: 2.2em; }
+  .roster-card.owned .rc-name { color: var(--ink-strong); font-weight: 600; }
+  .roster-card .rc-buy {
+    width: 100%;
+    margin-top: 4px;
+    padding: 5px 2px;
+    font-family: inherit;
+    font-size: 10px;
+    color: #fff;
+    background: #b98a2e;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .roster-card .rc-buy:disabled { background: rgba(120, 100, 60, 0.25); color: var(--ink-soft); cursor: default; }
+  .roster-card .rc-owned-mark { font-size: 10px; color: #5a7d5a; margin-top: 4px; }
+
+  /* ---- 名前をつける ---- */
+  .name-input {
+    width: 100%;
+    padding: 11px;
+    font-family: inherit;
+    font-size: 15px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--ink-text);
+  }
+
+  .save-note {
+    position: fixed;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 12px;
+    color: #fff;
+    background: rgba(60, 50, 30, 0.85);
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 90;
+  }
+  .save-note.show { opacity: 1; }
+
   .empty-note {
     margin-top: 40px;
     text-align: center;
@@ -267,6 +352,8 @@
 </head>
 <body>
 
+<div class="save-note" id="saveNote"></div>
+
 <div class="book">
   <div class="paper">
     <button type="button" class="settings-btn" id="settingsBtn" aria-label="設定">⚙</button>
@@ -274,9 +361,15 @@
       <h1>手ざわり集中</h1>
       <p>時間を決めて、離れずに一緒にいる。離れると寂しがります。</p>
       <div class="total-time" id="totalTime"></div>
+      <div class="mileage-stat" id="mileageStat"></div>
+    </div>
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" id="tabHomeBtn">おうち</button>
+      <button type="button" class="tab-btn" id="tabRosterBtn">図鑑</button>
     </div>
     <div class="garden-scroll">
       <div class="garden-grid" id="gardenGrid"></div>
+      <div class="roster-grid" id="rosterGrid" style="display:none;"></div>
       <div class="empty-note" id="emptyNote" style="display:none;">
         まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。
       </div>
@@ -324,7 +417,7 @@
     <div class="sheet">
       <h2>設定</h2>
       <p class="sub">手ざわり集中について</p>
-      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。</p>
+      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけマイルが貯まり、「図鑑」でまだ会っていない子をマイルで迎えることもできます。おうちの子は名前をつけたり変えたりできます。</p>
       <div class="settings-row">
         <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
       </div>
@@ -334,6 +427,20 @@
       <div class="sheet-btns">
         <span class="spacer"></span>
         <button type="button" class="primary" id="settingsClose">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 名前をつける -->
+  <div class="modal" id="nameModal">
+    <div class="sheet">
+      <h2>名前をつける</h2>
+      <p class="sub" id="nameModalSub"></p>
+      <input type="text" id="nameInput" class="name-input" maxlength="12" placeholder="なまえ（空でもOK）">
+      <div class="sheet-btns">
+        <button type="button" id="nameCancel">とじる</button>
+        <span class="spacer"></span>
+        <button type="button" class="primary" id="nameSave">きめる</button>
       </div>
     </div>
   </div>
@@ -351,6 +458,16 @@
 <script>
 (function () {
   'use strict';
+
+  // ---- 保存の合図 ----
+  var saveNoteTimer = 0;
+  function flashSaved(msg) {
+    var el = document.getElementById('saveNote');
+    el.textContent = msg || '保存しました';
+    el.classList.add('show');
+    clearTimeout(saveNoteTimer);
+    saveNoteTimer = setTimeout(function () { el.classList.remove('show'); }, 1200);
+  }
 
   // ---- ペットSVG。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
   var PET_TYPES = ['cat', 'dog', 'rabbit', 'bird', 'hamster', 'turtle'];
@@ -496,11 +613,12 @@
   }
 
   // ---- ストレージ ----
-  // pf:garden = [{id, minutes, completedAt, type, key}]（懐いたなかまだけ記録。失敗は残さない）
+  // pf:garden = [{id, minutes, completedAt, type, key, name, source}]（懐いた／迎えたなかまだけ記録。失敗は残さない）
+  // source: 'session'=集中して懐いた（minutesはその回の分数） / 'shop'=マイルで迎えた（minutesは0）
   function coreValid(g) {
     return g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
-      Number.isFinite(g.minutes) && g.minutes >= 1 && g.minutes <= 180 &&
+      Number.isFinite(g.minutes) && g.minutes >= 0 && g.minutes <= 180 &&
       Number.isFinite(g.completedAt);
   }
   function petFieldsValid(g) {
@@ -521,16 +639,22 @@
       var coreDropped = raw.length;
       var filtered = raw.filter(coreValid);
       coreDropped -= filtered.length;   // id/分数/日時が壊れていて捨てた件数
-      var petMigrated = false;
+      var changed = false;
       var out = filtered.map(function (g) {
-        if (petFieldsValid(g)) return g;
-        petMigrated = true;   // 品種を持たない・古い色ベースの旧形式の記録。消さずに割り当てて救済する
-        var p = deriveLegacyPet(g.id);
-        return { id: g.id, minutes: g.minutes, completedAt: g.completedAt, type: p.type, key: p.key };
+        var type = g.type, key = g.key;
+        if (!petFieldsValid(g)) {
+          changed = true;   // 品種を持たない・古い色ベースの旧形式の記録。消さずに割り当てて救済する
+          var p = deriveLegacyPet(g.id);
+          type = p.type; key = p.key;
+        }
+        var name = (typeof g.name === 'string') ? g.name.slice(0, 12) : '';
+        var source = (g.source === 'shop') ? 'shop' : 'session';   // name/sourceが無い旧形式の記録も既定値で補う
+        var minutes = (source === 'shop') ? 0 : g.minutes;   // マイルで迎えた記録は分数を持たない、という約束を必ず保つ
+        if (g.type !== type || g.key !== key || g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
+        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source };
       });
-      // 壊れた記録を捨てた場合も含めて、変化があれば必ず書き戻す（そうしないと
-      // storageに残ったまま毎回読み飛ばされるだけになる）
-      if (petMigrated || coreDropped > 0) writeGarden(out);
+      // 壊れた記録を捨てた・古い形式を補った場合は、次回から読み飛ばしを繰り返さないよう書き戻す
+      if (changed || coreDropped > 0) writeGarden(out);
       return out;
     } catch (e) { return []; }
   }
@@ -538,13 +662,54 @@
     try { localStorage.setItem('pf:garden', JSON.stringify(arr)); return true; }
     catch (e) { return false; }   // 容量超過等。呼び出し側で保存失敗を扱う
   }
-  function addToGarden(minutes, pet) {
+  function addToGarden(minutes, pet, source) {
     var arr = readGarden();
     arr.push({
       id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      minutes: minutes, completedAt: Date.now(), type: pet.type, key: pet.key
+      minutes: minutes, completedAt: Date.now(), type: pet.type, key: pet.key,
+      name: '', source: source || 'session'
     });
     return writeGarden(arr);
+  }
+  function renameGardenEntry(id, name) {
+    var arr = readGarden();
+    var hit = false;
+    var clean = (name || '').trim().slice(0, 12);
+    arr.forEach(function (g) { if (g.id === id) { g.name = clean; hit = true; } });
+    if (!hit) return false;
+    return writeGarden(arr);   // 書き込みそのものの成否を返す（見つかっただけで成功扱いにしない）
+  }
+
+  // ---- マイル（集中した分だけ貯まり、図鑑でなかまを迎えると使う。累計の「これまでの集中」とは別の残高） ----
+  function petPrice(type, key) {
+    var v = petVariant(type, key);
+    return (v && v.name) ? 60 : 30;   // 名前付き品種（猫）は60マイル、それ以外は30マイル
+  }
+  var MAX_MILEAGE = Number.MAX_SAFE_INTEGER;
+  function readMileage() {
+    var raw = localStorage.getItem('pf:mileage') || '0';
+    if (!/^\d+$/.test(raw)) return 0;   // 数字以外が混ざった壊れた値は信用しない
+    var v = parseInt(raw, 10);
+    return (Number.isSafeInteger(v) && v >= 0 && v <= MAX_MILEAGE) ? v : 0;
+  }
+  function addMileage(minutes) {
+    var v = Math.min(MAX_MILEAGE, readMileage() + minutes);
+    try { localStorage.setItem('pf:mileage', String(v)); } catch (e) {}
+  }
+  function spendMileage(cost) {
+    var v = readMileage();
+    if (v < cost) return false;
+    try { localStorage.setItem('pf:mileage', String(v - cost)); return true; }
+    catch (e) { return false; }
+  }
+  function buyPet(type, key) {
+    var price = petPrice(type, key);
+    if (readMileage() < price) return false;
+    // 先になかまを迎える処理を試み、それが成功したときだけマイルを引く。
+    // 逆順だと保存失敗時に「マイルだけ減ってなかまが増えない」事故になりうるため
+    if (!addToGarden(0, { type: type, key: key }, 'shop')) return false;
+    spendMileage(price);
+    return true;
   }
 
   function fmtDate(ms) {
@@ -565,38 +730,47 @@
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      garden.slice().reverse().forEach(function (g, i) {
+      garden.slice().reverse().forEach(function (g) {
         var card = document.createElement('div');
         card.className = 'pot-card';
         card.innerHTML = petSVG('', g.type, g.key);   // type/keyはreadGardenで既知の値だけに絞られている
         var svg = card.querySelector('svg');
         paintPet(svg, 1);
         var v = petVariant(g.type, g.key);
-        if (v && v.name) {
+        if (g.name) {
           var nameEl = document.createElement('div');
-          nameEl.className = 'pc-breed';
-          nameEl.textContent = v.name;
+          nameEl.className = 'pc-name';
+          nameEl.textContent = g.name;
           card.appendChild(nameEl);
+        }
+        if (v && v.name) {
+          var breedEl = document.createElement('div');
+          breedEl.className = 'pc-breed';
+          breedEl.textContent = v.name;
+          card.appendChild(breedEl);
         }
         var minEl = document.createElement('div');
         minEl.className = 'pc-min';
-        minEl.textContent = g.minutes + '分';
+        minEl.textContent = (g.source === 'shop') ? 'マイルで' : g.minutes + '分';
         var dateEl = document.createElement('div');
         dateEl.className = 'pc-date';
         dateEl.textContent = fmtDate(g.completedAt);
         card.appendChild(minEl);
         card.appendChild(dateEl);
+        card.addEventListener('click', function () { openNameModal(g.id, g.name); });
         grid.appendChild(card);
       });
     }
-    var totalMin = garden.reduce(function (s, g) { return s + g.minutes; }, 0);
+    var totalMin = garden.reduce(function (s, g) { return s + (g.source === 'shop' ? 0 : g.minutes); }, 0);
     var totalEl = document.getElementById('totalTime');
     if (totalMin > 0) {
       var h = Math.floor(totalMin / 60), m = totalMin % 60;
       totalEl.innerHTML = 'これまでの集中: <b>' + (h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分') + '</b>（なかま' + garden.length + '匹）';
     } else {
-      totalEl.textContent = '';
+      totalEl.textContent = garden.length ? 'なかま' + garden.length + '匹' : '';
     }
+    var mileageEl = document.getElementById('mileageStat');
+    mileageEl.innerHTML = 'マイル: <b>' + readMileage() + '</b>';
   }
 
   // ---- 時間を決めるシート ----
@@ -681,7 +855,8 @@
     var minutes = session.minutes, pet = session.pet;
     endSessionCommon();
     if (success) {
-      var saved = addToGarden(minutes, pet);
+      var saved = addToGarden(minutes, pet, 'session');
+      if (saved) addMileage(minutes);
       renderGarden();
       showResult(true, minutes, saved ? null : 'savefail', pet);
     } else {
@@ -742,10 +917,89 @@
   document.getElementById('resetDataBtn').addEventListener('click', function () {
     if (session && session.active) return;
     if (!confirm('これまでの記録をぜんぶ消します。よろしいですか？')) return;
-    try { localStorage.removeItem('pf:garden'); }
+    try { localStorage.removeItem('pf:garden'); localStorage.removeItem('pf:mileage'); }
     catch (e) { alert('消せませんでした。もう一度お試しください。'); return; }
     renderGarden();
+    renderRoster();
     settingsModal.classList.remove('show');
+  });
+
+  // ---- タブ（おうち／図鑑） ----
+  var gardenGridEl = document.getElementById('gardenGrid');
+  var rosterGridEl = document.getElementById('rosterGrid');
+  var emptyNoteEl = document.getElementById('emptyNote');
+  document.getElementById('tabHomeBtn').addEventListener('click', function () { switchTab('home'); });
+  document.getElementById('tabRosterBtn').addEventListener('click', function () { switchTab('roster'); });
+  function switchTab(tab) {
+    document.getElementById('tabHomeBtn').classList.toggle('active', tab === 'home');
+    document.getElementById('tabRosterBtn').classList.toggle('active', tab === 'roster');
+    gardenGridEl.style.display = tab === 'home' ? '' : 'none';
+    rosterGridEl.style.display = tab === 'roster' ? '' : 'none';
+    emptyNoteEl.style.display = (tab === 'home' && !readGarden().length) ? 'block' : 'none';
+    if (tab === 'roster') renderRoster();
+  }
+
+  // ---- 図鑑（すべての種類×品種。持っていない子はマイルで迎えられる） ----
+  function renderRoster() {
+    var garden = readGarden();
+    var owned = {};
+    garden.forEach(function (g) { owned[g.type + ':' + g.key] = true; });
+    var mileage = readMileage();
+    rosterGridEl.innerHTML = '';
+    PET_TYPES.forEach(function (type) {
+      PET_VARIANTS[type].forEach(function (v) {
+        var isOwned = !!owned[type + ':' + v.key];
+        var price = petPrice(type, v.key);
+        var card = document.createElement('div');
+        card.className = 'roster-card' + (isOwned ? ' owned' : ' locked');
+        card.innerHTML = petSVG('', type, v.key);
+        paintPet(card.querySelector('svg'), 1);
+        var nameEl = document.createElement('div');
+        nameEl.className = 'rc-name';
+        nameEl.textContent = v.name || '';
+        card.appendChild(nameEl);
+        if (isOwned) {
+          var mark = document.createElement('div');
+          mark.className = 'rc-owned-mark';
+          mark.textContent = '仲間だよ';
+          card.appendChild(mark);
+        }
+        var buyBtn = document.createElement('button');
+        buyBtn.type = 'button';
+        buyBtn.className = 'rc-buy';
+        buyBtn.textContent = price + 'マイルで迎える';
+        buyBtn.disabled = mileage < price;
+        buyBtn.addEventListener('click', function () {
+          if (!buyPet(type, v.key)) return;
+          renderGarden();
+          renderRoster();
+          flashSaved('迎えました');
+        });
+        card.appendChild(buyBtn);
+        rosterGridEl.appendChild(card);
+      });
+    });
+  }
+
+  // ---- 名前をつける ----
+  var nameModal = document.getElementById('nameModal');
+  var namingId = null;
+  function openNameModal(id, currentName) {
+    namingId = id;
+    document.getElementById('nameModalSub').textContent = currentName ? '今の名前: ' + currentName : 'まだ名前がありません';
+    document.getElementById('nameInput').value = currentName || '';
+    nameModal.classList.add('show');
+    setTimeout(function () { document.getElementById('nameInput').focus(); }, 50);
+  }
+  document.getElementById('nameCancel').addEventListener('click', function () { nameModal.classList.remove('show'); namingId = null; });
+  nameModal.addEventListener('click', function (e) { if (e.target === nameModal) { nameModal.classList.remove('show'); namingId = null; } });
+  document.getElementById('nameSave').addEventListener('click', function () {
+    if (!namingId) return;
+    var ok = renameGardenEntry(namingId, document.getElementById('nameInput').value);
+    nameModal.classList.remove('show');
+    namingId = null;
+    renderGarden();
+    flashSaved(ok ? '名前をきめました' : '保存できませんでした');
   });
 
   // ---- 初期化 ----
