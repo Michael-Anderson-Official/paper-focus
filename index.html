@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>手ざわり集中</title>
-<meta name="description" content="時間を決めて集中する。離れると工事が止まってしまい、続けられると建物が街に加わる。">
+<meta name="description" content="時間を決めて集中する。離れるとなかまが眠ってしまい、続けられるとおうちに加わる。">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -98,87 +98,106 @@
   }
   .settings-danger { color: #a86a5c; }
 
-  /* ---- まち ---- */
+  /* ---- おうち（部屋） ---- */
   .garden-scroll { flex: 1; overflow-y: auto; padding: 0 0 100px; -webkit-overflow-scrolling: touch; }
   .room-scene { position: relative; overflow: hidden; }
-  .room-wall {   /* 空 */
+  .room-wall {
     position: absolute; top: 0; left: 0; right: 0; height: 190px;
-    background: linear-gradient(180deg, #bcdcef, #dcecd8);
+    background: linear-gradient(180deg, #e9e0c8, #ddd0ae);
   }
-  .room-floor-bg {   /* 地面 */
+  .room-floor-bg {
     position: absolute; top: 190px; left: 0; right: 0; bottom: 0;
-    background: #cdead2;
+    background: repeating-linear-gradient(90deg, #c9a877 0, #c9a877 38px, #bd9a68 38px, #bd9a68 40px);
   }
-  .town-sun {
-    position: absolute; top: 18px; right: 28px; width: 42px; height: 42px;
-    border-radius: 50%; background: radial-gradient(circle, #ffe28a, #f6cd57);
-    box-shadow: 0 0 18px rgba(246, 205, 87, 0.55);
+  .room-window {
+    position: absolute; top: 22px; right: 24px; width: 74px; height: 92px;
+    background: linear-gradient(180deg, #bcd9ea, #dcecd8);
+    border: 4px solid #f3ece0;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(60, 45, 25, 0.18);
+    overflow: hidden;
   }
-  .town-cloud {
-    position: absolute; background: rgba(255, 255, 255, 0.85); border-radius: 40px;
+  .room-window::before, .room-window::after {
+    content: ''; position: absolute; background: rgba(243, 236, 224, 0.9);
   }
+  .room-window::before { left: 50%; top: 0; bottom: 0; width: 3px; transform: translateX(-50%); }
+  .room-window::after { top: 50%; left: 0; right: 0; height: 3px; transform: translateY(-50%); }
+  .room-window-leaf {
+    position: absolute; bottom: 6px; left: 10px; width: 20px; height: 26px;
+    background: #7fae6f; border-radius: 0 100% 0 100%;
+  }
+  .room-window-leaf.l2 { left: 24px; bottom: 4px; width: 16px; height: 20px; background: #6ea45f; }
 
-  /* 広場（達成度の高い建物＝ランドマークが並ぶ場所） */
-  .cat-tower { position: absolute; top: 20px; left: 10px; width: 150px; height: 220px; }
+  .cat-tower { position: absolute; top: 26px; left: 16px; width: 130px; height: 210px; }
+  .tower-post {
+    position: absolute; left: 50%; bottom: 0; width: 16px; height: 100%;
+    transform: translateX(-50%);
+    background: repeating-linear-gradient(180deg, #c9a877 0, #c9a877 6px, #b6935f 6px, #b6935f 12px);
+    border-radius: 8px;
+    box-shadow: 1px 0 3px rgba(60, 45, 25, 0.2);
+  }
   .tower-platform {
-    position: absolute; border-radius: 50%;
-    background: #a3d182; border: 1.5px solid rgba(120, 100, 60, 0.35);
-    box-shadow: 0 2px 4px rgba(60, 90, 40, 0.25);
+    position: absolute; height: 14px; border-radius: 8px;
+    background: #f7ede0; border: 1.5px solid #a8794f;
+    box-shadow: 0 3px 5px rgba(60, 45, 25, 0.3);
   }
-  .tp1 { width: 84px; height: 30px; bottom: 0; left: 0; }
-  .tp2 { width: 70px; height: 26px; bottom: 86px; right: 0; }
-  .tp3 { width: 62px; height: 24px; bottom: 168px; left: 8px; }
+  .tp1 { width: 78px; bottom: 6px; left: 0; }
+  .tp2 { width: 68px; bottom: 92px; right: 0; }
+  .tp3 { width: 60px; bottom: 172px; left: 4px; }
+  .tower-toy {
+    position: absolute; top: 38px; left: 34px; width: 2px; height: 18px;
+    background: rgba(90, 65, 35, 0.55);
+  }
+  .tower-toy::after {
+    content: ''; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    width: 11px; height: 11px; border-radius: 50%; background: #d98a97;
+    box-shadow: 0 1px 2px rgba(60, 45, 25, 0.3);
+  }
 
-  .room-rug {   /* 道（一般の建物が並ぶ場所） */
-    position: absolute; left: 50%; top: 222px; transform: translateX(-50%);
-    width: 94%; border-radius: 18px;
-    background: #b9c4c9;
-    box-shadow: 0 3px 6px rgba(40, 50, 45, 0.12);
+  .room-rug {
+    position: absolute; left: 50%; top: 214px; transform: translateX(-50%);
+    width: 92%; border-radius: 50%;
+    background: radial-gradient(ellipse at center, #dfc9a3 0%, #dfc9a3 62%, #d3ba8e 63%, #d3ba8e 100%);
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.12);
   }
-  .room-rug::before {
-    content: '';
-    position: absolute; left: 0; right: 0; top: 50%; height: 3px; transform: translateY(-50%);
-    background: repeating-linear-gradient(90deg, #eef0ea 0, #eef0ea 14px, transparent 14px, transparent 26px);
+  .room-bowl {
+    position: absolute; top: 200px; left: 20px; width: 26px; height: 16px;
+    background: linear-gradient(180deg, #e0785a, #c95f44);
+    border-radius: 0 0 50% 50% / 0 0 90% 90%;
+    box-shadow: 0 2px 3px rgba(60, 45, 25, 0.2);
   }
-  .room-bowl {   /* 小さな池 */
-    position: absolute; top: 200px; left: 18px; width: 34px; height: 22px;
-    background: linear-gradient(180deg, #a9d3e6, #7fb6d4);
-    border-radius: 50%;
-    box-shadow: 0 2px 3px rgba(40, 60, 70, 0.2), inset 0 -3px 5px rgba(255, 255, 255, 0.3);
-  }
-  .room-basket {   /* 小さな公園 */
-    position: absolute; top: 186px; right: 26px; width: 40px; height: 34px;
+  .room-basket {
+    position: absolute; top: 194px; right: 30px; width: 44px; height: 26px;
+    background: repeating-linear-gradient(90deg, #b98a5f 0, #b98a5f 4px, #a87a50 4px, #a87a50 8px);
+    border-radius: 40% 40% 50% 50%;
+    box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2);
   }
   .room-basket::before {
-    content: '';
-    position: absolute; bottom: 0; left: 6px; right: 6px; height: 10px;
-    background: #8fae6f; border-radius: 50%;
-  }
-  .room-basket::after {
-    content: '';
-    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-    width: 26px; height: 26px; border-radius: 50%; background: #6ea45f;
-    box-shadow: 0 2px 3px rgba(40, 60, 30, 0.2);
+    content: ''; position: absolute; top: -6px; left: 6px; right: 6px; height: 12px;
+    background: #eddcc2; border-radius: 50%;
   }
 
   .room-pets { position: absolute; inset: 0; }
-  .room-pet { position: absolute; text-align: center; cursor: pointer; width: 58px; }
+  .room-pet {
+    position: absolute; text-align: center; cursor: pointer; width: 58px;
+    transition: left 1.1s ease-in-out, top 1.1s ease-in-out;   /* たまに歩いて移動するときの動き */
+    animation: petBob 2.3s ease-in-out infinite;
+    animation-delay: var(--pet-delay, 0s);
+  }
   .room-pet:active svg { transform: scale(0.94); }
   .room-pet svg { width: 52px; height: 52px; display: block; margin: 0 auto; filter: drop-shadow(0 3px 3px rgba(60, 45, 25, 0.25)); transition: transform 0.15s; }
   .room-pet .pc-name { font-size: 10px; color: #6b4a20; font-weight: 700; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); line-height: 1.2; }
   .room-pet .pc-breed { font-size: 8px; color: #7a6a4a; line-height: 1.2; }
-  /* 旗がそよぐ（どの建物にも立っている、生きている感じを出す共通の動き） */
-  .flag {
-    transform-box: view-box; transform-origin: 6px 10px;
-    animation: flagWave 1.6s ease-in-out infinite;
+  @keyframes petBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .tail {
+    transform-box: view-box; transform-origin: 37px 54px;
+    animation: tailSway 1.7s ease-in-out infinite;
     animation-delay: var(--pet-delay, 0s);
   }
-  @keyframes flagWave { 0%, 100% { transform: skewX(-6deg); } 50% { transform: skewX(8deg); } }
-  /* 風車の羽根はゆっくり回転（該当ランドマークのみ） */
-  .windmill-blades { transform-box: fill-box; transform-origin: center; animation: windmillSpin 6s linear infinite; }
-  @keyframes windmillSpin { 100% { transform: rotate(360deg); } }
+  @keyframes tailSway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(7deg); } }
   @media (prefers-reduced-motion: reduce) {
-    .flag, .windmill-blades { animation: none; }
+    .room-pet, .tail { animation: none; }
+    .room-pet { transition: none; }
   }
 
   .empty-note.room-empty {
@@ -414,7 +433,7 @@
 
   /* 鉢のパーツ共通 */
   .pet-body { transform-box: fill-box; transform-origin: bottom center; transition: transform 0.5s ease; }
-  .bld-scaffold, .bld-flag { transition: opacity 0.5s ease; }
+  .pet-eyes, .pet-zzz, .pet-heart { transition: opacity 0.5s ease; }
 </style>
 </head>
 <body>
@@ -426,7 +445,7 @@
     <button type="button" class="settings-btn" id="settingsBtn" aria-label="設定">⚙</button>
     <div class="head">
       <h1>手ざわり集中</h1>
-      <p>時間を決めて、離れずに見守る。離れると工事が止まってしまいます。</p>
+      <p>時間を決めて、離れずに一緒にいる。離れると寂しがります。</p>
       <div class="total-time" id="totalTime"></div>
       <div class="mileage-stat" id="mileageStat"></div>
     </div>
@@ -437,13 +456,13 @@
     <div class="garden-scroll">
       <div class="room-scene" id="roomScene">
         <div class="room-wall"></div>
-        <div class="town-sun"></div>
-        <div class="town-cloud" style="top:14px; left:20px; width:34px; height:14px;"></div>
-        <div class="town-cloud" style="top:40px; left:70px; width:24px; height:10px;"></div>
+        <div class="room-window"><div class="room-window-leaf"></div><div class="room-window-leaf l2"></div></div>
         <div class="cat-tower">
+          <div class="tower-post"></div>
           <div class="tower-platform tp1"></div>
           <div class="tower-platform tp2"></div>
           <div class="tower-platform tp3"></div>
+          <div class="tower-toy"></div>
         </div>
         <div class="room-floor-bg"></div>
         <div class="room-rug" id="roomRug"></div>
@@ -451,7 +470,7 @@
         <div class="room-basket"></div>
         <div class="room-pets" id="roomPets"></div>
         <div class="empty-note room-empty" id="emptyNote" style="display:none;">
-          まだ何もありません。<br>下の「集中をはじめる」から、<br>1つ目の建物を建てよう。
+          まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。
         </div>
       </div>
       <div class="roster-grid" id="rosterGrid" style="display:none;"></div>
@@ -499,7 +518,7 @@
     <div class="sheet">
       <h2>設定</h2>
       <p class="sub">手ざわり集中について</p>
-      <p class="settings-text">時間を決めて集中をはじめると、建物が1つ選ばれて工事がはじまります。時間のあいだ画面から離れずにいると、建物は完成して街に加わります。途中でアプリを離れたり画面をロックしたりすると、その回は工事が止まってしまい、街には加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ持っていない建物を貯まった時間で建てることもできます。街の建物は名前をつけたり変えたりできます。</p>
+      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。おうちの子は名前をつけたり変えたりできます。</p>
       <div class="settings-row">
         <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
       </div>
@@ -533,7 +552,7 @@
   <div class="session-plant" id="sessionPlantSlot"></div>
   <div class="session-time" id="sessionTime">00:00</div>
   <div class="session-label" id="sessionLabel"></div>
-  <div class="session-note">この画面を離れたり、他のアプリに切り替えたり、<br>画面をロックすると、この建物は工事が止まってしまいます。</div>
+  <div class="session-note">この画面を離れたり、他のアプリに切り替えたり、<br>画面をロックすると、このなかまは眠ってしまいます。</div>
   <button type="button" class="give-up-btn" id="giveUpBtn">やめる</button>
 </div>
 
@@ -551,146 +570,160 @@
     saveNoteTimer = setTimeout(function () { el.classList.remove('show'); }, 1200);
   }
 
-  // ---- 建物SVG。種類・建物はセッションごとにランダム。progress(0〜1)で「工事中→完成」を表す ----
-  var BUILDING_TYPES = ['landmark', 'house', 'shop', 'park', 'station', 'school'];
-  // 種類ごとの建物一覧。keyは保存用の固定ID、nameは画面表示（無ければ表示しない）、colorは地の色
-  var BUILDING_VARIANTS = {
-    landmark: [
-      { key: 'clock-tower', name: '時計塔',   color: '#c9564a' },
-      { key: 'fountain',    name: '噴水広場', color: '#c9c2a8' },
-      { key: 'bridge',      name: '赤い橋',   color: '#c9564a' },
-      { key: 'windmill',    name: '風車',     color: '#e8ddc2' },
-      { key: 'lighthouse',  name: '灯台',     color: '#f0e6d2' },
-      { key: 'torii',       name: '鳥居',     color: '#c9564a' }
+  // ---- ペットSVG。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
+  var PET_TYPES = ['cat', 'dog', 'rabbit', 'bird', 'hamster', 'turtle'];
+  // 種類ごとの品種一覧。keyは保存用の固定ID、nameは画面表示（無ければ表示しない）、
+  // colorは地の色、patternは模様（petBody/catPatternで解釈。'solid'は無地）
+  var PET_VARIANTS = {
+    cat: [
+      { key: 'american-shorthair', name: 'アメリカンショートヘア', color: '#b8b0a0', pattern: 'tabby' },
+      { key: 'russian-blue',       name: 'ロシアンブルー',         color: '#8a97a0', pattern: 'solid' },
+      { key: 'scottish-fold',      name: 'スコティッシュフォールド', color: '#c9bfae', pattern: 'fold' },
+      { key: 'maine-coon',         name: 'メインクーン',           color: '#a37a4e', pattern: 'tufted-tabby' },
+      { key: 'persian',            name: 'ペルシャ',               color: '#f3ece0', pattern: 'fluffy' },
+      { key: 'siamese',            name: 'シャム',                 color: '#f0e6d2', pattern: 'points' },
+      { key: 'bengal',             name: 'ベンガル',               color: '#e0a952', pattern: 'spots' },
+      { key: 'abyssinian',         name: 'アビシニアン',           color: '#b06a3f', pattern: 'solid' },
+      { key: 'british-shorthair',  name: 'ブリティッシュショートヘア', color: '#a3a89c', pattern: 'round' },
+      { key: 'calico',             name: '三毛猫',                 color: '#f3ece0', pattern: 'calico' }
     ],
-    house: [
-      { key: 'red',   name: null, color: '#c9564a', pattern: 'solid' },
-      { key: 'blue',  name: null, color: '#8fa8c9', pattern: 'solid' },
-      { key: 'cream', name: null, color: '#e0a952', pattern: 'solid' }
+    dog: [
+      { key: 'brown', name: null, color: '#c98a52', pattern: 'solid' },
+      { key: 'dark',  name: null, color: '#8a6a48', pattern: 'solid' },
+      { key: 'cream', name: null, color: '#e8ddc2', pattern: 'solid' }
     ],
-    shop: [
-      { key: 'green',  name: null, color: '#7fae6f', pattern: 'solid' },
-      { key: 'orange', name: null, color: '#e0a952', pattern: 'solid' },
-      { key: 'pink',   name: null, color: '#d98a97', pattern: 'solid' }
+    rabbit: [
+      { key: 'pink',  name: null, color: '#f0c9d6', pattern: 'solid' },
+      { key: 'ivory', name: null, color: '#e6ddc9', pattern: 'solid' },
+      { key: 'beige', name: null, color: '#c9b8a0', pattern: 'solid' }
     ],
-    park: [
-      { key: 'spring', name: null, color: '#7fae6f', pattern: 'solid' },
-      { key: 'autumn', name: null, color: '#c98a52', pattern: 'solid' },
-      { key: 'summer', name: null, color: '#6ea45f', pattern: 'solid' }
+    bird: [
+      { key: 'blue',  name: null, color: '#8fb6d9', pattern: 'solid' },
+      { key: 'gold',  name: null, color: '#e0a952', pattern: 'solid' },
+      { key: 'green', name: null, color: '#7fb08a', pattern: 'solid' }
     ],
-    station: [
-      { key: 'brown', name: null, color: '#b98a5f', pattern: 'solid' },
-      { key: 'blue',  name: null, color: '#8fa8c9', pattern: 'solid' },
-      { key: 'gray',  name: null, color: '#a3a89c', pattern: 'solid' }
+    hamster: [
+      { key: 'gold',  name: null, color: '#e0b96e', pattern: 'solid' },
+      { key: 'brown', name: null, color: '#c98a52', pattern: 'solid' },
+      { key: 'cream', name: null, color: '#f3ece0', pattern: 'solid' }
     ],
-    school: [
-      { key: 'cream', name: null, color: '#f0e6d2', pattern: 'solid' },
-      { key: 'red',   name: null, color: '#c9564a', pattern: 'solid' },
-      { key: 'blue',  name: null, color: '#8fa8c9', pattern: 'solid' }
+    turtle: [
+      { key: 'green', name: null, color: '#7fb08a', pattern: 'solid' },
+      { key: 'olive', name: null, color: '#8fa87f', pattern: 'solid' },
+      { key: 'tan',   name: null, color: '#b0a870', pattern: 'solid' }
     ]
   };
-  function buildingVariant(type, key) {
-    var list = BUILDING_VARIANTS[type] || [];
+  function petVariant(type, key) {
+    var list = PET_VARIANTS[type] || [];
     for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i];
     return null;
   }
-  function pickBuilding() {
-    var type = BUILDING_TYPES[Math.floor(Math.random() * BUILDING_TYPES.length)];
-    var variants = BUILDING_VARIANTS[type];
+  function pickPet() {
+    var type = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
+    var variants = PET_VARIANTS[type];
     var variant = variants[Math.floor(Math.random() * variants.length)];
     return { type: type, key: variant.key };
   }
-  // ランドマーク（名前付き・希少枠）。1種類につき絵柄も1つだけの一点物
-  function landmarkBody(key, c) {
-    switch (key) {
-      case 'clock-tower':
-        return '<rect x="19" y="16" width="12" height="38" fill="' + c + '"/>' +
-          '<path d="M16 16 L25 4 L34 16 Z" fill="' + c + '"/>' +
-          '<circle cx="25" cy="24" r="7" fill="#f8f3e6" stroke="#5a4a30" stroke-width="1.5"/>' +
-          '<path d="M25 24 L25 20 M25 24 L28 25" stroke="#5a4a30" stroke-width="1.2" stroke-linecap="round"/>' +
-          '<rect x="14" y="54" width="22" height="6" fill="#8a6a48"/>';
-      case 'fountain':
-        return '<ellipse cx="25" cy="52" rx="20" ry="7" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="50" rx="15" ry="5" fill="#a9d3e6"/>' +
-          '<rect x="22" y="30" width="6" height="20" fill="' + c + '"/>' +
-          '<path d="M25 30 L25 20 M20 32 L15 24 M30 32 L35 24" stroke="#a9d3e6" stroke-width="2" stroke-linecap="round"/>';
-      case 'bridge':
-        return '<rect x="0" y="52" width="50" height="8" fill="#a9d3e6"/>' +
-          '<path d="M4 52 Q25 22 46 52" stroke="' + c + '" stroke-width="7" fill="none"/>' +
-          '<path d="M10 44 L10 52 M18 36 L18 52 M32 36 L32 52 M40 44 L40 52" stroke="' + c + '" stroke-width="2"/>';
-      case 'windmill':
-        return '<path d="M20 60 L22 22 L28 22 L30 60 Z" fill="' + c + '" stroke="#8a6a48" stroke-width="1"/>' +
-          '<g class="windmill-blades" style="transform-origin:25px 22px;">' +
-            '<path d="M25 22 L25 6" stroke="#c9a876" stroke-width="4.5" stroke-linecap="round"/>' +
-            '<path d="M25 22 L41 22" stroke="#c9a876" stroke-width="4.5" stroke-linecap="round"/>' +
-            '<path d="M25 22 L25 38" stroke="#c9a876" stroke-width="4.5" stroke-linecap="round"/>' +
-            '<path d="M25 22 L9 22" stroke="#c9a876" stroke-width="4.5" stroke-linecap="round"/>' +
-          '</g>' +
-          '<circle cx="25" cy="22" r="3" fill="#5a4a30"/>';
-      case 'lighthouse':
-        return '<path d="M19 58 L21 16 L29 16 L31 58 Z" fill="' + c + '"/>' +
-          '<path d="M21 34 L29 34 L28 44 L22 44 Z" fill="#c9564a"/>' +
-          '<rect x="19" y="8" width="12" height="8" fill="#f6cd57"/>' +
-          '<path d="M17 8 L25 1 L33 8 Z" fill="#c9564a"/>';
-      case 'torii':
-        return '<rect x="11" y="20" width="5" height="38" fill="' + c + '"/><rect x="34" y="20" width="5" height="38" fill="' + c + '"/>' +
-          '<rect x="5" y="13" width="40" height="6" rx="2" fill="' + c + '"/>' +
-          '<rect x="10" y="24" width="30" height="4" fill="' + c + '"/>';
+  // 猫の品種模様。頭・体の上に重ねて描く追加パーツを返す
+  function catPattern(pattern, c) {
+    switch (pattern) {
+      case 'tabby':
+        return '<path d="M17 44 Q25 41 33 44 M16 50 Q25 47 34 50" stroke="rgba(0,0,0,0.38)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M20 21 L25 15 L30 21" stroke="rgba(0,0,0,0.42)" stroke-width="2" fill="none" stroke-linecap="round"/>';
+      case 'tufted-tabby':
+        return '<path d="M17 45 Q25 42 33 45 M17 51 Q25 48 33 51" stroke="rgba(0,0,0,0.32)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M14 16 L10 8 M36 16 L40 8" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>';
+      case 'spots':
+        return ['14,42', '22,46', '30,43', '36,48', '18,54', '28,56', '34,52'].map(function (pt) {
+          var xy = pt.split(',');
+          return '<ellipse cx="' + xy[0] + '" cy="' + xy[1] + '" rx="3.2" ry="2.4" fill="rgba(0,0,0,0.4)"/>';
+        }).join('');
+      case 'points':
+        return '<path d="M12 27 L17 15 L24 25 Z" fill="#5a4030"/><path d="M38 27 L33 15 L26 25 Z" fill="#5a4030"/>' +
+          '<ellipse cx="25" cy="33" rx="7" ry="5.5" fill="#5a4030" opacity="0.75"/>';
+      case 'fluffy':
+        return '<path d="M9 40 q-4 -2 -3 -7 M8 47 q-4 1 -4 -4 M9 54 q-4 3 -6 0 M41 40 q4 -2 3 -7 M42 47 q4 1 4 -4 M41 54 q4 3 6 0" ' +
+          'stroke="' + c + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+      case 'calico':
+        return '<path d="M9 42 Q12 26 22 24 L23 60 Q12 59 9 48 Z" fill="#e0a952"/>' +
+          '<path d="M41 42 Q38 28 29 25 L28 60 Q38 59 41 48 Z" fill="#3a332a"/>';
+      default:
+        return '';
     }
-    return '';
   }
-  // 一般の建物（色違いが3種類ずつある。色は屋根に少し濃く出す簡易な陰影付き）
-  function buildingBody(type, key, c) {
+  function petBody(type, c, pattern) {
     switch (type) {
-      case 'landmark':
-        return landmarkBody(key, c);
-      case 'house':
-        return '<path d="M8 30 L25 12 L42 30 Z" fill="' + c + '" style="filter:brightness(0.82)"/>' +
-          '<rect x="30" y="12" width="5" height="10" fill="' + c + '" style="filter:brightness(0.82)"/>' +
-          '<rect x="12" y="30" width="26" height="26" fill="' + c + '"/>' +
-          '<rect x="21" y="42" width="8" height="14" fill="#6b4a30"/>' +
-          '<rect x="15" y="34" width="7" height="7" fill="#bcd9ea"/><rect x="28" y="34" width="7" height="7" fill="#bcd9ea"/>';
-      case 'shop':
-        return '<rect x="8" y="28" width="34" height="28" fill="' + c + '"/>' +
-          '<path d="M6 28 L44 28 L40 36 L10 36 Z" fill="' + c + '" style="filter:brightness(0.8)"/>' +
-          '<rect x="12" y="40" width="26" height="12" fill="#bcd9ea"/>' +
-          '<rect x="21" y="50" width="8" height="6" fill="#6b4a30"/>';
-      case 'park':
-        return '<ellipse cx="25" cy="54" rx="22" ry="7" fill="#8fae6f"/>' +
-          '<rect x="22" y="30" width="4" height="18" fill="#a87a50"/>' +
-          '<circle cx="24" cy="26" r="13" fill="' + c + '"/>' +
-          '<rect x="14" y="52" width="10" height="3" fill="#a87a50"/>';
-      case 'station':
-        return '<rect x="10" y="30" width="30" height="26" fill="' + c + '"/>' +
-          '<path d="M6 30 L25 16 L44 30 Z" fill="' + c + '" style="filter:brightness(0.8)"/>' +
-          '<circle cx="25" cy="24" r="4" fill="#fff" stroke="#5a4a30" stroke-width="1"/>' +
-          '<rect x="4" y="56" width="42" height="3" fill="#a3a89c"/>';
-      case 'school':
-        return '<rect x="10" y="30" width="30" height="26" fill="' + c + '"/>' +
-          '<path d="M8 30 L25 18 L42 30 Z" fill="' + c + '" style="filter:brightness(0.8)"/>' +
-          '<rect x="14" y="36" width="3" height="20" fill="#f8f3e6"/><rect x="23.5" y="36" width="3" height="20" fill="#f8f3e6"/><rect x="33" y="36" width="3" height="20" fill="#f8f3e6"/>';
+      case 'cat':
+        var earFold = pattern === 'fold';
+        var ears = earFold
+          ? '<ellipse cx="17" cy="16" rx="4.2" ry="3" fill="' + c + '"/><ellipse cx="33" cy="16" rx="4.2" ry="3" fill="' + c + '"/>'
+          : '<path d="M12 24 L16 8 L23 20 Z" fill="' + c + '"/><path d="M38 24 L34 8 L27 20 Z" fill="' + c + '"/>' +
+            '<path d="M15 21 L17 12 L20 18 Z" fill="#f0b8bc" opacity="0.8"/><path d="M35 21 L33 12 L30 18 Z" fill="#f0b8bc" opacity="0.8"/>';
+        var bodyRx = (pattern === 'round') ? 17 : 15;
+        return (
+          // しっぽ（体の後ろから伸びて先が丸まる。tailクラスで揺れるアニメーションをかける）
+          '<path class="tail" d="M37 54 Q49 52 48 36 Q47 24 39 19" fill="none" stroke="' + c + '" stroke-width="6.5" stroke-linecap="round"/>' +
+          // 前あし
+          '<ellipse cx="17" cy="59" rx="4.5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="59" rx="4.5" ry="4" fill="' + c + '"/>' +
+          // 体
+          '<ellipse cx="25" cy="48" rx="' + bodyRx + '" ry="13" fill="' + c + '"/>' +
+          ears +
+          // 頭
+          '<circle cx="25" cy="26" r="13" fill="' + c + '"/>' +
+          // 鼻・口もと・ひげ
+          '<path d="M23 30 L27 30 L25 33 Z" fill="#c96b6b"/>' +
+          '<path d="M25 33 Q22 36 19 35 M25 33 Q28 36 31 35" stroke="rgba(0,0,0,0.35)" stroke-width="1" fill="none"/>' +
+          '<path d="M13 27 L4 25 M13 30 L4 31 M37 27 L46 25 M37 30 L46 31" stroke="rgba(60,50,30,0.4)" stroke-width="1" stroke-linecap="round"/>' +
+          catPattern(pattern, c)
+        );
+      case 'dog':
+        return '<ellipse cx="11" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(-18 11 38)"/>' +
+          '<ellipse cx="39" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(18 39 38)"/>' +
+          '<ellipse cx="25" cy="45" rx="18" ry="15" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="50" rx="5" ry="3.5" fill="#fbead6"/>';
+      case 'rabbit':
+        return '<ellipse cx="18" cy="18" rx="4.5" ry="15" fill="' + c + '" transform="rotate(-6 18 18)"/>' +
+          '<ellipse cx="32" cy="18" rx="4.5" ry="15" fill="' + c + '" transform="rotate(6 32 18)"/>' +
+          '<ellipse cx="25" cy="45" rx="17" ry="15" fill="' + c + '"/>';
+      case 'bird':
+        return '<ellipse cx="25" cy="45" rx="17" ry="16" fill="' + c + '"/>' +
+          '<ellipse cx="33" cy="44" rx="8" ry="6" fill="rgba(0,0,0,0.12)" transform="rotate(18 33 44)"/>' +
+          '<path d="M8 43 L1 41 L8 47 Z" fill="#e0a952"/>';
+      case 'hamster':
+        return '<ellipse cx="14" cy="32" rx="4" ry="4.5" fill="' + c + '"/><ellipse cx="36" cy="32" rx="4" ry="4.5" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="46" rx="20" ry="15" fill="' + c + '"/>';
+      case 'turtle':
+        return '<ellipse cx="25" cy="46" rx="19" ry="14" fill="' + c + '"/>' +
+          '<path d="M10 46 Q25 34 40 46 Q25 41 10 46 Z" fill="rgba(0,0,0,0.14)"/>' +
+          '<ellipse cx="8" cy="48" rx="5" ry="4" fill="' + c + '"/>';
     }
     return '';
   }
-  function buildingSVG(id, type, key) {
-    var v = buildingVariant(type, key) || { color: '#c9b8a0' };
+  // 顔の中心（目・Zzzの基準）。猫は頭が体と別に上へ分かれているぶん高い位置になる
+  var FACE_Y = { cat: 25 };
+  function petSVG(id, type, key) {
+    var v = petVariant(type, key) || { color: '#c9b8a0', pattern: 'solid' };
+    var fy = FACE_Y[type] || 43;
     return '<svg id="' + id + '" viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
-      '<g class="pet-body">' + buildingBody(type, key, v.color) + '</g>' +
-      '<g class="bld-scaffold"><path d="M8 58 L8 12 M18 58 L18 8 M28 58 L28 6 M38 58 L38 10 M6 46 L44 46 M6 33 L44 33 M6 20 L44 20" stroke="#a8794f" stroke-width="1.6" opacity="0.8" fill="none"/></g>' +
-      '<g class="bld-flag flag" opacity="0" transform="translate(35,4)"><rect x="0" y="0" width="1.6" height="16" fill="#7a6a4a"/><path d="M1.6 1 L11 4.5 L1.6 8 Z" fill="#e0785a"/></g>' +
+      '<text class="pet-zzz" x="31" y="' + (fy - 16) + '" font-size="10" fill="#8a8d99">Zzz</text>' +
+      '<g class="pet-body">' + petBody(type, v.color, v.pattern) + '</g>' +
+      '<g class="pet-eyes" opacity="0"><circle cx="20" cy="' + fy + '" r="1.5" fill="#3a332a"/><circle cx="30" cy="' + fy + '" r="1.5" fill="#3a332a"/></g>' +
+      '<g class="pet-heart" opacity="0" transform="translate(25,8) scale(0.4)"><path d="M0 4 C -6 -3, -14 2, 0 12 C 14 2, 6 -3, 0 4 Z" fill="#e0788a"/></g>' +
     '</svg>';
   }
-  // progress(0〜1): 建物は低い位置から少しずつせり上がって建つ。0.92未満は足場が見え、0.95以上で旗が立つ
-  function paintBuilding(svgEl, progress) {
+  // progress(0〜1): 0.3未満=眠っている(Zzz)、それ以上=目を開けて起きる、0.95以上=懐いてハート
+  function paintPet(svgEl, progress) {
     var t = Math.max(0, Math.min(1, progress));
     var body = svgEl.querySelector('.pet-body');
-    body.style.transform = 'scaleY(' + (0.4 + 0.6 * t).toFixed(3) + ')';
-    svgEl.querySelector('.bld-scaffold').style.opacity = t < 0.92 ? 1 : 0;
-    svgEl.querySelector('.bld-flag').style.opacity = t >= 0.95 ? 1 : 0;
+    body.style.transform = 'scaleY(' + (0.85 + 0.15 * Math.min(1, t / 0.4)).toFixed(3) + ')';
+    svgEl.querySelector('.pet-zzz').style.opacity = t < 0.3 ? 1 : 0;
+    svgEl.querySelector('.pet-eyes').style.opacity = t >= 0.3 ? 1 : 0;
+    svgEl.querySelector('.pet-heart').style.opacity = t >= 0.95 ? 1 : 0;
   }
-  function abandonBuilding(svgEl) {
-    svgEl.querySelector('.bld-scaffold').style.opacity = 1;   // 工事が途中で止まり、足場が残ったまま
-    svgEl.querySelector('.bld-flag').style.opacity = 0;
+  function sadPet(svgEl) {
+    svgEl.querySelector('.pet-zzz').style.opacity = 1;
+    svgEl.querySelector('.pet-eyes').style.opacity = 0;
+    svgEl.querySelector('.pet-heart').style.opacity = 0;
     svgEl.querySelectorAll('.pet-body').forEach(function (el) {
       el.style.transition = 'filter 0.8s ease';
       el.style.filter = 'grayscale(1) brightness(0.8)';
@@ -698,16 +731,16 @@
   }
 
   // ---- ストレージ ----
-  // pf:garden = [{id, minutes, completedAt, type, key, name, source}]（完成した建物だけ記録。失敗は残さない）
-  // source: 'session'=集中して完成した（minutesはその回の分数） / 'shop'=貯まった時間で建てた（minutesは0）
+  // pf:garden = [{id, minutes, completedAt, type, key, name, source}]（懐いた／迎えたなかまだけ記録。失敗は残さない）
+  // source: 'session'=集中して懐いた（minutesはその回の分数） / 'shop'=貯まった時間で迎えた（minutesは0）
   function coreValid(g) {
     return g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
       Number.isFinite(g.minutes) && g.minutes >= 0 && g.minutes <= 180 &&
       Number.isFinite(g.completedAt);
   }
-  function buildingFieldsValid(g) {
-    return BUILDING_TYPES.indexOf(g.type) !== -1 && !!buildingVariant(g.type, g.key);   // keyがその種類の既知の品種の1つであること
+  function petFieldsValid(g) {
+    return PET_TYPES.indexOf(g.type) !== -1 && !!petVariant(g.type, g.key);   // keyがその種類の既知の品種の1つであること
   }
   // 文字列から決定的な数値を作る（乱数は使わない＝再読み込みでも同じ結果になる）
   function hashStr(s) {
@@ -716,11 +749,11 @@
     return h;
   }
   // idから決定的に種類・品種を割り当てる（品種情報が無い・壊れた記録の救済用）
-  function deriveLegacyBuilding(id) {
+  function deriveLegacyPet(id) {
     var h = hashStr(id);
-    var type = BUILDING_TYPES[h % BUILDING_TYPES.length];
-    var variants = BUILDING_VARIANTS[type];
-    return { type: type, key: variants[Math.floor(h / BUILDING_TYPES.length) % variants.length].key };
+    var type = PET_TYPES[h % PET_TYPES.length];
+    var variants = PET_VARIANTS[type];
+    return { type: type, key: variants[Math.floor(h / PET_TYPES.length) % variants.length].key };
   }
   function readGarden() {
     try {
@@ -732,14 +765,14 @@
       var changed = false;
       var out = filtered.map(function (g) {
         var type = g.type, key = g.key;
-        if (!buildingFieldsValid(g)) {
+        if (!petFieldsValid(g)) {
           changed = true;   // 品種を持たない・古い色ベースの旧形式の記録。消さずに割り当てて救済する
-          var p = deriveLegacyBuilding(g.id);
+          var p = deriveLegacyPet(g.id);
           type = p.type; key = p.key;
         }
         var name = (typeof g.name === 'string') ? g.name.slice(0, 12) : '';
         var source = (g.source === 'shop') ? 'shop' : 'session';   // name/sourceが無い旧形式の記録も既定値で補う
-        var minutes = (source === 'shop') ? 0 : g.minutes;   // 貯まった時間で建てた記録は分数を持たない、という約束を必ず保つ
+        var minutes = (source === 'shop') ? 0 : g.minutes;   // 貯まった時間で迎えた記録は分数を持たない、という約束を必ず保つ
         if (g.type !== type || g.key !== key || g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
         return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source };
       });
@@ -770,11 +803,11 @@
     return writeGarden(arr);   // 書き込みそのものの成否を返す（見つかっただけで成功扱いにしない）
   }
 
-  // ---- 貯まった時間（集中した分だけ貯まり、図鑑で建物を建てると使う。累計の「これまでの集中」とは別の残高）----
+  // ---- 貯まった時間（集中した分だけ貯まり、図鑑でなかまを迎えると使う。累計の「これまでの集中」とは別の残高）----
   // 中身は分単位で持つが、値段は1時間単位（60分きざみ）にそろえる
-  function buildingPrice(type, key) {
-    var v = buildingVariant(type, key);
-    return (v && v.name) ? 120 : 60;   // 名前付き（ランドマーク）は2時間、それ以外は1時間
+  function petPrice(type, key) {
+    var v = petVariant(type, key);
+    return (v && v.name) ? 120 : 60;   // 名前付き品種（猫）は2時間、それ以外は1時間
   }
   var MAX_MILEAGE = Number.MAX_SAFE_INTEGER;
   function readMileage() {
@@ -794,10 +827,10 @@
     catch (e) { return false; }
   }
   function buyPet(type, key) {
-    var price = buildingPrice(type, key);
+    var price = petPrice(type, key);
     if (readMileage() < price) return false;
-    // 先に建物を建てる処理を試み、それが成功したときだけ時間を引く。
-    // 逆順だと保存失敗時に「時間だけ減って建物が増えない」事故になりうるため
+    // 先になかまを迎える処理を試み、それが成功したときだけ時間を引く。
+    // 逆順だと保存失敗時に「時間だけ減ってなかまが増えない」事故になりうるため
     if (!addToGarden(0, { type: type, key: key }, 'shop')) return false;
     spendMileage(price);
     return true;
@@ -817,24 +850,24 @@
     return h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分';
   }
 
-  // 広場の3つの台座（.room-scene基準の座標＝各台座の上面の中心。建物の足もとがここに来るようにする）
-  var LANDMARK_SLOTS = [
+  // キャットタワーの3段（.room-scene基準の座標＝各段の上面の中心。なかまの足もとがここに来るようにする）
+  var TOWER_SLOTS = [
     { x: 55, y: 216 },   // tp1（一番下）
     { x: 112, y: 130 },  // tp2（中段）
     { x: 50, y: 50 }     // tp3（一番上）
   ];
-  // FLOOR_LEFT+2*FLOOR_CELL_W+ジッター最大+建物の幅が、幅320pxの狭い端末でも
+  // FLOOR_LEFT+2*FLOOR_CELL_W+ジッター最大+なかまの幅が、幅320pxの狭い端末でも
   // .room-scene（overflow:hidden）からはみ出て見切れないだけの余白を残した値
   var FLOOR_COLS = 3, FLOOR_CELL_W = 100, FLOOR_CELL_H = 78, FLOOR_TOP = 250, FLOOR_LEFT = 18;
 
-  function buildTownBuilding(g) {
+  function buildRoomPet(g) {
     var el = document.createElement('div');
     el.className = 'room-pet';
     el.dataset.id = g.id;
-    el.style.setProperty('--pet-delay', '-' + (hashStr(g.id) % 230) / 100 + 's');   // 旗のはためきをずらす
-    el.innerHTML = buildingSVG('', g.type, g.key);   // type/keyはreadGardenで既知の値だけに絞られている
-    paintBuilding(el.querySelector('svg'), 1);
-    var v = buildingVariant(g.type, g.key);
+    el.style.setProperty('--pet-delay', '-' + (hashStr(g.id) % 230) / 100 + 's');   // 呼吸・しっぽ揺れをずらす
+    el.innerHTML = petSVG('', g.type, g.key);   // type/keyはreadGardenで既知の値だけに絞られている
+    paintPet(el.querySelector('svg'), 1);
+    var v = petVariant(g.type, g.key);
     if (g.name) {
       var nameEl = document.createElement('div');
       nameEl.className = 'pc-name';
@@ -846,7 +879,7 @@
       breedEl.textContent = v.name;
       el.appendChild(breedEl);
     }
-    var detail = (g.source === 'shop') ? fmtHours(buildingPrice(g.type, g.key)) + 'で建てた' : g.minutes + '分・' + fmtDate(g.completedAt);
+    var detail = (g.source === 'shop') ? fmtHours(petPrice(g.type, g.key)) + 'で迎えた' : g.minutes + '分・' + fmtDate(g.completedAt);
     el.title = [g.name, v && v.name, detail].filter(Boolean).join(' · ');
     el.addEventListener('click', function () { openNameModal(g.id, g.name); });
     return el;
@@ -860,16 +893,16 @@
     petsLayer.innerHTML = '';
     empty.style.display = garden.length ? 'none' : 'block';
 
-    // ランドマークは広場の空いている台座に、それ以外（＋台座に入りきらないランドマーク）は道へ
-    var ordered = garden.slice().reverse();   // 新しい建物が手前（若い番号）に来る順
+    // 猫はタワーの空いている段に、それ以外（＋タワーに入りきらない猫）は床（ラグ）へ
+    var ordered = garden.slice().reverse();   // 新しい子が手前（若い番号）に来る順
     var towerCats = [], floorEntries = [];
     ordered.forEach(function (g) {
-      if (g.type === 'landmark' && towerCats.length < LANDMARK_SLOTS.length) towerCats.push(g);
+      if (g.type === 'cat' && towerCats.length < TOWER_SLOTS.length) towerCats.push(g);
       else floorEntries.push(g);
     });
     towerCats.forEach(function (g, i) {
-      var slot = LANDMARK_SLOTS[i];
-      var el = buildTownBuilding(g);
+      var slot = TOWER_SLOTS[i];
+      var el = buildRoomPet(g);
       el.dataset.tower = '1';   // タワーの子はうろうろさせない（段から落ちて見えるため）
       el.style.left = (slot.x - 29) + 'px';
       el.style.top = (slot.y - 50) + 'px';
@@ -881,7 +914,7 @@
       var h = hashStr(g.id);
       var jx = (h % 22) - 11, jy = ((h >>> 5) % 16) - 8;   // 符号なしシフト（>>だと符号拡張されジッターが想定範囲外に出ることがあった）
       var baseX = FLOOR_LEFT + col * FLOOR_CELL_W + jx, baseY = FLOOR_TOP + row * FLOOR_CELL_H + jy;
-      var el = buildTownBuilding(g);
+      var el = buildRoomPet(g);
       el.dataset.baseX = baseX;   // うろうろ移動の基準位置（この近くだけを行き来する）
       el.dataset.baseY = baseY;
       el.style.left = baseX + 'px';
@@ -889,7 +922,7 @@
       petsLayer.appendChild(el);
     });
 
-    // 部屋全体・道の高さを、床に置いた軒数ぶん確保する
+    // 部屋全体・ラグの高さを、床に置いた匹数ぶん確保する
     var rugHeight = Math.max(170, floorRows * FLOOR_CELL_H + 70);
     var rug = document.getElementById('roomRug');
     rug.style.height = rugHeight + 'px';
@@ -898,12 +931,28 @@
     var totalMin = garden.reduce(function (s, g) { return s + (g.source === 'shop' ? 0 : g.minutes); }, 0);
     var totalEl = document.getElementById('totalTime');
     if (totalMin > 0) {
-      totalEl.innerHTML = 'これまでの集中: <b>' + fmtHours(totalMin) + '</b>（建物' + garden.length + '軒）';
+      totalEl.innerHTML = 'これまでの集中: <b>' + fmtHours(totalMin) + '</b>（なかま' + garden.length + '匹）';
     } else {
-      totalEl.textContent = garden.length ? '建物' + garden.length + '軒' : '';
+      totalEl.textContent = garden.length ? 'なかま' + garden.length + '匹' : '';
     }
     var mileageEl = document.getElementById('mileageStat');
     mileageEl.innerHTML = '貯まった時間: <b>' + fmtHours(readMileage()) + '</b>';
+  }
+
+  // ---- ラグの上のなかまが、たまに少し歩く（基準位置の近くだけを行き来。タワーの子は対象外） ----
+  var wanderTimer = 0;
+  function scheduleWander() {
+    clearTimeout(wanderTimer);
+    wanderTimer = setTimeout(function () { wanderStep(); scheduleWander(); }, 3500 + Math.random() * 3000);
+  }
+  function wanderStep() {
+    var candidates = document.querySelectorAll('#roomPets > .room-pet:not([data-tower])');
+    if (!candidates.length) return;
+    var el = candidates[Math.floor(Math.random() * candidates.length)];
+    var baseX = parseFloat(el.dataset.baseX), baseY = parseFloat(el.dataset.baseY);
+    if (!Number.isFinite(baseX) || !Number.isFinite(baseY)) return;
+    el.style.left = (baseX + Math.random() * 24 - 12) + 'px';
+    el.style.top = (baseY + Math.random() * 18 - 9) + 'px';
   }
 
   // ---- 時間を決めるシート ----
@@ -946,10 +995,10 @@
   var wakeLock = null;
 
   function startSession(minutes) {
-    var pet = pickBuilding();
-    sessionPlantSlot.innerHTML = buildingSVG('liveSvg', pet.type, pet.key);
+    var pet = pickPet();
+    sessionPlantSlot.innerHTML = petSVG('liveSvg', pet.type, pet.key);
     var svg = document.getElementById('liveSvg');
-    paintBuilding(svg, 0);
+    paintPet(svg, 0);
     document.getElementById('sessionLabel').textContent = minutes + '分に挑戦中';
     // 経過時間はperformance.now()（単調増加）で測る。Date.now()は時計合わせ等で
     // 前後することがあり、それだと早すぎる成功や終わらない集中になりかねない
@@ -971,7 +1020,7 @@
     if (remainMs <= 0) { finishSession(true); return; }
     document.getElementById('sessionTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
     var progress = 1 - remainMs / session.totalMs;
-    paintBuilding(session.svg, progress);
+    paintPet(session.svg, progress);
   }
   function requestWakeLock() {
     if (!('wakeLock' in navigator)) return;
@@ -1017,20 +1066,20 @@
     var card = document.getElementById('resultCard');
     card.classList.toggle('fail', !success);
     var slot = document.getElementById('resultPlantSlot');
-    slot.innerHTML = buildingSVG('resultSvg', pet.type, pet.key);
+    slot.innerHTML = petSVG('resultSvg', pet.type, pet.key);
     var svg = document.getElementById('resultSvg');
-    var v = buildingVariant(pet.type, pet.key);
+    var v = petVariant(pet.type, pet.key);
     var breedLabel = (v && v.name) ? v.name + 'が' : '';
     if (success) {
-      paintBuilding(svg, 1);
-      document.getElementById('resultTitle').textContent = '完成しました🏠';
+      paintPet(svg, 1);
+      document.getElementById('resultTitle').textContent = 'なつきました🐾';
       document.getElementById('resultBody').textContent = reason === 'savefail'
-        ? breedLabel + minutes + '分、工事を見守れました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : breedLabel + minutes + '分、工事を見守れました。街に加わりました。';
+        ? breedLabel + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
+        : breedLabel + minutes + '分、一緒にいられました。おうちに加わりました。';
     } else {
-      paintBuilding(svg, 0.5);
-      abandonBuilding(svg);
-      document.getElementById('resultTitle').textContent = '工事が止まりました';
+      paintPet(svg, 0.5);
+      sadPet(svg);
+      document.getElementById('resultTitle').textContent = '眠ってしまいました';
       document.getElementById('resultBody').textContent = reason === 'giveup'
         ? '自分でやめました。またいつでも挑戦できます。'
         : '離れてしまったようです。またいつでも挑戦できます。';
@@ -1076,21 +1125,21 @@
     if (tab === 'roster') renderRoster();
   }
 
-  // ---- 図鑑（すべての種類×建物。持っていないものは貯まった時間で建てられる） ----
+  // ---- 図鑑（すべての種類×品種。持っていない子は貯まった時間で迎えられる） ----
   function renderRoster() {
     var garden = readGarden();
     var owned = {};
     garden.forEach(function (g) { owned[g.type + ':' + g.key] = true; });
     var mileage = readMileage();
     rosterGridEl.innerHTML = '';
-    BUILDING_TYPES.forEach(function (type) {
-      BUILDING_VARIANTS[type].forEach(function (v) {
+    PET_TYPES.forEach(function (type) {
+      PET_VARIANTS[type].forEach(function (v) {
         var isOwned = !!owned[type + ':' + v.key];
-        var price = buildingPrice(type, v.key);
+        var price = petPrice(type, v.key);
         var card = document.createElement('div');
         card.className = 'roster-card' + (isOwned ? ' owned' : ' locked');
-        card.innerHTML = buildingSVG('', type, v.key);
-        paintBuilding(card.querySelector('svg'), 1);
+        card.innerHTML = petSVG('', type, v.key);
+        paintPet(card.querySelector('svg'), 1);
         var nameEl = document.createElement('div');
         nameEl.className = 'rc-name';
         nameEl.textContent = v.name || '';
@@ -1098,19 +1147,19 @@
         if (isOwned) {
           var mark = document.createElement('div');
           mark.className = 'rc-owned-mark';
-          mark.textContent = '街にあるよ';
+          mark.textContent = '仲間だよ';
           card.appendChild(mark);
         }
         var buyBtn = document.createElement('button');
         buyBtn.type = 'button';
         buyBtn.className = 'rc-buy';
-        buyBtn.textContent = fmtHours(price) + 'で建てる';
+        buyBtn.textContent = fmtHours(price) + 'で迎える';
         buyBtn.disabled = mileage < price;
         buyBtn.addEventListener('click', function () {
           if (!buyPet(type, v.key)) return;
           renderGarden();
           renderRoster();
-          flashSaved('建てました');
+          flashSaved('迎えました');
         });
         card.appendChild(buyBtn);
         rosterGridEl.appendChild(card);
@@ -1143,6 +1192,7 @@
   var lastMin = parseInt(localStorage.getItem('pf:lastMinutes') || '25', 10);
   chosenMinutes = (lastMin > 0 && lastMin <= 180) ? lastMin : 25;
   renderGarden();
+  scheduleWander();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
