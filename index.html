@@ -100,6 +100,40 @@
 
   /* ---- おうち（部屋） ---- */
   .garden-scroll { flex: 1; overflow-y: auto; padding: 0 0 100px; -webkit-overflow-scrolling: touch; }
+
+  /* ---- 部屋タブ（リビング／キッチン／寝室） ---- */
+  .room-tab-bar { display: flex; gap: 6px; padding: 0 14px; margin-bottom: 8px; flex: none; }
+  .room-tab-btn {
+    flex: 1;
+    padding: 7px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(120, 100, 60, 0.18);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .room-tab-btn.active { background: #8a7248; border-color: #6e5a38; color: #fff; font-weight: 600; }
+
+  /* ---- 置いた家具（ハウス）の棚 ---- */
+  .room-houses { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 10px; }
+  .room-house {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 8px 7px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(120, 100, 60, 0.25);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .room-house:active { transform: translateY(1px); }
+  .room-house .rh-icon { width: 34px; height: 34px; display: block; }
+  .room-house .rh-icon svg { width: 100%; height: 100%; display: block; }
+  .room-house .rh-name { font-size: 9px; color: var(--ink-strong); font-weight: 600; }
+  .room-house .rh-slots { display: flex; gap: 2px; }
+  .room-house .rh-slot { width: 18px; height: 18px; display: block; }
+  .room-house .rh-slot.empty { border: 1px dashed rgba(120, 100, 60, 0.4); border-radius: 50%; box-sizing: border-box; }
+
   .room-scene { position: relative; overflow: hidden; }
   .room-wall {
     position: absolute; top: 0; left: 0; right: 0; height: 190px;
@@ -109,6 +143,16 @@
     position: absolute; top: 190px; left: 0; right: 0; bottom: 0;
     background: repeating-linear-gradient(90deg, #c9a877 0, #c9a877 38px, #bd9a68 38px, #bd9a68 40px);
   }
+  .room-scene.room-kitchen .room-wall { background: linear-gradient(180deg, #dce8e6, #c9dbd6); }
+  .room-scene.room-kitchen .room-floor-bg { background: repeating-linear-gradient(90deg, #cfd9d6 0, #cfd9d6 38px, #bcc9c5 38px, #bcc9c5 40px); }
+  .room-scene.room-bedroom .room-wall { background: linear-gradient(180deg, #e6dce8, #d8c9dd); }
+  .room-scene.room-bedroom .room-floor-bg { background: repeating-linear-gradient(90deg, #d9c9dc 0, #d9c9dc 38px, #c9b6cc 38px, #c9b6cc 40px); }
+
+  .room-window, .room-counter, .room-bed { display: none; }
+  .room-scene.room-living .room-window { display: block; }
+  .room-scene.room-kitchen .room-counter { display: block; }
+  .room-scene.room-bedroom .room-bed { display: block; }
+
   .room-window {
     position: absolute; top: 22px; right: 24px; width: 74px; height: 92px;
     background: linear-gradient(180deg, #bcd9ea, #dcecd8);
@@ -128,30 +172,30 @@
   }
   .room-window-leaf.l2 { left: 24px; bottom: 4px; width: 16px; height: 20px; background: #6ea45f; }
 
-  .cat-tower { position: absolute; top: 26px; left: 16px; width: 130px; height: 210px; }
-  .tower-post {
-    position: absolute; left: 50%; bottom: 0; width: 16px; height: 100%;
-    transform: translateX(-50%);
-    background: repeating-linear-gradient(180deg, #c9a877 0, #c9a877 6px, #b6935f 6px, #b6935f 12px);
-    border-radius: 8px;
-    box-shadow: 1px 0 3px rgba(60, 45, 25, 0.2);
+  .room-counter {
+    position: absolute; top: 60px; right: 20px; width: 90px; height: 56px;
+    background: linear-gradient(180deg, #f3ece0, #d9cdb4);
+    border: 1.5px solid #b6935f;
+    border-radius: 6px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
-  .tower-platform {
-    position: absolute; height: 14px; border-radius: 8px;
-    background: #f7ede0; border: 1.5px solid #a8794f;
-    box-shadow: 0 3px 5px rgba(60, 45, 25, 0.3);
+  .room-counter::before {
+    content: ''; position: absolute; top: 8px; left: 10px; width: 20px; height: 20px;
+    border-radius: 50%; background: #a3a89c; box-shadow: 28px 0 0 #a3a89c;
   }
-  .tp1 { width: 78px; bottom: 6px; left: 0; }
-  .tp2 { width: 68px; bottom: 92px; right: 0; }
-  .tp3 { width: 60px; bottom: 172px; left: 4px; }
-  .tower-toy {
-    position: absolute; top: 38px; left: 34px; width: 2px; height: 18px;
-    background: rgba(90, 65, 35, 0.55);
+
+  .room-bed {
+    position: absolute; top: 50px; right: 18px; width: 96px; height: 66px;
+    background: #d98a97; border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
-  .tower-toy::after {
-    content: ''; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-    width: 11px; height: 11px; border-radius: 50%; background: #d98a97;
-    box-shadow: 0 1px 2px rgba(60, 45, 25, 0.3);
+  .room-bed::before {
+    content: ''; position: absolute; top: 8px; left: 8px; width: 30px; height: 22px;
+    background: #f8f3e6; border-radius: 6px;
+  }
+  .room-bed::after {
+    content: ''; position: absolute; left: 10px; right: 10px; bottom: 10px; height: 20px;
+    background: #e6dce8; border-radius: 4px;
   }
 
   .room-rug {
@@ -160,22 +204,8 @@
     background: radial-gradient(ellipse at center, #dfc9a3 0%, #dfc9a3 62%, #d3ba8e 63%, #d3ba8e 100%);
     box-shadow: 0 3px 6px rgba(60, 45, 25, 0.12);
   }
-  .room-bowl {
-    position: absolute; top: 200px; left: 20px; width: 26px; height: 16px;
-    background: linear-gradient(180deg, #e0785a, #c95f44);
-    border-radius: 0 0 50% 50% / 0 0 90% 90%;
-    box-shadow: 0 2px 3px rgba(60, 45, 25, 0.2);
-  }
-  .room-basket {
-    position: absolute; top: 194px; right: 30px; width: 44px; height: 26px;
-    background: repeating-linear-gradient(90deg, #b98a5f 0, #b98a5f 4px, #a87a50 4px, #a87a50 8px);
-    border-radius: 40% 40% 50% 50%;
-    box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2);
-  }
-  .room-basket::before {
-    content: ''; position: absolute; top: -6px; left: 6px; right: 6px; height: 12px;
-    background: #eddcc2; border-radius: 50%;
-  }
+  .room-scene.room-kitchen .room-rug { background: radial-gradient(ellipse at center, #dbe6c9 0%, #dbe6c9 62%, #cddab3 63%, #cddab3 100%); }
+  .room-scene.room-bedroom .room-rug { background: radial-gradient(ellipse at center, #ecd9df 0%, #ecd9df 62%, #ddc0c9 63%, #ddc0c9 100%); }
 
   .room-pets { position: absolute; inset: 0; }
   .room-pet {
@@ -452,28 +482,31 @@
     <div class="tab-bar">
       <button type="button" class="tab-btn active" id="tabHomeBtn">おうち</button>
       <button type="button" class="tab-btn" id="tabRosterBtn">図鑑</button>
+      <button type="button" class="tab-btn" id="tabHouseBtn">家具</button>
     </div>
     <div class="garden-scroll">
-      <div class="room-scene" id="roomScene">
-        <div class="room-wall"></div>
-        <div class="room-window"><div class="room-window-leaf"></div><div class="room-window-leaf l2"></div></div>
-        <div class="cat-tower">
-          <div class="tower-post"></div>
-          <div class="tower-platform tp1"></div>
-          <div class="tower-platform tp2"></div>
-          <div class="tower-platform tp3"></div>
-          <div class="tower-toy"></div>
+      <div id="homeView">
+        <div class="room-tab-bar" id="roomTabBar">
+          <button type="button" class="room-tab-btn active" data-room="living">リビング</button>
+          <button type="button" class="room-tab-btn" data-room="kitchen">キッチン</button>
+          <button type="button" class="room-tab-btn" data-room="bedroom">寝室</button>
         </div>
-        <div class="room-floor-bg"></div>
-        <div class="room-rug" id="roomRug"></div>
-        <div class="room-bowl"></div>
-        <div class="room-basket"></div>
-        <div class="room-pets" id="roomPets"></div>
-        <div class="empty-note room-empty" id="emptyNote" style="display:none;">
-          まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。
+        <div class="room-houses" id="roomHouses"></div>
+        <div class="room-scene room-living" id="roomScene">
+          <div class="room-wall"></div>
+          <div class="room-window"><div class="room-window-leaf"></div><div class="room-window-leaf l2"></div></div>
+          <div class="room-counter"></div>
+          <div class="room-bed"></div>
+          <div class="room-floor-bg"></div>
+          <div class="room-rug" id="roomRug"></div>
+          <div class="room-pets" id="roomPets"></div>
+          <div class="empty-note room-empty" id="emptyNote" style="display:none;">
+            まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。
+          </div>
         </div>
       </div>
       <div class="roster-grid" id="rosterGrid" style="display:none;"></div>
+      <div class="roster-grid" id="houseGrid" style="display:none;"></div>
     </div>
     <div class="start-bar">
       <button type="button" class="start-btn" id="openPickerBtn">＋ 集中をはじめる</button>
@@ -518,7 +551,7 @@
     <div class="sheet">
       <h2>設定</h2>
       <p class="sub">手ざわり集中について</p>
-      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。おうちの子は名前をつけたり変えたりできます。</p>
+      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。「家具」タブでは、リビング・キッチン・寝室になかま用のハウスを置けます。ハウスには入れる匹数の上限があり、あふれた子やハウスの無い子はリビングの床にいます。おうちの子は名前をつけたり変えたりできます。</p>
       <div class="settings-row">
         <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
       </div>
@@ -542,6 +575,22 @@
         <button type="button" id="nameCancel">とじる</button>
         <span class="spacer"></span>
         <button type="button" class="primary" id="nameSave">きめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- どの部屋に置く／移すか選ぶ -->
+  <div class="modal" id="roomPickModal">
+    <div class="sheet">
+      <h2 id="roomPickTitle">どの部屋に置きますか？</h2>
+      <div class="duration-chips" id="roomPickChips">
+        <button type="button" data-room="living">リビング</button>
+        <button type="button" data-room="kitchen">キッチン</button>
+        <button type="button" data-room="bedroom">寝室</button>
+      </div>
+      <div class="sheet-btns">
+        <button type="button" id="roomPickCancel">とじる</button>
+        <span class="spacer"></span>
       </div>
     </div>
   </div>
@@ -836,6 +885,121 @@
     return true;
   }
 
+  // ---- 部屋・家具（ハウス） ----
+  // 部屋を選んで、なかまの種類ごとの「ハウス」を置ける。ハウスには入る匹数の上限があり、
+  // 上限を超えたぶんや、まだハウスが無い種類は、リビングの床（ラグ）にそのまま表示する
+  var ROOMS = [
+    { key: 'living', name: 'リビング' },
+    { key: 'kitchen', name: 'キッチン' },
+    { key: 'bedroom', name: '寝室' }
+  ];
+  var HOUSE_TYPES = {
+    cat:     { name: '猫用ハウス',     color: '#c98a52' },
+    dog:     { name: '犬小屋',         color: '#a87a50' },
+    rabbit:  { name: 'うさぎ小屋',     color: '#c9b8a0' },
+    bird:    { name: '鳥かご',         color: '#8fb6d9' },
+    hamster: { name: 'ケージ',         color: '#e0b96e' },
+    turtle:  { name: '水槽',           color: '#7fb08a' }
+  };
+  var HOUSE_CAPACITY = 4;
+  var HOUSE_PRICE = 60;   // 1時間
+  function isRoomKey(k) { return ROOMS.some(function (r) { return r.key === k; }); }
+  function coreHouseValid(h) {
+    return h && typeof h === 'object' && typeof h.id === 'string' && h.id &&
+      PET_TYPES.indexOf(h.species) !== -1 && isRoomKey(h.room);
+  }
+  function readHouses() {
+    try {
+      var raw = JSON.parse(localStorage.getItem('pf:houses') || '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw.filter(coreHouseValid);
+    } catch (e) { return []; }
+  }
+  function writeHouses(arr) {
+    try { localStorage.setItem('pf:houses', JSON.stringify(arr)); return true; }
+    catch (e) { return false; }
+  }
+  function buyHouse(species, room) {
+    if (PET_TYPES.indexOf(species) === -1 || !isRoomKey(room)) return false;
+    if (readMileage() < HOUSE_PRICE) return false;
+    var arr = readHouses();
+    arr.push({ id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), species: species, room: room });
+    // 先にハウスを置く処理を試み、それが成功したときだけ時間を引く（なかまの購入と同じ順序）
+    if (!writeHouses(arr)) return false;
+    spendMileage(HOUSE_PRICE);
+    return true;
+  }
+  function moveHouse(id, room) {
+    if (!isRoomKey(room)) return false;
+    var arr = readHouses();
+    var hit = false;
+    arr.forEach(function (h) { if (h.id === id) { h.room = room; hit = true; } });
+    if (!hit) return false;
+    return writeHouses(arr);
+  }
+  // なかまをハウスに割り当てる（新しい子を優先、ハウスは置いた順に埋める）。
+  // 入りきらない・対応するハウスが無いなかまは unhoused として返す
+  function assignPetsToHouses(garden, houses) {
+    var housesBySpecies = {};
+    houses.forEach(function (h) { (housesBySpecies[h.species] = housesBySpecies[h.species] || []).push(h); });
+    var petsBySpecies = {};
+    garden.slice().reverse().forEach(function (g) { (petsBySpecies[g.type] = petsBySpecies[g.type] || []).push(g); });
+    var occupants = {};
+    houses.forEach(function (h) { occupants[h.id] = []; });
+    var unhoused = [];
+    Object.keys(petsBySpecies).forEach(function (species) {
+      var hs = housesBySpecies[species] || [];
+      var hi = 0;
+      petsBySpecies[species].forEach(function (g) {
+        while (hi < hs.length && occupants[hs[hi].id].length >= HOUSE_CAPACITY) hi++;
+        if (hi < hs.length) occupants[hs[hi].id].push(g);
+        else unhoused.push(g);
+      });
+    });
+    return { occupants: occupants, unhoused: unhoused };
+  }
+  // ハウスの見た目（屋根＋箱の簡易アイコン。中に入るなかまの色に合わせて塗る）
+  function houseSVG(species) {
+    var t = HOUSE_TYPES[species] || { color: '#c9b8a0' };
+    return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M6 20 L20 8 L34 20 Z" fill="' + t.color + '" style="filter:brightness(0.85)"/>' +
+      '<rect x="9" y="20" width="22" height="15" rx="2" fill="' + t.color + '"/>' +
+      '<rect x="16" y="26" width="8" height="9" rx="1.5" fill="#5a4a30" opacity="0.5"/>' +
+    '</svg>';
+  }
+  function buildHouseEl(house, occupants) {
+    var t = HOUSE_TYPES[house.species] || { name: house.species };
+    var el = document.createElement('div');
+    el.className = 'room-house';
+    el.innerHTML = '<div class="rh-icon">' + houseSVG(house.species) + '</div>' +
+      '<div class="rh-name">' + t.name + '（' + occupants.length + '/' + HOUSE_CAPACITY + '）</div>';
+    var slots = document.createElement('div');
+    slots.className = 'rh-slots';
+    for (var i = 0; i < HOUSE_CAPACITY; i++) {
+      if (occupants[i]) {
+        var slotEl = document.createElement('div');
+        slotEl.className = 'rh-slot';
+        slotEl.innerHTML = petSVG('', occupants[i].type, occupants[i].key);
+        paintPet(slotEl.querySelector('svg'), 1);
+        slotEl.querySelector('svg').style.width = '18px';
+        slotEl.querySelector('svg').style.height = '18px';
+        slots.appendChild(slotEl);
+      } else {
+        var empty = document.createElement('div');
+        empty.className = 'rh-slot empty';
+        slots.appendChild(empty);
+      }
+    }
+    el.appendChild(slots);
+    el.title = t.name + '・タップで部屋を移動';
+    el.addEventListener('click', function () {
+      openRoomPick('このハウスをどの部屋に移しますか？', function (room) {
+        if (moveHouse(house.id, room)) { renderGarden(); flashSaved('移しました'); }
+      });
+    });
+    return el;
+  }
+
   function fmtDate(ms) {
     var d = new Date(ms);
     return (d.getMonth() + 1) + '/' + d.getDate();
@@ -850,15 +1014,14 @@
     return h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分';
   }
 
-  // キャットタワーの3段（.room-scene基準の座標＝各段の上面の中心。なかまの足もとがここに来るようにする）
-  var TOWER_SLOTS = [
-    { x: 55, y: 216 },   // tp1（一番下）
-    { x: 112, y: 130 },  // tp2（中段）
-    { x: 50, y: 50 }     // tp3（一番上）
-  ];
   // FLOOR_LEFT+2*FLOOR_CELL_W+ジッター最大+なかまの幅が、幅320pxの狭い端末でも
   // .room-scene（overflow:hidden）からはみ出て見切れないだけの余白を残した値
   var FLOOR_COLS = 3, FLOOR_CELL_W = 100, FLOOR_CELL_H = 78, FLOOR_TOP = 250, FLOOR_LEFT = 18;
+  // 今どの部屋を見ているか（リロードしても保つ）
+  var currentRoom = (function () {
+    var r = localStorage.getItem('pf:currentRoom');
+    return isRoomKey(r) ? r : 'living';
+  })();
 
   function buildRoomPet(g) {
     var el = document.createElement('div');
@@ -887,27 +1050,24 @@
 
   function renderGarden() {
     var garden = readGarden();
+    var houses = readHouses();
+    var assign = assignPetsToHouses(garden, houses);
     var scene = document.getElementById('roomScene');
     var petsLayer = document.getElementById('roomPets');
+    var housesLayer = document.getElementById('roomHouses');
     var empty = document.getElementById('emptyNote');
     petsLayer.innerHTML = '';
-    empty.style.display = garden.length ? 'none' : 'block';
+    housesLayer.innerHTML = '';
+    scene.className = 'room-scene room-' + currentRoom;
 
-    // 猫はタワーの空いている段に、それ以外（＋タワーに入りきらない猫）は床（ラグ）へ
-    var ordered = garden.slice().reverse();   // 新しい子が手前（若い番号）に来る順
-    var towerCats = [], floorEntries = [];
-    ordered.forEach(function (g) {
-      if (g.type === 'cat' && towerCats.length < TOWER_SLOTS.length) towerCats.push(g);
-      else floorEntries.push(g);
+    // このハウスはリビング／キッチン／寝室のうち今見ている部屋に置かれたものだけ棚に並べる
+    var roomHouses = houses.filter(function (h) { return h.room === currentRoom; });
+    roomHouses.forEach(function (h) {
+      housesLayer.appendChild(buildHouseEl(h, assign.occupants[h.id] || []));
     });
-    towerCats.forEach(function (g, i) {
-      var slot = TOWER_SLOTS[i];
-      var el = buildRoomPet(g);
-      el.dataset.tower = '1';   // タワーの子はうろうろさせない（段から落ちて見えるため）
-      el.style.left = (slot.x - 29) + 'px';
-      el.style.top = (slot.y - 50) + 'px';
-      petsLayer.appendChild(el);
-    });
+
+    // ハウスに入りきらない・対応するハウスがまだ無いなかまは、リビングの床（ラグ）にそのまま表示する
+    var floorEntries = (currentRoom === 'living') ? assign.unhoused : [];
     var floorRows = Math.max(1, Math.ceil(floorEntries.length / FLOOR_COLS));
     floorEntries.forEach(function (g, i) {
       var col = i % FLOOR_COLS, row = Math.floor(i / FLOOR_COLS);
@@ -928,6 +1088,11 @@
     rug.style.height = rugHeight + 'px';
     scene.style.height = (FLOOR_TOP - 36 + rugHeight + 30) + 'px';
 
+    empty.style.display = (roomHouses.length === 0 && floorEntries.length === 0) ? 'block' : 'none';
+    empty.innerHTML = garden.length === 0
+      ? 'まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。'
+      : 'この部屋にはまだ何もありません。<br>「家具」タブでハウスを置いてみよう。';
+
     var totalMin = garden.reduce(function (s, g) { return s + (g.source === 'shop' ? 0 : g.minutes); }, 0);
     var totalEl = document.getElementById('totalTime');
     if (totalMin > 0) {
@@ -939,14 +1104,14 @@
     mileageEl.innerHTML = '貯まった時間: <b>' + fmtHours(readMileage()) + '</b>';
   }
 
-  // ---- ラグの上のなかまが、たまに少し歩く（基準位置の近くだけを行き来。タワーの子は対象外） ----
+  // ---- ラグの上のなかまが、たまに少し歩く（基準位置の近くだけを行き来） ----
   var wanderTimer = 0;
   function scheduleWander() {
     clearTimeout(wanderTimer);
     wanderTimer = setTimeout(function () { wanderStep(); scheduleWander(); }, 3500 + Math.random() * 3000);
   }
   function wanderStep() {
-    var candidates = document.querySelectorAll('#roomPets > .room-pet:not([data-tower])');
+    var candidates = document.querySelectorAll('#roomPets > .room-pet');
     if (!candidates.length) return;
     var el = candidates[Math.floor(Math.random() * candidates.length)];
     var baseX = parseFloat(el.dataset.baseX), baseY = parseFloat(el.dataset.baseY);
@@ -1103,26 +1268,112 @@
   document.getElementById('resetDataBtn').addEventListener('click', function () {
     if (session && session.active) return;
     if (!confirm('これまでの記録をぜんぶ消します。よろしいですか？')) return;
-    try { localStorage.removeItem('pf:garden'); localStorage.removeItem('pf:mileage'); }
+    try {
+      localStorage.removeItem('pf:garden');
+      localStorage.removeItem('pf:mileage');
+      localStorage.removeItem('pf:houses');
+    }
     catch (e) { alert('消せませんでした。もう一度お試しください。'); return; }
     renderGarden();
     renderRoster();
+    renderHouseGrid();
     settingsModal.classList.remove('show');
   });
 
-  // ---- タブ（おうち／図鑑） ----
-  var roomSceneEl = document.getElementById('roomScene');
+  // ---- タブ（おうち／図鑑／家具） ----
+  var homeViewEl = document.getElementById('homeView');
   var rosterGridEl = document.getElementById('rosterGrid');
-  var emptyNoteEl = document.getElementById('emptyNote');
+  var houseGridEl = document.getElementById('houseGrid');
   document.getElementById('tabHomeBtn').addEventListener('click', function () { switchTab('home'); });
   document.getElementById('tabRosterBtn').addEventListener('click', function () { switchTab('roster'); });
+  document.getElementById('tabHouseBtn').addEventListener('click', function () { switchTab('house'); });
   function switchTab(tab) {
     document.getElementById('tabHomeBtn').classList.toggle('active', tab === 'home');
     document.getElementById('tabRosterBtn').classList.toggle('active', tab === 'roster');
-    roomSceneEl.style.display = tab === 'home' ? '' : 'none';
+    document.getElementById('tabHouseBtn').classList.toggle('active', tab === 'house');
+    homeViewEl.style.display = tab === 'home' ? '' : 'none';
     rosterGridEl.style.display = tab === 'roster' ? '' : 'none';
-    emptyNoteEl.style.display = (tab === 'home' && !readGarden().length) ? 'block' : 'none';
+    houseGridEl.style.display = tab === 'house' ? '' : 'none';
+    if (tab === 'home') renderGarden();
     if (tab === 'roster') renderRoster();
+    if (tab === 'house') renderHouseGrid();
+  }
+
+  // ---- 部屋タブ（リビング／キッチン／寝室） ----
+  document.querySelectorAll('#roomTabBar .room-tab-btn').forEach(function (b) {
+    b.addEventListener('click', function () { switchRoom(b.dataset.room); });
+  });
+  function switchRoom(room) {
+    if (!isRoomKey(room)) return;
+    currentRoom = room;
+    try { localStorage.setItem('pf:currentRoom', room); } catch (e) {}
+    document.querySelectorAll('#roomTabBar .room-tab-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.room === room);
+    });
+    renderGarden();
+  }
+
+  // ---- どの部屋に置く／移すか選ぶモーダル ----
+  var roomPickModal = document.getElementById('roomPickModal');
+  var roomPickCallback = null;
+  function openRoomPick(title, callback) {
+    document.getElementById('roomPickTitle').textContent = title;
+    roomPickCallback = callback;
+    roomPickModal.classList.add('show');
+  }
+  function closeRoomPick() {
+    roomPickModal.classList.remove('show');
+    roomPickCallback = null;
+  }
+  document.querySelectorAll('#roomPickChips button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var room = b.dataset.room;
+      var cb = roomPickCallback;
+      closeRoomPick();
+      if (cb) cb(room);
+    });
+  });
+  document.getElementById('roomPickCancel').addEventListener('click', closeRoomPick);
+  roomPickModal.addEventListener('click', function (e) { if (e.target === roomPickModal) closeRoomPick(); });
+
+  // ---- 家具（すべての種類のハウス。貯まった時間で置け、いくつでも買い足せる） ----
+  function renderHouseGrid() {
+    var houses = readHouses();
+    var counts = {};
+    houses.forEach(function (h) { counts[h.species] = (counts[h.species] || 0) + 1; });
+    var mileage = readMileage();
+    houseGridEl.innerHTML = '';
+    PET_TYPES.forEach(function (species) {
+      var t = HOUSE_TYPES[species];
+      var card = document.createElement('div');
+      card.className = 'roster-card' + (counts[species] ? ' owned' : ' locked');
+      card.innerHTML = houseSVG(species);
+      var nameEl = document.createElement('div');
+      nameEl.className = 'rc-name';
+      nameEl.textContent = t.name;
+      card.appendChild(nameEl);
+      if (counts[species]) {
+        var mark = document.createElement('div');
+        mark.className = 'rc-owned-mark';
+        mark.textContent = '所有: ' + counts[species] + '個（計' + (counts[species] * HOUSE_CAPACITY) + '匹まで）';
+        card.appendChild(mark);
+      }
+      var buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'rc-buy';
+      buyBtn.textContent = fmtHours(HOUSE_PRICE) + 'で置く';
+      buyBtn.disabled = mileage < HOUSE_PRICE;
+      buyBtn.addEventListener('click', function () {
+        openRoomPick('どの部屋に置きますか？', function (room) {
+          if (!buyHouse(species, room)) return;
+          renderHouseGrid();
+          renderGarden();
+          flashSaved('置きました');
+        });
+      });
+      card.appendChild(buyBtn);
+      houseGridEl.appendChild(card);
+    });
   }
 
   // ---- 図鑑（すべての種類×品種。持っていない子は貯まった時間で迎えられる） ----
@@ -1191,6 +1442,9 @@
   // ---- 初期化 ----
   var lastMin = parseInt(localStorage.getItem('pf:lastMinutes') || '25', 10);
   chosenMinutes = (lastMin > 0 && lastMin <= 180) ? lastMin : 25;
+  document.querySelectorAll('#roomTabBar .room-tab-btn').forEach(function (b) {
+    b.classList.toggle('active', b.dataset.room === currentRoom);
+  });
   renderGarden();
   scheduleWander();
 
