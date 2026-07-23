@@ -1,0 +1,16 @@
+{
+  "name": "手ざわり集中",
+  "short_name": "集中",
+  "description": "時間を決めて集中する。離れると鉢植えが枯れ、続けられると庭に育つ。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef2e4",
+  "theme_color": "#2b251f",
+  "orientation": "portrait",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>手ざわり集中</title>
+<meta name="description" content="時間を決めて集中する。離れると鉢植えが枯れ、続けられると庭に育つ。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2b251f">
+<style>
+  @font-face { font-family: 'system-fallback'; src: local(''); }
+  @import url('fonts/fonts.css');
+
+  :root {
+    --paper: #fdf8ea;
+    --paper-back-1: #f4eeda;
+    --paper-back-2: #faf4e6;
+    --ink-strong: #454a58;
+    --ink-text: #4a4e5c;
+    --ink-soft: #8a8d99;
+    --placeholder: rgba(122, 126, 140, 0.4);
+    --rule-strong: rgba(122, 158, 196, 0.55);
+    --today-ring: rgba(200, 80, 70, 0.75);
+    --stitch: rgba(120, 100, 70, 0.4);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    margin: 0;
+    font-family: 'Klee One', 'system-fallback', sans-serif;
+    background: var(--paper-back-1);
+    color: var(--ink-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .book {
+    position: relative;
+    width: min(94vw, 460px);
+    height: min(92vh, 780px);
+  }
+  .paper {
+    position: absolute;
+    inset: 0;
+    background-color: var(--paper);
+    background-image:
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.38 0 0 0 0 0.32 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    border-radius: 6px;
+    box-shadow: inset 12px 0 22px -14px rgba(90, 70, 40, 0.5), 0 10px 30px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- ヘッダー ---- */
+  .head {
+    padding: 18px 18px 10px;
+    text-align: center;
+    flex: none;
+  }
+  .head h1 { margin: 0; font-size: 20px; font-weight: 600; color: var(--ink-strong); }
+  .head p { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); }
+  .total-time { margin-top: 8px; font-size: 13px; color: var(--ink-strong); }
+  .total-time b { font-size: 17px; color: var(--today-ring); }
+
+  /* ---- 庭 ---- */
+  .garden-scroll { flex: 1; overflow-y: auto; padding: 8px 14px 100px; -webkit-overflow-scrolling: touch; }
+  .garden-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 10px;
+  }
+  .pot-card {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(120, 100, 60, 0.2);
+    border-radius: 10px;
+    padding: 8px 4px 6px;
+    text-align: center;
+    cursor: default;
+  }
+  .pot-card svg { width: 56px; height: 56px; }
+  .pot-card .pc-min { font-size: 11px; color: var(--ink-strong); font-weight: 600; margin-top: 2px; }
+  .pot-card .pc-date { font-size: 9px; color: var(--ink-soft); }
+  .empty-note {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 2;
+    color: var(--ink-soft);
+    padding: 0 20px;
+  }
+
+  /* ---- 下部：はじめるボタン ---- */
+  .start-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--paper) 55%, transparent);
+  }
+  .start-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(180deg, #6a8f6a, #5a7d5a);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(80, 110, 80, 0.4);
+    cursor: pointer;
+  }
+  .start-btn:active { transform: translateY(1px); }
+
+  /* ---- 時間を決めるモーダル ---- */
+  .modal { position: absolute; inset: 0; z-index: 30; display: none; align-items: flex-end; background: rgba(30, 24, 14, 0.45); }
+  .modal.show { display: flex; }
+  .sheet {
+    width: 100%;
+    background: #f8f3e6;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 30px rgba(30, 22, 10, 0.4);
+  }
+  .sheet h2 { margin: 0 0 4px; font-size: 18px; color: var(--ink-strong); }
+  .sheet .sub { margin: 0 0 16px; font-size: 12px; color: var(--ink-soft); }
+  .duration-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .duration-chips button {
+    flex: 1 1 auto;
+    min-width: 64px;
+    padding: 12px 6px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink-strong);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(120, 100, 60, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .duration-chips button.active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
+  .custom-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .custom-row input {
+    width: 70px;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--ink-text);
+  }
+  .custom-row span { font-size: 13px; color: var(--ink-soft); }
+  .sheet-btns { display: flex; gap: 8px; margin-top: 18px; }
+  .sheet-btns button {
+    flex: none;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(120, 100, 60, 0.35);
+    background: linear-gradient(180deg, #f3ecd9, #e7dfc8);
+    color: #4a4030;
+    cursor: pointer;
+  }
+  .sheet-btns .spacer { flex: 1; }
+  .sheet-btns .primary { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
+
+  /* ---- 集中中の全画面 ---- */
+  .session-screen {
+    position: fixed; inset: 0; z-index: 50;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #eef2e4, #e2ead6);
+    padding: env(safe-area-inset-top, 0px) 20px env(safe-area-inset-bottom, 0px);
+  }
+  .session-screen.show { display: flex; }
+  .session-plant { width: min(60vw, 260px); height: min(60vw, 260px); }
+  .session-time { margin-top: 10px; font-size: 40px; font-weight: 700; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .session-label { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+  .session-note { margin-top: 24px; font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.8; max-width: 260px; }
+  .give-up-btn {
+    margin-top: 30px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 10px;
+  }
+
+  /* ---- 終わった直後の結果 ---- */
+  .result-modal { position: absolute; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(30, 24, 14, 0.5); }
+  .result-modal.show { display: flex; }
+  .result-card {
+    width: min(84vw, 320px);
+    background: #f8f3e6;
+    border-radius: 16px;
+    padding: 26px 22px 20px;
+    text-align: center;
+    box-shadow: 0 12px 32px rgba(30, 22, 10, 0.5);
+  }
+  .result-card svg { width: 90px; height: 90px; }
+  .result-card h3 { margin: 8px 0 4px; font-size: 18px; color: var(--ink-strong); }
+  .result-card p { margin: 0 0 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+  .result-card button {
+    width: 100%;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: #5a7d5a;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .result-card.fail button { background: #a86a5c; }
+
+  /* 鉢のパーツ共通 */
+  .stem { transform-box: fill-box; transform-origin: bottom center; transition: transform 0.5s ease; }
+  .leaf, .flower { transition: opacity 0.6s ease, transform 0.6s ease; transform-box: fill-box; transform-origin: center; }
+</style>
+</head>
+<body>
+
+<div class="book">
+  <div class="paper">
+    <div class="head">
+      <h1>手ざわり集中</h1>
+      <p>時間を決めて、離れずに集中する。離れると枯れます。</p>
+      <div class="total-time" id="totalTime"></div>
+    </div>
+    <div class="garden-scroll">
+      <div class="garden-grid" id="gardenGrid"></div>
+      <div class="empty-note" id="emptyNote" style="display:none;">
+        まだ何もありません。<br>下の「集中をはじめる」から、<br>1つ目の鉢を育てよう。
+      </div>
+    </div>
+    <div class="start-bar">
+      <button type="button" class="start-btn" id="openPickerBtn">＋ 集中をはじめる</button>
+    </div>
+  </div>
+
+  <!-- 時間を決めるシート -->
+  <div class="modal" id="pickerModal">
+    <div class="sheet">
+      <h2>何分、集中しますか？</h2>
+      <p class="sub">はじめたら、アプリを離れたり画面をロックしたりすると、その回は失敗になります。</p>
+      <div class="duration-chips" id="durationChips">
+        <button type="button" data-min="15">15分</button>
+        <button type="button" data-min="25">25分</button>
+        <button type="button" data-min="45">45分</button>
+        <button type="button" data-min="60">60分</button>
+      </div>
+      <div class="custom-row">
+        <input type="number" id="customMinutes" min="1" max="180" placeholder="自由に">
+        <span>分</span>
+      </div>
+      <div class="sheet-btns">
+        <button type="button" id="pickerCancel">とじる</button>
+        <span class="spacer"></span>
+        <button type="button" class="primary" id="pickerStart">はじめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 結果 -->
+  <div class="result-modal" id="resultModal">
+    <div class="result-card" id="resultCard">
+      <div id="resultPlantSlot"></div>
+      <h3 id="resultTitle"></h3>
+      <p id="resultBody"></p>
+      <button type="button" id="resultClose">とじる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 集中中の全画面 -->
+<div class="session-screen" id="sessionScreen">
+  <div class="session-plant" id="sessionPlantSlot"></div>
+  <div class="session-time" id="sessionTime">00:00</div>
+  <div class="session-label" id="sessionLabel"></div>
+  <div class="session-note">この画面を離れたり、他のアプリに切り替えたり、<br>画面をロックすると、この鉢は枯れます。</div>
+  <button type="button" class="give-up-btn" id="giveUpBtn">やめる</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- 鉢植えSVG。progress(0〜1)で育ち具合を変える。colorSeedで花の色を変える ----
+  var PETAL_COLORS = ['#d98a97', '#e0a952', '#8fa8d9', '#b28fd9', '#e0785a'];
+  function plantSVG(id, colorSeed) {
+    var petal = PETAL_COLORS[Math.abs(colorSeed) % PETAL_COLORS.length];
+    return '' +
+      '<svg id="' + id + '" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M30 92 L70 92 L64 66 L36 66 Z" fill="#b98a5f" stroke="#8a6440" stroke-width="1.5"/>' +
+        '<ellipse cx="50" cy="66" rx="17" ry="3.5" fill="#7a5638"/>' +
+        '<g class="plant-parts">' +
+          '<path class="stem" d="M50 66 C 50 50, 48 40, 50 26" fill="none" stroke="#5c8a52" stroke-width="3.4" stroke-linecap="round"/>' +
+          '<path class="leaf leaf1" d="M50 54 C 40 52, 34 44, 38 36 C 46 38, 51 46, 50 54 Z" fill="#6ea45f" opacity="0"/>' +
+          '<path class="leaf leaf2" d="M50 44 C 60 42, 66 34, 62 26 C 54 28, 49 36, 50 44 Z" fill="#78ae67" opacity="0"/>' +
+          '<path class="leaf leaf3" d="M50 32 C 41 29, 36 20, 41 13 C 49 16, 53 25, 50 32 Z" fill="#6ea45f" opacity="0"/>' +
+          '<g class="flower" opacity="0" transform="translate(50,20) scale(0.3)">' +
+            '<circle cx="0" cy="-7" r="6" fill="' + petal + '"/>' +
+            '<circle cx="7" cy="-2" r="6" fill="' + petal + '"/>' +
+            '<circle cx="4" cy="6" r="6" fill="' + petal + '"/>' +
+            '<circle cx="-4" cy="6" r="6" fill="' + petal + '"/>' +
+            '<circle cx="-7" cy="-2" r="6" fill="' + petal + '"/>' +
+            '<circle cx="0" cy="0" r="5" fill="#f4d35e"/>' +
+          '</g>' +
+        '</g>' +
+      '</svg>';
+  }
+  function paintPlant(svgEl, progress) {
+    var t = Math.max(0, Math.min(1, progress));
+    svgEl.querySelector('.stem').style.transform = 'scaleY(' + Math.min(1, t / 0.85).toFixed(3) + ')';
+    var l1 = svgEl.querySelector('.leaf1'), l2 = svgEl.querySelector('.leaf2'), l3 = svgEl.querySelector('.leaf3');
+    var fl = svgEl.querySelector('.flower');
+    l1.style.opacity = t > 0.18 ? 1 : 0;
+    l1.style.transform = 'scale(' + (t > 0.18 ? 1 : 0.4) + ')';
+    l2.style.opacity = t > 0.4 ? 1 : 0;
+    l2.style.transform = 'scale(' + (t > 0.4 ? 1 : 0.4) + ')';
+    l3.style.opacity = t > 0.62 ? 1 : 0;
+    l3.style.transform = 'scale(' + (t > 0.62 ? 1 : 0.4) + ')';
+    var flOn = t >= 0.95;
+    fl.style.opacity = flOn ? 1 : 0;
+    fl.style.transform = 'translate(50px,20px) scale(' + (flOn ? 1 : 0.3) + ')';
+  }
+  function witherPlant(svgEl) {
+    svgEl.querySelectorAll('.stem, .leaf, .flower').forEach(function (el) {
+      el.style.transition = 'filter 0.8s ease, opacity 0.8s ease';
+      el.style.filter = 'grayscale(1) brightness(0.75)';
+    });
+  }
+
+  // ---- ストレージ ----
+  // pf:garden = [{id, minutes, completedAt}]（達成したセッションだけ記録。失敗は残さない）
+  function readGarden() {
+    try { var a = JSON.parse(localStorage.getItem('pf:garden') || '[]'); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function writeGarden(arr) { localStorage.setItem('pf:garden', JSON.stringify(arr)); }
+  function addToGarden(minutes) {
+    var arr = readGarden();
+    arr.push({ id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), minutes: minutes, completedAt: Date.now() });
+    writeGarden(arr);
+  }
+
+  function fmtDate(ms) {
+    var d = new Date(ms);
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  }
+  function fmtClock(sec) {
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function renderGarden() {
+    var garden = readGarden();
+    var grid = document.getElementById('gardenGrid');
+    var empty = document.getElementById('emptyNote');
+    grid.innerHTML = '';
+    if (!garden.length) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      garden.slice().reverse().forEach(function (g, i) {
+        var card = document.createElement('div');
+        card.className = 'pot-card';
+        card.innerHTML = plantSVG('', g.id.length) +
+          '<div class="pc-min">' + g.minutes + '分</div>' +
+          '<div class="pc-date">' + fmtDate(g.completedAt) + '</div>';
+        var svg = card.querySelector('svg');
+        paintPlant(svg, 1);
+        grid.appendChild(card);
+      });
+    }
+    var totalMin = garden.reduce(function (s, g) { return s + g.minutes; }, 0);
+    var totalEl = document.getElementById('totalTime');
+    if (totalMin > 0) {
+      var h = Math.floor(totalMin / 60), m = totalMin % 60;
+      totalEl.innerHTML = 'これまでの集中: <b>' + (h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分') + '</b>（鉢' + garden.length + '個）';
+    } else {
+      totalEl.textContent = '';
+    }
+  }
+
+  // ---- 時間を決めるシート ----
+  var pickerModal = document.getElementById('pickerModal');
+  var chosenMinutes = 25;
+  function selectChip(min) {
+    chosenMinutes = min;
+    document.querySelectorAll('.duration-chips button').forEach(function (b) {
+      b.classList.toggle('active', parseInt(b.dataset.min, 10) === min);
+    });
+    document.getElementById('customMinutes').value = '';
+  }
+  document.querySelectorAll('.duration-chips button').forEach(function (b) {
+    b.addEventListener('click', function () { selectChip(parseInt(b.dataset.min, 10)); });
+  });
+  document.getElementById('customMinutes').addEventListener('input', function (e) {
+    var v = parseInt(e.target.value, 10);
+    if (v > 0) {
+      chosenMinutes = Math.min(180, v);
+      document.querySelectorAll('.duration-chips button').forEach(function (b) { b.classList.remove('active'); });
+    }
+  });
+  document.getElementById('openPickerBtn').addEventListener('click', function () {
+    selectChip(chosenMinutes || 25);
+    pickerModal.classList.add('show');
+  });
+  document.getElementById('pickerCancel').addEventListener('click', function () { pickerModal.classList.remove('show'); });
+  pickerModal.addEventListener('click', function (e) { if (e.target === pickerModal) pickerModal.classList.remove('show'); });
+  document.getElementById('pickerStart').addEventListener('click', function () {
+    if (!chosenMinutes || chosenMinutes < 1) return;
+    localStorage.setItem('pf:lastMinutes', String(chosenMinutes));
+    pickerModal.classList.remove('show');
+    startSession(chosenMinutes);
+  });
+
+  // ---- セッション本体 ----
+  var sessionScreen = document.getElementById('sessionScreen');
+  var sessionPlantSlot = document.getElementById('sessionPlantSlot');
+  var session = null;   // { minutes, endAt, timer, wakeLock, active }
+  var wakeLock = null;
+
+  function startSession(minutes) {
+    sessionPlantSlot.innerHTML = plantSVG('liveSvg', Date.now());
+    var svg = document.getElementById('liveSvg');
+    paintPlant(svg, 0);
+    document.getElementById('sessionLabel').textContent = minutes + '分に挑戦中';
+    session = { minutes: minutes, endAt: Date.now() + minutes * 60000, active: true, svg: svg };
+    sessionScreen.classList.add('show');
+    tickSession();
+    session.timer = setInterval(tickSession, 1000);
+    requestWakeLock();
+  }
+  function tickSession() {
+    if (!session || !session.active) return;
+    var remainMs = session.endAt - Date.now();
+    if (remainMs <= 0) { finishSession(true); return; }
+    document.getElementById('sessionTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
+    var progress = 1 - remainMs / (session.minutes * 60000);
+    paintPlant(session.svg, progress);
+  }
+  function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
+  }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+  function endSessionCommon() {
+    if (session && session.timer) clearInterval(session.timer);
+    releaseWakeLock();
+    sessionScreen.classList.remove('show');
+  }
+  function finishSession(success) {
+    if (!session || !session.active) return;
+    session.active = false;
+    var minutes = session.minutes;
+    endSessionCommon();
+    if (success) {
+      addToGarden(minutes);
+      renderGarden();
+      showResult(true, minutes);
+    } else {
+      showResult(false, minutes);
+    }
+    session = null;
+  }
+  document.getElementById('giveUpBtn').addEventListener('click', function () { finishSession(false); });
+
+  // アプリが見えなくなった（他アプリ・他タブ・画面ロック）＝失敗
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && session && session.active) finishSession(false);
+  });
+  window.addEventListener('pagehide', function () {
+    if (session && session.active) finishSession(false);
+  });
+
+  // ---- 結果表示 ----
+  var resultModal = document.getElementById('resultModal');
+  function showResult(success, minutes) {
+    var card = document.getElementById('resultCard');
+    card.classList.toggle('fail', !success);
+    var slot = document.getElementById('resultPlantSlot');
+    slot.innerHTML = plantSVG('resultSvg', Date.now());
+    var svg = document.getElementById('resultSvg');
+    if (success) {
+      paintPlant(svg, 1);
+      document.getElementById('resultTitle').textContent = '育ちました🌸';
+      document.getElementById('resultBody').textContent = minutes + '分、集中できました。庭に加わりました。';
+    } else {
+      paintPlant(svg, 0.55);
+      witherPlant(svg);
+      document.getElementById('resultTitle').textContent = '枯れてしまいました';
+      document.getElementById('resultBody').textContent = '離れてしまったようです。またいつでも挑戦できます。';
+    }
+    resultModal.classList.add('show');
+  }
+  document.getElementById('resultClose').addEventListener('click', function () { resultModal.classList.remove('show'); });
+
+  // ---- 初期化 ----
+  var lastMin = parseInt(localStorage.getItem('pf:lastMinutes') || '25', 10);
+  chosenMinutes = (lastMin > 0 && lastMin <= 180) ? lastMin : 25;
+  renderGarden();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
