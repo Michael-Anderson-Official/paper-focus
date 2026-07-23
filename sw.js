@@ -1,7 +1,7 @@
 // 手ざわり集中 Service Worker
 // - アプリ本体（シェル）は事前キャッシュ。ページはネット優先→落ちたらキャッシュ（更新がすぐ届く）
 // - フォント（自前ホスト）等の同一オリジン資産はキャッシュ優先で使い回し（オフラインでも文字化けなし）
-var CACHE = 'tezawari-focus-v1';
+var CACHE = 'tezawari-focus-v2';
 var SHELL = [
   './',
   './manifest.webmanifest'
