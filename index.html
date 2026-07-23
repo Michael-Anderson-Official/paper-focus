@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>手ざわり集中</title>
 <meta name="description" content="時間を決めて集中する。離れると鉢植えが枯れ、続けられると庭に育つ。">
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#2b251f">
 <style>
-  @font-face { font-family: 'system-fallback'; src: local(''); }
   @import url('fonts/fonts.css');
+  @font-face { font-family: 'system-fallback'; src: local(''); }
 
   :root {
     --paper: #fdf8ea;
@@ -348,15 +348,26 @@
 
   // ---- ストレージ ----
   // pf:garden = [{id, minutes, completedAt}]（達成したセッションだけ記録。失敗は残さない）
-  function readGarden() {
-    try { var a = JSON.parse(localStorage.getItem('pf:garden') || '[]'); return Array.isArray(a) ? a : []; }
-    catch (e) { return []; }
+  function validGardenEntry(g) {
+    return g && typeof g === 'object' &&
+      typeof g.id === 'string' && g.id &&
+      Number.isFinite(g.minutes) && g.minutes >= 1 && g.minutes <= 180 &&
+      Number.isFinite(g.completedAt);
   }
-  function writeGarden(arr) { localStorage.setItem('pf:garden', JSON.stringify(arr)); }
+  function readGarden() {
+    try {
+      var a = JSON.parse(localStorage.getItem('pf:garden') || '[]');
+      return Array.isArray(a) ? a.filter(validGardenEntry) : [];   // 壊れた・不正な項目は読み飛ばす
+    } catch (e) { return []; }
+  }
+  function writeGarden(arr) {
+    try { localStorage.setItem('pf:garden', JSON.stringify(arr)); return true; }
+    catch (e) { return false; }   // 容量超過等。呼び出し側で保存失敗を扱う
+  }
   function addToGarden(minutes) {
     var arr = readGarden();
     arr.push({ id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), minutes: minutes, completedAt: Date.now() });
-    writeGarden(arr);
+    return writeGarden(arr);
   }
 
   function fmtDate(ms) {
@@ -380,11 +391,17 @@
       garden.slice().reverse().forEach(function (g, i) {
         var card = document.createElement('div');
         card.className = 'pot-card';
-        card.innerHTML = plantSVG('', g.id.length) +
-          '<div class="pc-min">' + g.minutes + '分</div>' +
-          '<div class="pc-date">' + fmtDate(g.completedAt) + '</div>';
+        card.innerHTML = plantSVG('', g.id.length);   // plantSVGは固定テンプレート（保存された値は差し込まない）
         var svg = card.querySelector('svg');
         paintPlant(svg, 1);
+        var minEl = document.createElement('div');
+        minEl.className = 'pc-min';
+        minEl.textContent = g.minutes + '分';
+        var dateEl = document.createElement('div');
+        dateEl.className = 'pc-date';
+        dateEl.textContent = fmtDate(g.completedAt);
+        card.appendChild(minEl);
+        card.appendChild(dateEl);
         grid.appendChild(card);
       });
     }
@@ -442,7 +459,9 @@
     var svg = document.getElementById('liveSvg');
     paintPlant(svg, 0);
     document.getElementById('sessionLabel').textContent = minutes + '分に挑戦中';
-    session = { minutes: minutes, endAt: Date.now() + minutes * 60000, active: true, svg: svg };
+    // 経過時間はperformance.now()（単調増加）で測る。Date.now()は時計合わせ等で
+    // 前後することがあり、それだと早すぎる成功や終わらない集中になりかねない
+    session = { minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(), active: true, svg: svg };
     sessionScreen.classList.add('show');
     tickSession();
     session.timer = setInterval(tickSession, 1000);
@@ -450,10 +469,11 @@
   }
   function tickSession() {
     if (!session || !session.active) return;
-    var remainMs = session.endAt - Date.now();
+    if (document.hidden) { finishSession(false, 'hidden'); return; }   // visibilitychangeの取りこぼし対策
+    var remainMs = session.totalMs - (performance.now() - session.startPerf);
     if (remainMs <= 0) { finishSession(true); return; }
     document.getElementById('sessionTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
-    var progress = 1 - remainMs / (session.minutes * 60000);
+    var progress = 1 - remainMs / session.totalMs;
     paintPlant(session.svg, progress);
   }
   function requestWakeLock() {
@@ -468,33 +488,33 @@
     releaseWakeLock();
     sessionScreen.classList.remove('show');
   }
-  function finishSession(success) {
+  function finishSession(success, reason) {
     if (!session || !session.active) return;
     session.active = false;
     var minutes = session.minutes;
     endSessionCommon();
     if (success) {
-      addToGarden(minutes);
+      var saved = addToGarden(minutes);
       renderGarden();
-      showResult(true, minutes);
+      showResult(true, minutes, saved ? null : 'savefail');
     } else {
-      showResult(false, minutes);
+      showResult(false, minutes, reason);
     }
     session = null;
   }
-  document.getElementById('giveUpBtn').addEventListener('click', function () { finishSession(false); });
+  document.getElementById('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
 
   // アプリが見えなくなった（他アプリ・他タブ・画面ロック）＝失敗
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden && session && session.active) finishSession(false);
+    if (document.hidden && session && session.active) finishSession(false, 'hidden');
   });
   window.addEventListener('pagehide', function () {
-    if (session && session.active) finishSession(false);
+    if (session && session.active) finishSession(false, 'hidden');
   });
 
   // ---- 結果表示 ----
   var resultModal = document.getElementById('resultModal');
-  function showResult(success, minutes) {
+  function showResult(success, minutes, reason) {
     var card = document.getElementById('resultCard');
     card.classList.toggle('fail', !success);
     var slot = document.getElementById('resultPlantSlot');
@@ -503,12 +523,16 @@
     if (success) {
       paintPlant(svg, 1);
       document.getElementById('resultTitle').textContent = '育ちました🌸';
-      document.getElementById('resultBody').textContent = minutes + '分、集中できました。庭に加わりました。';
+      document.getElementById('resultBody').textContent = reason === 'savefail'
+        ? minutes + '分、集中できました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
+        : minutes + '分、集中できました。庭に加わりました。';
     } else {
       paintPlant(svg, 0.55);
       witherPlant(svg);
       document.getElementById('resultTitle').textContent = '枯れてしまいました';
-      document.getElementById('resultBody').textContent = '離れてしまったようです。またいつでも挑戦できます。';
+      document.getElementById('resultBody').textContent = reason === 'giveup'
+        ? '自分でやめました。またいつでも挑戦できます。'
+        : '離れてしまったようです。またいつでも挑戦できます。';
     }
     resultModal.classList.add('show');
   }
