@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>手ざわり集中</title>
-<meta name="description" content="時間を決めて集中する。離れると鉢植えが枯れ、続けられると庭に育つ。">
+<meta name="description" content="時間を決めて集中する。離れるとなかまが眠ってしまい、続けられるとおうちに加わる。">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -68,6 +68,35 @@
   .head p { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); }
   .total-time { margin-top: 8px; font-size: 13px; color: var(--ink-strong); }
   .total-time b { font-size: 17px; color: var(--today-ring); }
+
+  .settings-btn {
+    position: absolute;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    right: 14px;
+    z-index: 5;
+    width: 34px; height: 34px;
+    font-size: 16px;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(120, 100, 60, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .settings-btn:active { transform: translateY(1px); }
+  .settings-text { font-family: inherit; font-size: 13px; line-height: 1.9; color: var(--ink-text); margin: 0 0 16px; }
+  .settings-row { margin-bottom: 10px; }
+  .settings-link, .settings-danger {
+    width: 100%;
+    padding: 11px;
+    font-family: inherit;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(120, 100, 60, 0.25);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--ink-strong);
+  }
+  .settings-danger { color: #a86a5c; }
 
   /* ---- 庭 ---- */
   .garden-scroll { flex: 1; overflow-y: auto; padding: 8px 14px 100px; -webkit-overflow-scrolling: touch; }
@@ -229,23 +258,24 @@
   .result-card.fail button { background: #a86a5c; }
 
   /* 鉢のパーツ共通 */
-  .stem { transform-box: fill-box; transform-origin: bottom center; transition: transform 0.5s ease; }
-  .leaf, .flower { transition: opacity 0.6s ease, transform 0.6s ease; transform-box: fill-box; transform-origin: center; }
+  .pet-body { transform-box: fill-box; transform-origin: bottom center; transition: transform 0.5s ease; }
+  .pet-eyes, .pet-zzz, .pet-heart { transition: opacity 0.5s ease; }
 </style>
 </head>
 <body>
 
 <div class="book">
   <div class="paper">
+    <button type="button" class="settings-btn" id="settingsBtn" aria-label="設定">⚙</button>
     <div class="head">
       <h1>手ざわり集中</h1>
-      <p>時間を決めて、離れずに集中する。離れると枯れます。</p>
+      <p>時間を決めて、離れずに一緒にいる。離れると寂しがります。</p>
       <div class="total-time" id="totalTime"></div>
     </div>
     <div class="garden-scroll">
       <div class="garden-grid" id="gardenGrid"></div>
       <div class="empty-note" id="emptyNote" style="display:none;">
-        まだ何もありません。<br>下の「集中をはじめる」から、<br>1つ目の鉢を育てよう。
+        まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。
       </div>
     </div>
     <div class="start-bar">
@@ -285,6 +315,25 @@
       <button type="button" id="resultClose">とじる</button>
     </div>
   </div>
+
+  <!-- 設定 -->
+  <div class="modal" id="settingsModal">
+    <div class="sheet">
+      <h2>設定</h2>
+      <p class="sub">手ざわり集中について</p>
+      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。</p>
+      <div class="settings-row">
+        <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
+      </div>
+      <div class="settings-row">
+        <button type="button" class="settings-danger" id="resetDataBtn">記録をぜんぶ消す</button>
+      </div>
+      <div class="sheet-btns">
+        <span class="spacer"></span>
+        <button type="button" class="primary" id="settingsClose">とじる</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 集中中の全画面 -->
@@ -292,7 +341,7 @@
   <div class="session-plant" id="sessionPlantSlot"></div>
   <div class="session-time" id="sessionTime">00:00</div>
   <div class="session-label" id="sessionLabel"></div>
-  <div class="session-note">この画面を離れたり、他のアプリに切り替えたり、<br>画面をロックすると、この鉢は枯れます。</div>
+  <div class="session-note">この画面を離れたり、他のアプリに切り替えたり、<br>画面をロックすると、このなかまは眠ってしまいます。</div>
   <button type="button" class="give-up-btn" id="giveUpBtn">やめる</button>
 </div>
 
@@ -300,59 +349,88 @@
 (function () {
   'use strict';
 
-  // ---- 鉢植えSVG。progress(0〜1)で育ち具合を変える。colorSeedで花の色を変える ----
-  var PETAL_COLORS = ['#d98a97', '#e0a952', '#8fa8d9', '#b28fd9', '#e0785a'];
-  function plantSVG(id, colorSeed) {
-    var petal = PETAL_COLORS[Math.abs(colorSeed) % PETAL_COLORS.length];
-    return '' +
-      '<svg id="' + id + '" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
-        '<path d="M30 92 L70 92 L64 66 L36 66 Z" fill="#b98a5f" stroke="#8a6440" stroke-width="1.5"/>' +
-        '<ellipse cx="50" cy="66" rx="17" ry="3.5" fill="#7a5638"/>' +
-        '<g class="plant-parts">' +
-          '<path class="stem" d="M50 66 C 50 50, 48 40, 50 26" fill="none" stroke="#5c8a52" stroke-width="3.4" stroke-linecap="round"/>' +
-          '<path class="leaf leaf1" d="M50 54 C 40 52, 34 44, 38 36 C 46 38, 51 46, 50 54 Z" fill="#6ea45f" opacity="0"/>' +
-          '<path class="leaf leaf2" d="M50 44 C 60 42, 66 34, 62 26 C 54 28, 49 36, 50 44 Z" fill="#78ae67" opacity="0"/>' +
-          '<path class="leaf leaf3" d="M50 32 C 41 29, 36 20, 41 13 C 49 16, 53 25, 50 32 Z" fill="#6ea45f" opacity="0"/>' +
-          '<g class="flower" opacity="0" transform="translate(50,20) scale(0.3)">' +
-            '<circle cx="0" cy="-7" r="6" fill="' + petal + '"/>' +
-            '<circle cx="7" cy="-2" r="6" fill="' + petal + '"/>' +
-            '<circle cx="4" cy="6" r="6" fill="' + petal + '"/>' +
-            '<circle cx="-4" cy="6" r="6" fill="' + petal + '"/>' +
-            '<circle cx="-7" cy="-2" r="6" fill="' + petal + '"/>' +
-            '<circle cx="0" cy="0" r="5" fill="#f4d35e"/>' +
-          '</g>' +
-        '</g>' +
-      '</svg>';
+  // ---- ペットSVG。種類・色はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
+  var PET_TYPES = ['cat', 'dog', 'rabbit', 'bird', 'hamster', 'turtle'];
+  var PET_COLORS = {
+    cat:     ['#e0a952', '#4a4030', '#f3ece0'],
+    dog:     ['#c98a52', '#8a6a48', '#e8ddc2'],
+    rabbit:  ['#f0c9d6', '#e6ddc9', '#c9b8a0'],
+    bird:    ['#8fb6d9', '#e0a952', '#7fb08a'],
+    hamster: ['#e0b96e', '#c98a52', '#f3ece0'],
+    turtle:  ['#7fb08a', '#8fa87f', '#b0a870']
+  };
+  function pickPet() {
+    var type = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
+    var colors = PET_COLORS[type];
+    var color = colors[Math.floor(Math.random() * colors.length)];
+    return { type: type, color: color };
   }
-  function paintPlant(svgEl, progress) {
+  function petBody(type, c) {
+    switch (type) {
+      case 'cat':
+        return '<path d="M12 40 L18 28 L25 38 Z" fill="' + c + '"/><path d="M38 40 L32 28 L25 38 Z" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="45" rx="18" ry="15" fill="' + c + '"/>' +
+          '<path d="M17 50 L13 53 M17 51 L12 51 M33 50 L37 53 M33 51 L38 51" stroke="' + c + '" stroke-width="1" opacity="0.55"/>';
+      case 'dog':
+        return '<ellipse cx="11" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(-18 11 38)"/>' +
+          '<ellipse cx="39" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(18 39 38)"/>' +
+          '<ellipse cx="25" cy="45" rx="18" ry="15" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="50" rx="5" ry="3.5" fill="#fbead6"/>';
+      case 'rabbit':
+        return '<ellipse cx="18" cy="18" rx="4.5" ry="15" fill="' + c + '" transform="rotate(-6 18 18)"/>' +
+          '<ellipse cx="32" cy="18" rx="4.5" ry="15" fill="' + c + '" transform="rotate(6 32 18)"/>' +
+          '<ellipse cx="25" cy="45" rx="17" ry="15" fill="' + c + '"/>';
+      case 'bird':
+        return '<ellipse cx="25" cy="45" rx="17" ry="16" fill="' + c + '"/>' +
+          '<ellipse cx="33" cy="44" rx="8" ry="6" fill="rgba(0,0,0,0.12)" transform="rotate(18 33 44)"/>' +
+          '<path d="M8 43 L1 41 L8 47 Z" fill="#e0a952"/>';
+      case 'hamster':
+        return '<ellipse cx="14" cy="32" rx="4" ry="4.5" fill="' + c + '"/><ellipse cx="36" cy="32" rx="4" ry="4.5" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="46" rx="20" ry="15" fill="' + c + '"/>';
+      case 'turtle':
+        return '<ellipse cx="25" cy="46" rx="19" ry="14" fill="' + c + '"/>' +
+          '<path d="M10 46 Q25 34 40 46 Q25 41 10 46 Z" fill="rgba(0,0,0,0.14)"/>' +
+          '<ellipse cx="8" cy="48" rx="5" ry="4" fill="' + c + '"/>';
+    }
+    return '';
+  }
+  function petSVG(id, type, color) {
+    return '<svg id="' + id + '" viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
+      '<text class="pet-zzz" x="31" y="27" font-size="10" fill="#8a8d99">Zzz</text>' +
+      '<g class="pet-body">' + petBody(type, color) + '</g>' +
+      '<g class="pet-eyes" opacity="0"><circle cx="20" cy="43" r="1.5" fill="#3a332a"/><circle cx="30" cy="43" r="1.5" fill="#3a332a"/></g>' +
+      '<g class="pet-heart" opacity="0" transform="translate(25,8) scale(0.4)"><path d="M0 4 C -6 -3, -14 2, 0 12 C 14 2, 6 -3, 0 4 Z" fill="#e0788a"/></g>' +
+    '</svg>';
+  }
+  // progress(0〜1): 0.3未満=眠っている(Zzz)、それ以上=目を開けて起きる、0.95以上=懐いてハート
+  function paintPet(svgEl, progress) {
     var t = Math.max(0, Math.min(1, progress));
-    svgEl.querySelector('.stem').style.transform = 'scaleY(' + Math.min(1, t / 0.85).toFixed(3) + ')';
-    var l1 = svgEl.querySelector('.leaf1'), l2 = svgEl.querySelector('.leaf2'), l3 = svgEl.querySelector('.leaf3');
-    var fl = svgEl.querySelector('.flower');
-    l1.style.opacity = t > 0.18 ? 1 : 0;
-    l1.style.transform = 'scale(' + (t > 0.18 ? 1 : 0.4) + ')';
-    l2.style.opacity = t > 0.4 ? 1 : 0;
-    l2.style.transform = 'scale(' + (t > 0.4 ? 1 : 0.4) + ')';
-    l3.style.opacity = t > 0.62 ? 1 : 0;
-    l3.style.transform = 'scale(' + (t > 0.62 ? 1 : 0.4) + ')';
-    var flOn = t >= 0.95;
-    fl.style.opacity = flOn ? 1 : 0;
-    fl.style.transform = 'translate(50px,20px) scale(' + (flOn ? 1 : 0.3) + ')';
+    var body = svgEl.querySelector('.pet-body');
+    body.style.transform = 'scaleY(' + (0.85 + 0.15 * Math.min(1, t / 0.4)).toFixed(3) + ')';
+    svgEl.querySelector('.pet-zzz').style.opacity = t < 0.3 ? 1 : 0;
+    svgEl.querySelector('.pet-eyes').style.opacity = t >= 0.3 ? 1 : 0;
+    svgEl.querySelector('.pet-heart').style.opacity = t >= 0.95 ? 1 : 0;
   }
-  function witherPlant(svgEl) {
-    svgEl.querySelectorAll('.stem, .leaf, .flower').forEach(function (el) {
-      el.style.transition = 'filter 0.8s ease, opacity 0.8s ease';
-      el.style.filter = 'grayscale(1) brightness(0.75)';
+  function sadPet(svgEl) {
+    svgEl.querySelector('.pet-zzz').style.opacity = 1;
+    svgEl.querySelector('.pet-eyes').style.opacity = 0;
+    svgEl.querySelector('.pet-heart').style.opacity = 0;
+    svgEl.querySelectorAll('.pet-body').forEach(function (el) {
+      el.style.transition = 'filter 0.8s ease';
+      el.style.filter = 'grayscale(1) brightness(0.8)';
     });
   }
 
   // ---- ストレージ ----
-  // pf:garden = [{id, minutes, completedAt}]（達成したセッションだけ記録。失敗は残さない）
+  // pf:garden = [{id, minutes, completedAt, type, color}]（懐いたなかまだけ記録。失敗は残さない）
   function validGardenEntry(g) {
-    return g && typeof g === 'object' &&
+    if (!(g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
       Number.isFinite(g.minutes) && g.minutes >= 1 && g.minutes <= 180 &&
-      Number.isFinite(g.completedAt);
+      Number.isFinite(g.completedAt))) return false;
+    if (PET_TYPES.indexOf(g.type) === -1) return false;   // 種類は既知のものだけ許可
+    if ((PET_COLORS[g.type] || []).indexOf(g.color) === -1) return false;   // 色もSVGへ直接差し込むため既知の値だけ許可
+    return true;
   }
   function readGarden() {
     try {
@@ -364,9 +442,12 @@
     try { localStorage.setItem('pf:garden', JSON.stringify(arr)); return true; }
     catch (e) { return false; }   // 容量超過等。呼び出し側で保存失敗を扱う
   }
-  function addToGarden(minutes) {
+  function addToGarden(minutes, pet) {
     var arr = readGarden();
-    arr.push({ id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), minutes: minutes, completedAt: Date.now() });
+    arr.push({
+      id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      minutes: minutes, completedAt: Date.now(), type: pet.type, color: pet.color
+    });
     return writeGarden(arr);
   }
 
@@ -391,9 +472,9 @@
       garden.slice().reverse().forEach(function (g, i) {
         var card = document.createElement('div');
         card.className = 'pot-card';
-        card.innerHTML = plantSVG('', g.id.length);   // plantSVGは固定テンプレート（保存された値は差し込まない）
+        card.innerHTML = petSVG('', g.type, g.color);   // type/colorはvalidGardenEntryで既知の値だけに絞られている
         var svg = card.querySelector('svg');
-        paintPlant(svg, 1);
+        paintPet(svg, 1);
         var minEl = document.createElement('div');
         minEl.className = 'pc-min';
         minEl.textContent = g.minutes + '分';
@@ -409,7 +490,7 @@
     var totalEl = document.getElementById('totalTime');
     if (totalMin > 0) {
       var h = Math.floor(totalMin / 60), m = totalMin % 60;
-      totalEl.innerHTML = 'これまでの集中: <b>' + (h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分') + '</b>（鉢' + garden.length + '個）';
+      totalEl.innerHTML = 'これまでの集中: <b>' + (h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分') + '</b>（なかま' + garden.length + '匹）';
     } else {
       totalEl.textContent = '';
     }
@@ -455,13 +536,14 @@
   var wakeLock = null;
 
   function startSession(minutes) {
-    sessionPlantSlot.innerHTML = plantSVG('liveSvg', Date.now());
+    var pet = pickPet();
+    sessionPlantSlot.innerHTML = petSVG('liveSvg', pet.type, pet.color);
     var svg = document.getElementById('liveSvg');
-    paintPlant(svg, 0);
+    paintPet(svg, 0);
     document.getElementById('sessionLabel').textContent = minutes + '分に挑戦中';
     // 経過時間はperformance.now()（単調増加）で測る。Date.now()は時計合わせ等で
     // 前後することがあり、それだと早すぎる成功や終わらない集中になりかねない
-    session = { minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(), active: true, svg: svg };
+    session = { minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(), active: true, svg: svg, pet: pet };
     sessionScreen.classList.add('show');
     tickSession();
     session.timer = setInterval(tickSession, 1000);
@@ -474,7 +556,7 @@
     if (remainMs <= 0) { finishSession(true); return; }
     document.getElementById('sessionTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
     var progress = 1 - remainMs / session.totalMs;
-    paintPlant(session.svg, progress);
+    paintPet(session.svg, progress);
   }
   function requestWakeLock() {
     if (!('wakeLock' in navigator)) return;
@@ -491,14 +573,14 @@
   function finishSession(success, reason) {
     if (!session || !session.active) return;
     session.active = false;
-    var minutes = session.minutes;
+    var minutes = session.minutes, pet = session.pet;
     endSessionCommon();
     if (success) {
-      var saved = addToGarden(minutes);
+      var saved = addToGarden(minutes, pet);
       renderGarden();
-      showResult(true, minutes, saved ? null : 'savefail');
+      showResult(true, minutes, saved ? null : 'savefail', pet);
     } else {
-      showResult(false, minutes, reason);
+      showResult(false, minutes, reason, pet);
     }
     session = null;
   }
@@ -514,22 +596,22 @@
 
   // ---- 結果表示 ----
   var resultModal = document.getElementById('resultModal');
-  function showResult(success, minutes, reason) {
+  function showResult(success, minutes, reason, pet) {
     var card = document.getElementById('resultCard');
     card.classList.toggle('fail', !success);
     var slot = document.getElementById('resultPlantSlot');
-    slot.innerHTML = plantSVG('resultSvg', Date.now());
+    slot.innerHTML = petSVG('resultSvg', pet.type, pet.color);
     var svg = document.getElementById('resultSvg');
     if (success) {
-      paintPlant(svg, 1);
-      document.getElementById('resultTitle').textContent = '育ちました🌸';
+      paintPet(svg, 1);
+      document.getElementById('resultTitle').textContent = 'なつきました🐾';
       document.getElementById('resultBody').textContent = reason === 'savefail'
-        ? minutes + '分、集中できました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : minutes + '分、集中できました。庭に加わりました。';
+        ? minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
+        : minutes + '分、一緒にいられました。おうちに加わりました。';
     } else {
-      paintPlant(svg, 0.55);
-      witherPlant(svg);
-      document.getElementById('resultTitle').textContent = '枯れてしまいました';
+      paintPet(svg, 0.5);
+      sadPet(svg);
+      document.getElementById('resultTitle').textContent = '眠ってしまいました';
       document.getElementById('resultBody').textContent = reason === 'giveup'
         ? '自分でやめました。またいつでも挑戦できます。'
         : '離れてしまったようです。またいつでも挑戦できます。';
@@ -537,6 +619,19 @@
     resultModal.classList.add('show');
   }
   document.getElementById('resultClose').addEventListener('click', function () { resultModal.classList.remove('show'); });
+
+  // ---- 設定 ----
+  var settingsModal = document.getElementById('settingsModal');
+  document.getElementById('settingsBtn').addEventListener('click', function () { settingsModal.classList.add('show'); });
+  document.getElementById('settingsClose').addEventListener('click', function () { settingsModal.classList.remove('show'); });
+  settingsModal.addEventListener('click', function (e) { if (e.target === settingsModal) settingsModal.classList.remove('show'); });
+  document.getElementById('privacyLinkBtn').addEventListener('click', function () { location.href = 'privacy.html'; });
+  document.getElementById('resetDataBtn').addEventListener('click', function () {
+    if (!confirm('これまでの記録をぜんぶ消します。よろしいですか？')) return;
+    localStorage.removeItem('pf:garden');
+    renderGarden();
+    settingsModal.classList.remove('show');
+  });
 
   // ---- 初期化 ----
   var lastMin = parseInt(localStorage.getItem('pf:lastMinutes') || '25', 10);
