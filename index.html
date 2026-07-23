@@ -121,7 +121,7 @@
   .pot-card .pc-min { font-size: 11px; color: var(--ink-strong); font-weight: 600; margin-top: 1px; }
   .pot-card .pc-date { font-size: 9px; color: var(--ink-soft); }
 
-  /* ---- マイル ---- */
+  /* ---- 貯まった時間 ---- */
   .mileage-stat { margin-top: 4px; font-size: 12px; color: var(--ink-soft); }
   .mileage-stat b { color: #b98a2e; }
 
@@ -417,7 +417,7 @@
     <div class="sheet">
       <h2>設定</h2>
       <p class="sub">手ざわり集中について</p>
-      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけマイルが貯まり、「図鑑」でまだ会っていない子をマイルで迎えることもできます。おうちの子は名前をつけたり変えたりできます。</p>
+      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。おうちの子は名前をつけたり変えたりできます。</p>
       <div class="settings-row">
         <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
       </div>
@@ -614,7 +614,7 @@
 
   // ---- ストレージ ----
   // pf:garden = [{id, minutes, completedAt, type, key, name, source}]（懐いた／迎えたなかまだけ記録。失敗は残さない）
-  // source: 'session'=集中して懐いた（minutesはその回の分数） / 'shop'=マイルで迎えた（minutesは0）
+  // source: 'session'=集中して懐いた（minutesはその回の分数） / 'shop'=貯まった時間で迎えた（minutesは0）
   function coreValid(g) {
     return g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
@@ -649,7 +649,7 @@
         }
         var name = (typeof g.name === 'string') ? g.name.slice(0, 12) : '';
         var source = (g.source === 'shop') ? 'shop' : 'session';   // name/sourceが無い旧形式の記録も既定値で補う
-        var minutes = (source === 'shop') ? 0 : g.minutes;   // マイルで迎えた記録は分数を持たない、という約束を必ず保つ
+        var minutes = (source === 'shop') ? 0 : g.minutes;   // 貯まった時間で迎えた記録は分数を持たない、という約束を必ず保つ
         if (g.type !== type || g.key !== key || g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
         return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source };
       });
@@ -680,10 +680,11 @@
     return writeGarden(arr);   // 書き込みそのものの成否を返す（見つかっただけで成功扱いにしない）
   }
 
-  // ---- マイル（集中した分だけ貯まり、図鑑でなかまを迎えると使う。累計の「これまでの集中」とは別の残高） ----
+  // ---- 貯まった時間（集中した分だけ貯まり、図鑑でなかまを迎えると使う。累計の「これまでの集中」とは別の残高）----
+  // 中身は分単位で持つが、値段は1時間単位（60分きざみ）にそろえる
   function petPrice(type, key) {
     var v = petVariant(type, key);
-    return (v && v.name) ? 60 : 30;   // 名前付き品種（猫）は60マイル、それ以外は30マイル
+    return (v && v.name) ? 120 : 60;   // 名前付き品種（猫）は2時間、それ以外は1時間
   }
   var MAX_MILEAGE = Number.MAX_SAFE_INTEGER;
   function readMileage() {
@@ -705,8 +706,8 @@
   function buyPet(type, key) {
     var price = petPrice(type, key);
     if (readMileage() < price) return false;
-    // 先になかまを迎える処理を試み、それが成功したときだけマイルを引く。
-    // 逆順だと保存失敗時に「マイルだけ減ってなかまが増えない」事故になりうるため
+    // 先になかまを迎える処理を試み、それが成功したときだけ時間を引く。
+    // 逆順だと保存失敗時に「時間だけ減ってなかまが増えない」事故になりうるため
     if (!addToGarden(0, { type: type, key: key }, 'shop')) return false;
     spendMileage(price);
     return true;
@@ -719,6 +720,11 @@
   function fmtClock(sec) {
     var m = Math.floor(sec / 60), s = sec % 60;
     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  // 分数を「H時間M分」表記へ（1時間ちょうどなら「1時間」、1時間未満なら「M分」のみ）
+  function fmtHours(totalMin) {
+    var h = Math.floor(totalMin / 60), m = totalMin % 60;
+    return h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分';
   }
 
   function renderGarden() {
@@ -751,7 +757,7 @@
         }
         var minEl = document.createElement('div');
         minEl.className = 'pc-min';
-        minEl.textContent = (g.source === 'shop') ? 'マイルで' : g.minutes + '分';
+        minEl.textContent = (g.source === 'shop') ? fmtHours(petPrice(g.type, g.key)) + 'で' : g.minutes + '分';
         var dateEl = document.createElement('div');
         dateEl.className = 'pc-date';
         dateEl.textContent = fmtDate(g.completedAt);
@@ -764,13 +770,12 @@
     var totalMin = garden.reduce(function (s, g) { return s + (g.source === 'shop' ? 0 : g.minutes); }, 0);
     var totalEl = document.getElementById('totalTime');
     if (totalMin > 0) {
-      var h = Math.floor(totalMin / 60), m = totalMin % 60;
-      totalEl.innerHTML = 'これまでの集中: <b>' + (h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分') + '</b>（なかま' + garden.length + '匹）';
+      totalEl.innerHTML = 'これまでの集中: <b>' + fmtHours(totalMin) + '</b>（なかま' + garden.length + '匹）';
     } else {
       totalEl.textContent = garden.length ? 'なかま' + garden.length + '匹' : '';
     }
     var mileageEl = document.getElementById('mileageStat');
-    mileageEl.innerHTML = 'マイル: <b>' + readMileage() + '</b>';
+    mileageEl.innerHTML = '貯まった時間: <b>' + fmtHours(readMileage()) + '</b>';
   }
 
   // ---- 時間を決めるシート ----
@@ -939,7 +944,7 @@
     if (tab === 'roster') renderRoster();
   }
 
-  // ---- 図鑑（すべての種類×品種。持っていない子はマイルで迎えられる） ----
+  // ---- 図鑑（すべての種類×品種。持っていない子は貯まった時間で迎えられる） ----
   function renderRoster() {
     var garden = readGarden();
     var owned = {};
@@ -967,7 +972,7 @@
         var buyBtn = document.createElement('button');
         buyBtn.type = 'button';
         buyBtn.className = 'rc-buy';
-        buyBtn.textContent = price + 'マイルで迎える';
+        buyBtn.textContent = fmtHours(price) + 'で迎える';
         buyBtn.disabled = mileage < price;
         buyBtn.addEventListener('click', function () {
           if (!buyPet(type, v.key)) return;
