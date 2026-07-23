@@ -114,7 +114,8 @@
     cursor: default;
   }
   .pot-card svg { width: 56px; height: 56px; }
-  .pot-card .pc-min { font-size: 11px; color: var(--ink-strong); font-weight: 600; margin-top: 2px; }
+  .pot-card .pc-breed { font-size: 9px; color: var(--ink-soft); margin-top: 3px; line-height: 1.3; }
+  .pot-card .pc-min { font-size: 11px; color: var(--ink-strong); font-weight: 600; margin-top: 1px; }
   .pot-card .pc-date { font-size: 9px; color: var(--ink-soft); }
   .empty-note {
     margin-top: 40px;
@@ -351,28 +352,98 @@
 (function () {
   'use strict';
 
-  // ---- ペットSVG。種類・色はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
+  // ---- ペットSVG。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
   var PET_TYPES = ['cat', 'dog', 'rabbit', 'bird', 'hamster', 'turtle'];
-  var PET_COLORS = {
-    cat:     ['#e0a952', '#4a4030', '#f3ece0'],
-    dog:     ['#c98a52', '#8a6a48', '#e8ddc2'],
-    rabbit:  ['#f0c9d6', '#e6ddc9', '#c9b8a0'],
-    bird:    ['#8fb6d9', '#e0a952', '#7fb08a'],
-    hamster: ['#e0b96e', '#c98a52', '#f3ece0'],
-    turtle:  ['#7fb08a', '#8fa87f', '#b0a870']
+  // 種類ごとの品種一覧。keyは保存用の固定ID、nameは画面表示（無ければ表示しない）、
+  // colorは地の色、patternは模様（petBody/catPatternで解釈。'solid'は無地）
+  var PET_VARIANTS = {
+    cat: [
+      { key: 'american-shorthair', name: 'アメリカンショートヘア', color: '#b8b0a0', pattern: 'tabby' },
+      { key: 'russian-blue',       name: 'ロシアンブルー',         color: '#8a97a0', pattern: 'solid' },
+      { key: 'scottish-fold',      name: 'スコティッシュフォールド', color: '#c9bfae', pattern: 'fold' },
+      { key: 'maine-coon',         name: 'メインクーン',           color: '#a37a4e', pattern: 'tufted-tabby' },
+      { key: 'persian',            name: 'ペルシャ',               color: '#f3ece0', pattern: 'fluffy' },
+      { key: 'siamese',            name: 'シャム',                 color: '#f0e6d2', pattern: 'points' },
+      { key: 'bengal',             name: 'ベンガル',               color: '#e0a952', pattern: 'spots' },
+      { key: 'abyssinian',         name: 'アビシニアン',           color: '#b06a3f', pattern: 'solid' },
+      { key: 'british-shorthair',  name: 'ブリティッシュショートヘア', color: '#a3a89c', pattern: 'round' },
+      { key: 'calico',             name: '三毛猫',                 color: '#f3ece0', pattern: 'calico' }
+    ],
+    dog: [
+      { key: 'brown', name: null, color: '#c98a52', pattern: 'solid' },
+      { key: 'dark',  name: null, color: '#8a6a48', pattern: 'solid' },
+      { key: 'cream', name: null, color: '#e8ddc2', pattern: 'solid' }
+    ],
+    rabbit: [
+      { key: 'pink',  name: null, color: '#f0c9d6', pattern: 'solid' },
+      { key: 'ivory', name: null, color: '#e6ddc9', pattern: 'solid' },
+      { key: 'beige', name: null, color: '#c9b8a0', pattern: 'solid' }
+    ],
+    bird: [
+      { key: 'blue',  name: null, color: '#8fb6d9', pattern: 'solid' },
+      { key: 'gold',  name: null, color: '#e0a952', pattern: 'solid' },
+      { key: 'green', name: null, color: '#7fb08a', pattern: 'solid' }
+    ],
+    hamster: [
+      { key: 'gold',  name: null, color: '#e0b96e', pattern: 'solid' },
+      { key: 'brown', name: null, color: '#c98a52', pattern: 'solid' },
+      { key: 'cream', name: null, color: '#f3ece0', pattern: 'solid' }
+    ],
+    turtle: [
+      { key: 'green', name: null, color: '#7fb08a', pattern: 'solid' },
+      { key: 'olive', name: null, color: '#8fa87f', pattern: 'solid' },
+      { key: 'tan',   name: null, color: '#b0a870', pattern: 'solid' }
+    ]
   };
+  function petVariant(type, key) {
+    var list = PET_VARIANTS[type] || [];
+    for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i];
+    return null;
+  }
   function pickPet() {
     var type = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
-    var colors = PET_COLORS[type];
-    var color = colors[Math.floor(Math.random() * colors.length)];
-    return { type: type, color: color };
+    var variants = PET_VARIANTS[type];
+    var variant = variants[Math.floor(Math.random() * variants.length)];
+    return { type: type, key: variant.key };
   }
-  function petBody(type, c) {
+  // 猫の品種模様。既存のシルエット（耳2つ＋体）の上に重ねて描く追加パーツを返す
+  function catPattern(pattern, c) {
+    switch (pattern) {
+      case 'tabby':
+        return '<path d="M18 32 Q25 30 32 32 M17 38 Q25 36 33 38 M18 44 Q25 42 32 44" stroke="rgba(0,0,0,0.4)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M21 30 L25 25 L29 30" stroke="rgba(0,0,0,0.45)" stroke-width="2" fill="none" stroke-linecap="round"/>';
+      case 'tufted-tabby':
+        return '<path d="M18 34 Q25 32 32 34 M18 40 Q25 38 32 40 M18 46 Q25 44 32 46" stroke="rgba(0,0,0,0.35)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M14 29 L10 20 M36 29 L40 20" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>';
+      case 'spots':
+        return ['12,38', '20,34', '30,36', '36,40', '16,48', '28,50', '33,46'].map(function (pt) {
+          var xy = pt.split(',');
+          return '<ellipse cx="' + xy[0] + '" cy="' + xy[1] + '" rx="3.4" ry="2.6" fill="rgba(0,0,0,0.42)"/>';
+        }).join('');
+      case 'points':
+        return '<path d="M12 40 L18 28 L25 38 Z" fill="#5a4030"/><path d="M38 40 L32 28 L25 38 Z" fill="#5a4030"/>' +
+          '<ellipse cx="25" cy="50" rx="9" ry="7" fill="#5a4030" opacity="0.7"/>';
+      case 'fluffy':
+        return '<path d="M7 42 q-4 -2 -3 -7 M7 49 q-4 1 -4 -4 M7 56 q-4 3 -6 0 M43 42 q4 -2 3 -7 M43 49 q4 1 4 -4 M43 56 q4 3 6 0 M16 58 q-2 4 -6 3 M34 58 q2 4 6 3" ' +
+          'stroke="' + c + '" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+      case 'calico':
+        return '<path d="M10 44 Q14 30 24 30 L24 58 Q14 58 10 50 Z" fill="#e0a952"/>' +
+          '<path d="M40 44 Q36 32 28 31 L28 58 Q36 58 40 50 Z" fill="#3a332a"/>';
+      default:
+        return '';
+    }
+  }
+  function petBody(type, c, pattern) {
     switch (type) {
       case 'cat':
-        return '<path d="M12 40 L18 28 L25 38 Z" fill="' + c + '"/><path d="M38 40 L32 28 L25 38 Z" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="45" rx="18" ry="15" fill="' + c + '"/>' +
-          '<path d="M17 50 L13 53 M17 51 L12 51 M33 50 L37 53 M33 51 L38 51" stroke="' + c + '" stroke-width="1" opacity="0.55"/>';
+        var ears = (pattern === 'fold')
+          ? '<ellipse cx="16" cy="27" rx="4.5" ry="3.2" fill="' + c + '"/><ellipse cx="34" cy="27" rx="4.5" ry="3.2" fill="' + c + '"/>'
+          : '<path d="M12 40 L18 28 L25 38 Z" fill="' + c + '"/><path d="M38 40 L32 28 L25 38 Z" fill="' + c + '"/>';
+        var bodyRx = (pattern === 'round') ? 19 : 18;
+        return ears +
+          '<ellipse cx="25" cy="45" rx="' + bodyRx + '" ry="15" fill="' + c + '"/>' +
+          '<path d="M17 50 L13 53 M17 51 L12 51 M33 50 L37 53 M33 51 L38 51" stroke="' + c + '" stroke-width="1" opacity="0.55"/>' +
+          catPattern(pattern, c);
       case 'dog':
         return '<ellipse cx="11" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(-18 11 38)"/>' +
           '<ellipse cx="39" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(18 39 38)"/>' +
@@ -396,10 +467,11 @@
     }
     return '';
   }
-  function petSVG(id, type, color) {
+  function petSVG(id, type, key) {
+    var v = petVariant(type, key) || { color: '#c9b8a0', pattern: 'solid' };
     return '<svg id="' + id + '" viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
       '<text class="pet-zzz" x="31" y="27" font-size="10" fill="#8a8d99">Zzz</text>' +
-      '<g class="pet-body">' + petBody(type, color) + '</g>' +
+      '<g class="pet-body">' + petBody(type, v.color, v.pattern) + '</g>' +
       '<g class="pet-eyes" opacity="0"><circle cx="20" cy="43" r="1.5" fill="#3a332a"/><circle cx="30" cy="43" r="1.5" fill="#3a332a"/></g>' +
       '<g class="pet-heart" opacity="0" transform="translate(25,8) scale(0.4)"><path d="M0 4 C -6 -3, -14 2, 0 12 C 14 2, 6 -3, 0 4 Z" fill="#e0788a"/></g>' +
     '</svg>';
@@ -424,7 +496,7 @@
   }
 
   // ---- ストレージ ----
-  // pf:garden = [{id, minutes, completedAt, type, color}]（懐いたなかまだけ記録。失敗は残さない）
+  // pf:garden = [{id, minutes, completedAt, type, key}]（懐いたなかまだけ記録。失敗は残さない）
   function coreValid(g) {
     return g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
@@ -432,29 +504,33 @@
       Number.isFinite(g.completedAt);
   }
   function petFieldsValid(g) {
-    return PET_TYPES.indexOf(g.type) !== -1 &&
-      (PET_COLORS[g.type] || []).indexOf(g.color) !== -1;   // SVGへ直接差し込むため既知の値だけ許可
+    return PET_TYPES.indexOf(g.type) !== -1 && !!petVariant(g.type, g.key);   // keyがその種類の既知の品種の1つであること
   }
-  // idから決定的に種類・色を割り当てる（種類/色が無い・壊れた記録の救済用。乱数は使わない＝再読み込みでも同じ子になる）
+  // idから決定的に種類・品種を割り当てる（品種情報が無い・壊れた記録の救済用。乱数は使わない＝再読み込みでも同じ子になる）
   function deriveLegacyPet(id) {
     var h = 0;
     for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
     var type = PET_TYPES[h % PET_TYPES.length];
-    var colors = PET_COLORS[type];
-    return { type: type, color: colors[Math.floor(h / PET_TYPES.length) % colors.length] };
+    var variants = PET_VARIANTS[type];
+    return { type: type, key: variants[Math.floor(h / PET_TYPES.length) % variants.length].key };
   }
   function readGarden() {
     try {
       var raw = JSON.parse(localStorage.getItem('pf:garden') || '[]');
       if (!Array.isArray(raw)) return [];
-      var migrated = false;
-      var out = raw.filter(coreValid).map(function (g) {
+      var coreDropped = raw.length;
+      var filtered = raw.filter(coreValid);
+      coreDropped -= filtered.length;   // id/分数/日時が壊れていて捨てた件数
+      var petMigrated = false;
+      var out = filtered.map(function (g) {
         if (petFieldsValid(g)) return g;
-        migrated = true;   // 種類/色を持たない旧形式の記録。消さずに割り当てて救済する
+        petMigrated = true;   // 品種を持たない・古い色ベースの旧形式の記録。消さずに割り当てて救済する
         var p = deriveLegacyPet(g.id);
-        return { id: g.id, minutes: g.minutes, completedAt: g.completedAt, type: p.type, color: p.color };
+        return { id: g.id, minutes: g.minutes, completedAt: g.completedAt, type: p.type, key: p.key };
       });
-      if (migrated) writeGarden(out);   // 次回から読み飛ばしを繰り返さないよう書き戻す
+      // 壊れた記録を捨てた場合も含めて、変化があれば必ず書き戻す（そうしないと
+      // storageに残ったまま毎回読み飛ばされるだけになる）
+      if (petMigrated || coreDropped > 0) writeGarden(out);
       return out;
     } catch (e) { return []; }
   }
@@ -466,7 +542,7 @@
     var arr = readGarden();
     arr.push({
       id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      minutes: minutes, completedAt: Date.now(), type: pet.type, color: pet.color
+      minutes: minutes, completedAt: Date.now(), type: pet.type, key: pet.key
     });
     return writeGarden(arr);
   }
@@ -492,9 +568,16 @@
       garden.slice().reverse().forEach(function (g, i) {
         var card = document.createElement('div');
         card.className = 'pot-card';
-        card.innerHTML = petSVG('', g.type, g.color);   // type/colorはvalidGardenEntryで既知の値だけに絞られている
+        card.innerHTML = petSVG('', g.type, g.key);   // type/keyはreadGardenで既知の値だけに絞られている
         var svg = card.querySelector('svg');
         paintPet(svg, 1);
+        var v = petVariant(g.type, g.key);
+        if (v && v.name) {
+          var nameEl = document.createElement('div');
+          nameEl.className = 'pc-breed';
+          nameEl.textContent = v.name;
+          card.appendChild(nameEl);
+        }
         var minEl = document.createElement('div');
         minEl.className = 'pc-min';
         minEl.textContent = g.minutes + '分';
@@ -557,7 +640,7 @@
 
   function startSession(minutes) {
     var pet = pickPet();
-    sessionPlantSlot.innerHTML = petSVG('liveSvg', pet.type, pet.color);
+    sessionPlantSlot.innerHTML = petSVG('liveSvg', pet.type, pet.key);
     var svg = document.getElementById('liveSvg');
     paintPet(svg, 0);
     document.getElementById('sessionLabel').textContent = minutes + '分に挑戦中';
@@ -622,14 +705,16 @@
     var card = document.getElementById('resultCard');
     card.classList.toggle('fail', !success);
     var slot = document.getElementById('resultPlantSlot');
-    slot.innerHTML = petSVG('resultSvg', pet.type, pet.color);
+    slot.innerHTML = petSVG('resultSvg', pet.type, pet.key);
     var svg = document.getElementById('resultSvg');
+    var v = petVariant(pet.type, pet.key);
+    var breedLabel = (v && v.name) ? v.name + 'が' : '';
     if (success) {
       paintPet(svg, 1);
       document.getElementById('resultTitle').textContent = 'なつきました🐾';
       document.getElementById('resultBody').textContent = reason === 'savefail'
-        ? minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : minutes + '分、一緒にいられました。おうちに加わりました。';
+        ? breedLabel + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
+        : breedLabel + minutes + '分、一緒にいられました。おうちに加わりました。';
     } else {
       paintPet(svg, 0.5);
       sadPet(svg);
