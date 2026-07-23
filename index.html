@@ -101,13 +101,17 @@
   /* ---- おうち（部屋） ---- */
   .garden-scroll { flex: 1; overflow-y: auto; padding: 0 0 100px; -webkit-overflow-scrolling: touch; }
 
-  /* ---- 部屋タブ（リビング／キッチン／寝室） ---- */
-  .room-tab-bar { display: flex; gap: 6px; padding: 0 14px; margin-bottom: 8px; flex: none; }
+  /* ---- 部屋タブ（玄関／リビング／キッチン／寝室） ---- */
+  .room-tab-bar { display: flex; gap: 4px; padding: 0 10px; margin-bottom: 8px; flex: none; }
   .room-tab-btn {
     flex: 1;
-    padding: 7px;
+    min-width: 0;
+    padding: 7px 2px;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--ink-soft);
     background: rgba(255, 255, 255, 0.3);
     border: 1px solid rgba(120, 100, 60, 0.18);
@@ -147,12 +151,28 @@
   .room-scene.room-kitchen .room-floor-bg { background: repeating-linear-gradient(90deg, #cfd9d6 0, #cfd9d6 38px, #bcc9c5 38px, #bcc9c5 40px); }
   .room-scene.room-bedroom .room-wall { background: linear-gradient(180deg, #e6dce8, #d8c9dd); }
   .room-scene.room-bedroom .room-floor-bg { background: repeating-linear-gradient(90deg, #d9c9dc 0, #d9c9dc 38px, #c9b6cc 38px, #c9b6cc 40px); }
+  .room-scene.room-genkan .room-wall { background: linear-gradient(180deg, #e2ded2, #cfc7b4); }
+  .room-scene.room-genkan .room-floor-bg { background: repeating-linear-gradient(45deg, #c9c2ae 0, #c9c2ae 20px, #bab293 20px, #bab293 22px); }
 
-  .room-window, .room-counter, .room-bed { display: none; }
-  .room-scene.room-living .room-window { display: block; }
-  .room-scene.room-kitchen .room-counter { display: block; }
-  .room-scene.room-bedroom .room-bed { display: block; }
+  .room-window, .room-sofa, .room-plant,
+  .room-counter, .room-shelf, .room-fridge,
+  .room-bed, .room-nightstand, .room-lamp, .room-wardrobe,
+  .room-shoebox, .room-umbrella-stand, .room-doormat { display: none; }
+  .room-scene.room-living .room-window,
+  .room-scene.room-living .room-sofa,
+  .room-scene.room-living .room-plant { display: block; }
+  .room-scene.room-kitchen .room-counter,
+  .room-scene.room-kitchen .room-shelf,
+  .room-scene.room-kitchen .room-fridge { display: block; }
+  .room-scene.room-bedroom .room-bed,
+  .room-scene.room-bedroom .room-nightstand,
+  .room-scene.room-bedroom .room-lamp,
+  .room-scene.room-bedroom .room-wardrobe { display: block; }
+  .room-scene.room-genkan .room-shoebox,
+  .room-scene.room-genkan .room-umbrella-stand,
+  .room-scene.room-genkan .room-doormat { display: block; }
 
+  /* リビング：窓・ソファ・観葉植物 */
   .room-window {
     position: absolute; top: 22px; right: 24px; width: 74px; height: 92px;
     background: linear-gradient(180deg, #bcd9ea, #dcecd8);
@@ -171,7 +191,31 @@
     background: #7fae6f; border-radius: 0 100% 0 100%;
   }
   .room-window-leaf.l2 { left: 24px; bottom: 4px; width: 16px; height: 20px; background: #6ea45f; }
+  .room-sofa {
+    position: absolute; left: 14px; top: 136px; width: 104px; height: 50px;
+    background: #8fa8c9; border-radius: 10px 10px 4px 4px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+  }
+  .room-sofa::before, .room-sofa::after {
+    content: ''; position: absolute; top: -14px; width: 36px; height: 20px;
+    background: #8fa8c9; border-radius: 8px 8px 0 0;
+  }
+  .room-sofa::before { left: 6px; }
+  .room-sofa::after { right: 6px; }
+  .room-plant {
+    position: absolute; left: 132px; top: 118px; width: 34px; height: 72px;
+  }
+  .room-plant::before {
+    content: ''; position: absolute; bottom: 0; left: 5px; width: 24px; height: 22px;
+    background: #b98a5f; border-radius: 2px 2px 8px 8px; box-shadow: 0 2px 3px rgba(60, 45, 25, 0.2);
+  }
+  .room-plant::after {
+    content: ''; position: absolute; top: 0; left: 2px; width: 26px; height: 30px;
+    background: #6ea45f; border-radius: 50% 50% 50% 10%;
+    box-shadow: 10px 10px 0 -4px #7fae6f, -6px 14px 0 -6px #5f9450;
+  }
 
+  /* キッチン：カウンター・吊り棚・冷蔵庫 */
   .room-counter {
     position: absolute; top: 60px; right: 20px; width: 90px; height: 56px;
     background: linear-gradient(180deg, #f3ece0, #d9cdb4);
@@ -183,19 +227,98 @@
     content: ''; position: absolute; top: 8px; left: 10px; width: 20px; height: 20px;
     border-radius: 50%; background: #a3a89c; box-shadow: 28px 0 0 #a3a89c;
   }
+  .room-shelf {
+    position: absolute; left: 16px; top: 24px; width: 80px; height: 8px;
+    background: #a87a50; border-radius: 2px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.25);
+  }
+  .room-shelf::before {
+    content: ''; position: absolute; top: 8px; left: 6px; width: 14px; height: 16px;
+    background: #c9564a; border-radius: 0 0 4px 4px;
+  }
+  .room-shelf::after {
+    content: ''; position: absolute; top: 8px; left: 30px; width: 12px; height: 12px;
+    border: 2px solid #7fae6f; border-radius: 50%; background: transparent;
+  }
+  .room-fridge {
+    position: absolute; left: 16px; top: 100px; width: 40px; height: 88px;
+    background: linear-gradient(180deg, #f3ece0, #dccbb0);
+    border: 1.5px solid #b6935f; border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+  }
+  .room-fridge::before, .room-fridge::after {
+    content: ''; position: absolute; right: 6px; width: 3px; height: 14px;
+    background: #8a6a48; border-radius: 2px;
+  }
+  .room-fridge::before { top: 10px; }
+  .room-fridge::after { top: 44px; }
 
+  /* 寝室：ベッド・サイドテーブル＋ランプ・クローゼット */
   .room-bed {
-    position: absolute; top: 50px; right: 18px; width: 96px; height: 66px;
+    position: absolute; top: 50px; right: 30px; width: 84px; height: 66px;
     background: #d98a97; border-radius: 10px;
     box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
   .room-bed::before {
-    content: ''; position: absolute; top: 8px; left: 8px; width: 30px; height: 22px;
+    content: ''; position: absolute; top: 8px; left: 8px; width: 26px; height: 22px;
     background: #f8f3e6; border-radius: 6px;
   }
   .room-bed::after {
     content: ''; position: absolute; left: 10px; right: 10px; bottom: 10px; height: 20px;
     background: #e6dce8; border-radius: 4px;
+  }
+  .room-nightstand {
+    position: absolute; right: 10px; top: 128px; width: 26px; height: 24px;
+    background: #c9a876; border: 1px solid #a3805a; border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2);
+  }
+  .room-lamp { position: absolute; right: 14px; top: 106px; width: 18px; height: 22px; }
+  .room-lamp::before {
+    content: ''; position: absolute; bottom: 0; left: 7px; width: 3px; height: 12px; background: #8a6a48;
+  }
+  .room-lamp::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 18px; height: 12px;
+    background: #f6cd57; border-radius: 4px 4px 8px 8px; opacity: 0.9;
+  }
+  .room-wardrobe {
+    position: absolute; left: 14px; top: 20px; width: 46px; height: 110px;
+    background: linear-gradient(180deg, #e6dce8, #d0bcd6);
+    border: 1.5px solid #b394ba; border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+  }
+  .room-wardrobe::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+    background: rgba(120, 90, 120, 0.4); transform: translateX(-50%);
+  }
+
+  /* 玄関：下駄箱・傘立て・ドアマット */
+  .room-shoebox {
+    position: absolute; right: 20px; top: 30px; width: 64px; height: 70px;
+    background: linear-gradient(180deg, #c9a876, #a8825a);
+    border: 1.5px solid #8a6a48; border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+  }
+  .room-shoebox::before, .room-shoebox::after {
+    content: ''; position: absolute; left: 6px; right: 6px; height: 2px; background: rgba(90, 65, 35, 0.4);
+  }
+  .room-shoebox::before { top: 24px; }
+  .room-shoebox::after { top: 46px; }
+  .room-umbrella-stand {
+    position: absolute; left: 24px; top: 110px; width: 20px; height: 36px;
+    background: #7a8a94; border-radius: 4px 4px 8px 8px;
+    box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2);
+  }
+  .room-umbrella-stand::before {
+    content: ''; position: absolute; bottom: 30px; left: 2px; width: 3px; height: 40px;
+    background: #5a4a30; transform: rotate(-8deg);
+  }
+  .room-umbrella-stand::after {
+    content: ''; position: absolute; bottom: 60px; left: -4px; width: 16px; height: 10px;
+    background: #c9564a; border-radius: 50% 50% 0 0; transform: rotate(-8deg);
+  }
+  .room-doormat {
+    position: absolute; left: 50%; top: 152px; transform: translateX(-50%);
+    width: 76px; height: 26px; background: #a3a89c; border-radius: 6px;
+    box-shadow: inset 0 0 0 3px #8a8f7f, 0 2px 4px rgba(60, 45, 25, 0.18);
   }
 
   .room-rug {
@@ -206,6 +329,7 @@
   }
   .room-scene.room-kitchen .room-rug { background: radial-gradient(ellipse at center, #dbe6c9 0%, #dbe6c9 62%, #cddab3 63%, #cddab3 100%); }
   .room-scene.room-bedroom .room-rug { background: radial-gradient(ellipse at center, #ecd9df 0%, #ecd9df 62%, #ddc0c9 63%, #ddc0c9 100%); }
+  .room-scene.room-genkan .room-rug { background: radial-gradient(ellipse at center, #d9d2c0 0%, #d9d2c0 62%, #c7bfa8 63%, #c7bfa8 100%); }
 
   .room-pets { position: absolute; inset: 0; }
   .room-pet {
@@ -378,6 +502,18 @@
     cursor: pointer;
   }
   .duration-chips button.active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
+  .room-pick-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .room-pick-chips button {
+    padding: 12px 6px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink-strong);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(120, 100, 60, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .room-pick-chips button:active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; }
   .custom-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .custom-row input {
     width: 70px;
@@ -487,6 +623,7 @@
     <div class="garden-scroll">
       <div id="homeView">
         <div class="room-tab-bar" id="roomTabBar">
+          <button type="button" class="room-tab-btn" data-room="genkan">玄関</button>
           <button type="button" class="room-tab-btn active" data-room="living">リビング</button>
           <button type="button" class="room-tab-btn" data-room="kitchen">キッチン</button>
           <button type="button" class="room-tab-btn" data-room="bedroom">寝室</button>
@@ -495,8 +632,18 @@
         <div class="room-scene room-living" id="roomScene">
           <div class="room-wall"></div>
           <div class="room-window"><div class="room-window-leaf"></div><div class="room-window-leaf l2"></div></div>
+          <div class="room-sofa"></div>
+          <div class="room-plant"></div>
           <div class="room-counter"></div>
+          <div class="room-shelf"></div>
+          <div class="room-fridge"></div>
           <div class="room-bed"></div>
+          <div class="room-nightstand"></div>
+          <div class="room-lamp"></div>
+          <div class="room-wardrobe"></div>
+          <div class="room-shoebox"></div>
+          <div class="room-umbrella-stand"></div>
+          <div class="room-doormat"></div>
           <div class="room-floor-bg"></div>
           <div class="room-rug" id="roomRug"></div>
           <div class="room-pets" id="roomPets"></div>
@@ -551,7 +698,7 @@
     <div class="sheet">
       <h2>設定</h2>
       <p class="sub">手ざわり集中について</p>
-      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。「家具」タブでは、リビング・キッチン・寝室になかま用のハウスを置けます。ハウスには入れる匹数の上限があり、あふれた子やハウスの無い子はリビングの床にいます。おうちの子は名前をつけたり変えたりできます。</p>
+      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。「家具」タブでは、玄関・リビング・キッチン・寝室になかま用のハウスを置けます。ハウスには入れる匹数の上限があり、あふれた子やハウスの無い子はリビングの床にいます。おうちの子は名前をつけたり変えたりできます。</p>
       <div class="settings-row">
         <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
       </div>
@@ -583,7 +730,8 @@
   <div class="modal" id="roomPickModal">
     <div class="sheet">
       <h2 id="roomPickTitle">どの部屋に置きますか？</h2>
-      <div class="duration-chips" id="roomPickChips">
+      <div class="room-pick-chips" id="roomPickChips">
+        <button type="button" data-room="genkan">玄関</button>
         <button type="button" data-room="living">リビング</button>
         <button type="button" data-room="kitchen">キッチン</button>
         <button type="button" data-room="bedroom">寝室</button>
@@ -889,6 +1037,7 @@
   // 部屋を選んで、なかまの種類ごとの「ハウス」を置ける。ハウスには入る匹数の上限があり、
   // 上限を超えたぶんや、まだハウスが無い種類は、リビングの床（ラグ）にそのまま表示する
   var ROOMS = [
+    { key: 'genkan', name: '玄関' },
     { key: 'living', name: 'リビング' },
     { key: 'kitchen', name: 'キッチン' },
     { key: 'bedroom', name: '寝室' }
