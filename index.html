@@ -153,6 +153,8 @@
   .modal.show { display: flex; }
   .sheet {
     width: 100%;
+    max-height: 82vh;
+    overflow-y: auto;
     background: #f8f3e6;
     border-radius: 18px 18px 0 0;
     padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
@@ -423,19 +425,37 @@
 
   // ---- ストレージ ----
   // pf:garden = [{id, minutes, completedAt, type, color}]（懐いたなかまだけ記録。失敗は残さない）
-  function validGardenEntry(g) {
-    if (!(g && typeof g === 'object' &&
+  function coreValid(g) {
+    return g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
       Number.isFinite(g.minutes) && g.minutes >= 1 && g.minutes <= 180 &&
-      Number.isFinite(g.completedAt))) return false;
-    if (PET_TYPES.indexOf(g.type) === -1) return false;   // 種類は既知のものだけ許可
-    if ((PET_COLORS[g.type] || []).indexOf(g.color) === -1) return false;   // 色もSVGへ直接差し込むため既知の値だけ許可
-    return true;
+      Number.isFinite(g.completedAt);
+  }
+  function petFieldsValid(g) {
+    return PET_TYPES.indexOf(g.type) !== -1 &&
+      (PET_COLORS[g.type] || []).indexOf(g.color) !== -1;   // SVGへ直接差し込むため既知の値だけ許可
+  }
+  // idから決定的に種類・色を割り当てる（種類/色が無い・壊れた記録の救済用。乱数は使わない＝再読み込みでも同じ子になる）
+  function deriveLegacyPet(id) {
+    var h = 0;
+    for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    var type = PET_TYPES[h % PET_TYPES.length];
+    var colors = PET_COLORS[type];
+    return { type: type, color: colors[Math.floor(h / PET_TYPES.length) % colors.length] };
   }
   function readGarden() {
     try {
-      var a = JSON.parse(localStorage.getItem('pf:garden') || '[]');
-      return Array.isArray(a) ? a.filter(validGardenEntry) : [];   // 壊れた・不正な項目は読み飛ばす
+      var raw = JSON.parse(localStorage.getItem('pf:garden') || '[]');
+      if (!Array.isArray(raw)) return [];
+      var migrated = false;
+      var out = raw.filter(coreValid).map(function (g) {
+        if (petFieldsValid(g)) return g;
+        migrated = true;   // 種類/色を持たない旧形式の記録。消さずに割り当てて救済する
+        var p = deriveLegacyPet(g.id);
+        return { id: g.id, minutes: g.minutes, completedAt: g.completedAt, type: p.type, color: p.color };
+      });
+      if (migrated) writeGarden(out);   // 次回から読み飛ばしを繰り返さないよう書き戻す
+      return out;
     } catch (e) { return []; }
   }
   function writeGarden(arr) {
@@ -545,6 +565,7 @@
     // 前後することがあり、それだと早すぎる成功や終わらない集中になりかねない
     session = { minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(), active: true, svg: svg, pet: pet };
     sessionScreen.classList.add('show');
+    settingsBtnEl.style.display = 'none';   // セッション中は設定にキーボード操作等でも届かないようにする
     tickSession();
     session.timer = setInterval(tickSession, 1000);
     requestWakeLock();
@@ -569,6 +590,7 @@
     if (session && session.timer) clearInterval(session.timer);
     releaseWakeLock();
     sessionScreen.classList.remove('show');
+    settingsBtnEl.style.display = '';
   }
   function finishSession(success, reason) {
     if (!session || !session.active) return;
@@ -621,14 +643,22 @@
   document.getElementById('resultClose').addEventListener('click', function () { resultModal.classList.remove('show'); });
 
   // ---- 設定 ----
+  // 集中セッション中は設定を開けないようにする（キーボード操作等で裏の要素に届いてしまう対策。
+  // confirm()がセッション中に開いたままになる抜け道もこれで一緒にふさがれる）
   var settingsModal = document.getElementById('settingsModal');
-  document.getElementById('settingsBtn').addEventListener('click', function () { settingsModal.classList.add('show'); });
+  var settingsBtnEl = document.getElementById('settingsBtn');
+  document.getElementById('settingsBtn').addEventListener('click', function () {
+    if (session && session.active) return;
+    settingsModal.classList.add('show');
+  });
   document.getElementById('settingsClose').addEventListener('click', function () { settingsModal.classList.remove('show'); });
   settingsModal.addEventListener('click', function (e) { if (e.target === settingsModal) settingsModal.classList.remove('show'); });
   document.getElementById('privacyLinkBtn').addEventListener('click', function () { location.href = 'privacy.html'; });
   document.getElementById('resetDataBtn').addEventListener('click', function () {
+    if (session && session.active) return;
     if (!confirm('これまでの記録をぜんぶ消します。よろしいですか？')) return;
-    localStorage.removeItem('pf:garden');
+    try { localStorage.removeItem('pf:garden'); }
+    catch (e) { alert('消せませんでした。もう一度お試しください。'); return; }
     renderGarden();
     settingsModal.classList.remove('show');
   });

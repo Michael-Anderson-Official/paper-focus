@@ -5,10 +5,11 @@
 //   github.io オリジン上にいる。activate時の掃除は必ずこのアプリのプレフィックスだけに絞り、
 //   他アプリのキャッシュを誤って消さないようにする
 var CACHE_PREFIX = 'tezawari-focus-';
-var CACHE = CACHE_PREFIX + 'v4';
+var CACHE = CACHE_PREFIX + 'v5';
 var SHELL = [
   './',
-  './manifest.webmanifest'
+  './manifest.webmanifest',
+  './privacy.html'
 ];
 var SCOPE_URL = self.registration.scope;   // 例: https://.../paper-focus/
 
@@ -44,7 +45,13 @@ self.addEventListener('fetch', function (ev) {
           caches.open(CACHE).then(function (cache) { cache.put('./', copy); });
         }
         return res;
-      }).catch(function () { return caches.match('./'); })
+      }).catch(function () {
+        // オフライン時は、いま実際に開こうとしたページを優先して返す（privacy.html等）。
+        // それも無ければアプリ本体にフォールバック
+        return caches.open(CACHE).then(function (cache) {
+          return cache.match(req).then(function (hit) { return hit || cache.match('./'); });
+        });
+      })
     );
     return;
   }
