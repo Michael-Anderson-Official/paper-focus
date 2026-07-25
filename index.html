@@ -373,6 +373,56 @@
     cursor: pointer;
   }
   .sess-give-up:active { background: rgba(255, 255, 255, 0.18); }
+  /* なでたときに ふわっと浮かぶハート */
+  .sess-heart {
+    position: absolute; z-index: 2;
+    font-size: 20px; pointer-events: none;
+    animation: heartFloat 1.5s ease-out forwards;
+  }
+  @keyframes heartFloat {
+    0%   { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+    22%  { transform: translate(-50%, -14px) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -74px) scale(0.85); opacity: 0; }
+  }
+  .sess-pet { cursor: pointer; }
+  .sess-pet.pat svg { animation: petPat 0.5s ease-out; }
+  @keyframes petPat {
+    0%, 100% { transform: scale(1) rotate(0); }
+    30%      { transform: scale(1.06) rotate(-3deg); }
+    65%      { transform: scale(0.98) rotate(3deg); }
+  }
+  /* 途中の出来事や節目を、静かに1行で知らせる */
+  .sess-caption {
+    margin-top: var(--s5);
+    min-height: 3.2em;
+    font-size: var(--t-md);
+    text-align: center; line-height: 1.9; max-width: 260px;
+    opacity: 0.55;
+    transition: opacity 0.9s var(--ease);
+  }
+  .sess-caption.fade { opacity: 0; }
+  .sess-caption b { display: block; font-weight: 600; opacity: 0.95; }
+  .sess-pats {
+    margin-top: 2px; font-size: var(--t-xs); opacity: 0.4;
+    min-height: 1.4em;
+  }
+  /* 音の入切。画面を離れずに触れるものが1つあると、間がもつ */
+  .sess-sound {
+    position: absolute; z-index: 3;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    right: 14px;
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    font-size: 17px;
+    color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--r-full);
+    cursor: pointer;
+  }
+  .sess-sound:active { background: rgba(255, 255, 255, 0.2); }
+  .sess-sound.on { color: #fff; background: rgba(255, 255, 255, 0.22); }
+
   .sess-warn {
     position: absolute; left: 50%; transform: translateX(-50%);
     top: calc(env(safe-area-inset-top, 0px) + 16px);
@@ -1064,6 +1114,7 @@
 <!-- ============ 集中中の全画面 ============ -->
 <div class="session" id="sessionScreen">
   <div class="sess-warn" id="sessWarn">あぶなかった。もどってこられました</div>
+  <button type="button" class="sess-sound" id="sessSoundBtn" aria-label="雨の音">♪</button>
   <div class="sess-ring">
     <svg class="ring" viewBox="0 0 240 240" aria-hidden="true">
       <circle class="track" cx="120" cy="120" r="110"/>
@@ -1073,7 +1124,8 @@
   </div>
   <div class="sess-time" id="sessTime">00:00</div>
   <div class="sess-label" id="sessLabel"></div>
-  <div class="sess-note">この画面のまま、そばにいてあげて。</div>
+  <div class="sess-caption" id="sessCaption">この画面のまま、そばにいてあげて。<br>そっと なでることもできます。</div>
+  <div class="sess-pats" id="sessPats"></div>
   <button type="button" class="sess-give-up" id="giveUpBtn">やめる</button>
 </div>
 
@@ -2099,6 +2151,129 @@
   var session = null;   // { minutes, totalMs, startPerf, active, svg, pet, hiddenPerf, hiddenWall, awayMs, awayTotalMs, awayCount, warned }
   var wakeLock = null;
 
+  // ---- 雨の音 ----
+  // 音のファイルは持たず、その場で雑音をつくって鳴らす（読み込みも通信もいらない）。
+  // 低い音ほど強い雑音（茶色雑音）を、ゆっくり開閉するフィルタに通すと雨だれのように聞こえる
+  var audioCtx = null, ambient = null;
+  function soundOn() { return lsGet('pf:sound', '0') === '1'; }
+  function paintSoundBtn() {
+    var b = $('sessSoundBtn');
+    var on = soundOn();
+    b.classList.toggle('on', on);
+    b.textContent = on ? '♪' : '♪';
+    b.style.opacity = on ? '1' : '0.55';
+    b.setAttribute('aria-label', on ? '雨の音を止める' : '雨の音を鳴らす');
+  }
+  function startAmbient() {
+    if (!soundOn() || ambient) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var len = Math.floor(audioCtx.sampleRate * 2);
+      var buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      var d = buf.getChannelData(0), last = 0;
+      for (var i = 0; i < len; i++) {
+        var white = Math.random() * 2 - 1;
+        last = (last + 0.02 * white) / 1.02;
+        d[i] = last * 3.2;
+      }
+      var src = audioCtx.createBufferSource();
+      src.buffer = buf; src.loop = true;
+      var filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 820;
+      var lfo = audioCtx.createOscillator();       // フィルタをゆっくり開け閉めして、雨脚の強弱をつくる
+      lfo.frequency.value = 0.07;
+      var lfoGain = audioCtx.createGain();
+      lfoGain.gain.value = 260;
+      lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
+      var gain = audioCtx.createGain();
+      gain.gain.value = 0;
+      src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+      src.start(); lfo.start();
+      gain.gain.linearRampToValueAtTime(0.11, audioCtx.currentTime + 2.5);   // だしぬけに鳴らさない
+      ambient = { src: src, lfo: lfo, gain: gain };
+    } catch (e) { ambient = null; }
+  }
+  function stopAmbient() {
+    if (!ambient) return;
+    var n = ambient;
+    ambient = null;
+    try {
+      var t = audioCtx.currentTime;
+      n.gain.gain.cancelScheduledValues(t);
+      n.gain.gain.setValueAtTime(n.gain.gain.value, t);
+      n.gain.gain.linearRampToValueAtTime(0, t + 0.6);
+    } catch (e) {}
+    setTimeout(function () { try { n.src.stop(); n.lfo.stop(); } catch (e) {} }, 900);
+  }
+  $('sessSoundBtn').addEventListener('click', function () {
+    var next = !soundOn();
+    lsSet('pf:sound', next ? '1' : '0');
+    paintSoundBtn();
+    if (next) startAmbient(); else stopAmbient();
+  });
+
+  // ---- 集中中の出来事 ----
+  // 静かなだけの画面は見ていられないので、ときどき なかまが何かする。
+  // 目を離す理由を減らすためのもので、操作は求めない
+  var PET_MOMENTS = [
+    'ちいさく のびをした', 'あくびを した', 'ねがえりを うった',
+    'しっぽが ゆれている', 'ちらっと こちらを見た', 'まるくなって 息をしている',
+    'ひげが ぴくりと 動いた', 'みみが ぴくっとした', 'ゆめを 見ているみたい',
+    'すこし こちらに寄ってきた', 'まえあしを そろえて座りなおした'
+  ];
+  // 節目のことば。progressがこの値をまたいだときに一度だけ出す
+  var MILESTONES = [
+    { at: 0.25, text: '四分の一。すこし 目をあけた' },
+    { at: 0.50, text: 'はんぶん。となりで 落ちついてきた' },
+    { at: 0.75, text: 'あと 四分の一。ずっと そばにいる' },
+    { at: 0.95, text: 'もうすこし' }
+  ];
+  var captionTimer = 0, momentTimer = 0;
+  function showCaption(text, strong) {
+    var el = $('sessCaption');
+    clearTimeout(captionTimer);
+    el.classList.add('fade');
+    captionTimer = setTimeout(function () {
+      el.innerHTML = strong ? '<b>' + text + '</b>' : text;
+      el.classList.remove('fade');
+    }, 500);
+  }
+  function scheduleMoment() {
+    clearTimeout(momentTimer);
+    momentTimer = setTimeout(function () {
+      if (session && session.active && !document.hidden) {
+        showCaption(PET_MOMENTS[Math.floor(Math.random() * PET_MOMENTS.length)]);
+      }
+      scheduleMoment();
+    }, 42000 + Math.random() * 38000);
+  }
+  function stopMoments() {
+    clearTimeout(momentTimer);
+    clearTimeout(captionTimer);
+  }
+  // なでる。ハートが浮かんで、なかまが少し身じろぎする
+  $('sessPetSlot').addEventListener('click', function (e) {
+    if (!session || !session.active) return;
+    session.pats++;
+    var slot = $('sessPetSlot');
+    slot.classList.remove('pat');
+    void slot.offsetWidth;   // アニメーションをかけ直すために一度戻す
+    slot.classList.add('pat');
+    var rect = slot.getBoundingClientRect();
+    var h = document.createElement('div');
+    h.className = 'sess-heart';
+    h.textContent = '♡';
+    h.style.left = ((e.clientX || (rect.left + rect.width / 2)) - rect.left) + 'px';
+    h.style.top = ((e.clientY || (rect.top + rect.height / 2)) - rect.top) + 'px';
+    slot.appendChild(h);
+    setTimeout(function () { h.remove(); }, 1600);
+    $('sessPats').textContent = 'なでた回数 ' + session.pats;
+  });
+
   function setSessionBg(progress) {
     // 夜（はじまり）から朝（おわり）へゆっくり明ける
     var stops = [
@@ -2134,10 +2309,14 @@
     fill.style.strokeDasharray = SESS_CIRC;
     fill.style.strokeDashoffset = SESS_CIRC;
     $('sessWarn').classList.remove('show');
+    $('sessCaption').classList.remove('fade');
+    $('sessCaption').innerHTML = 'この画面のまま、そばにいてあげて。<br>そっと なでることもできます。';
+    $('sessPats').textContent = '';
+    paintSoundBtn();
     setSessionBg(0);
     session = {
       minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(),
-      active: true, svg: svg, pet: pet,
+      active: true, svg: svg, pet: pet, pats: 0, mile: 0,
       // awayMs=経過から差し引く長さ / awayTotalMs=猶予の使いすぎを見る合計（測り方が違う）
       hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayTotalMs: 0, awayCount: 0, warned: false
     };
@@ -2149,6 +2328,8 @@
     if (session) {
       session.timer = setInterval(tickSession, 1000);
       requestWakeLock();
+      startAmbient();
+      scheduleMoment();
     }
   }
   function tickSession() {
@@ -2163,6 +2344,11 @@
     paintPet(session.svg, progress, true);
     $('sessFill').style.strokeDashoffset = SESS_CIRC * (1 - progress);
     setSessionBg(progress);
+    // 節目をまたいだら一度だけ知らせる（session.mileに何番目まで出したかを持つ）
+    while (session.mile < MILESTONES.length && progress >= MILESTONES[session.mile].at) {
+      showCaption(MILESTONES[session.mile].text, true);
+      session.mile++;
+    }
   }
   function requestWakeLock() {
     if (!('wakeLock' in navigator)) return;
@@ -2174,9 +2360,11 @@
   function finishSession(success, reason) {
     if (!session || !session.active) return;
     session.active = false;
-    var minutes = session.minutes, pet = session.pet;
+    var minutes = session.minutes, pet = session.pet, pats = session.pats;
     if (session.timer) clearInterval(session.timer);
     releaseWakeLock();
+    stopAmbient();
+    stopMoments();
     sessionScreen.classList.remove('show');
     $('settingsBtn').style.display = '';
     session = null;
@@ -2186,9 +2374,9 @@
       // 1匹目のときだけ、その子に合ったハウスを贈る
       var gifted = saved && readGarden().length === 1 && grantFirstHouse(pet);
       RENDERERS[currentView]();
-      showResult(true, minutes, saved ? null : 'savefail', pet, gifted);
+      showResult(true, minutes, saved ? null : 'savefail', pet, gifted, pats);
     } else {
-      showResult(false, minutes, reason, pet, false);
+      showResult(false, minutes, reason, pet, false, pats);
     }
   }
   $('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
@@ -2224,8 +2412,9 @@
       finishSession(false, 'hidden');
       return;
     }
-    // 画面が隠れた時点で解除されているので、続けるなら取り直す
+    // 画面が隠れた時点で解除・中断されているので、続けるなら取り直す
     requestWakeLock();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(function () {});
     if (!session.warned) {
       session.warned = true;   // 1回だけ知らせる（毎回出すと逃げ道を教えることになる）
       var warn = $('sessWarn');
@@ -2248,7 +2437,7 @@
 
   // ============ 結果 ============
   var resultModal = $('resultModal');
-  function showResult(success, minutes, reason, pet, gifted) {
+  function showResult(success, minutes, reason, pet, gifted, pats) {
     var svg = fillPet($('resultPetSlot'), pet.type, pet.key, success ? 1 : 0, true);
     var label = petLabel(pet.type, pet.key);
     if (success) {
@@ -2256,9 +2445,10 @@
       var gift = gifted
         ? 'はじめてのなかまなので、' + ((HOUSE_TYPES[pet.type] || {}).name || 'ハウス') + 'を1つ贈りました。リビングに置いてあります。'
         : '';
+      var patNote = pats > 0 ? '（' + pats + '回 なでました）' : '';
       $('resultBody').textContent = reason === 'savefail'
         ? label + 'と' + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : label + 'と' + minutes + '分、一緒にいられました。おうちに加わりました。' + gift;
+        : label + 'と' + minutes + '分、一緒にいられました。' + patNote + 'おうちに加わりました。' + gift;
     } else {
       sadPet(svg);
       $('resultTitle').textContent = '眠ってしまいました';
