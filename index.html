@@ -1256,6 +1256,15 @@
         </div>
         <div class="label">あそびかた</div>
         <p class="sub" style="margin-bottom:var(--s4)">時間を決めて集中をはじめると、なかまが1匹あらわれます。その時間ずっとこの画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を迎えたり、「おうち」でハウスを置いたりできます。</p>
+        <div class="label">ひかえ（バックアップ）</div>
+        <p class="sub" id="backupStatus" style="margin-bottom:var(--s2)"></p>
+        <div style="display:flex;flex-direction:column;gap:var(--s2)">
+          <button type="button" class="btn-quiet" id="exportBtn">ひかえをファイルに書き出す</button>
+          <button type="button" class="btn-quiet" id="importBtn">ひかえファイルから戻す</button>
+        </div>
+        <input id="importInput" type="file" accept="application/json,.json" style="display:none">
+
+        <div class="label">そのほか</div>
         <div style="display:flex;flex-direction:column;gap:var(--s2)">
           <button type="button" class="btn-quiet" id="howtoBtn">はじめの説明をもう一度みる</button>
           <button type="button" class="btn-quiet" id="privacyBtn">プライバシーポリシー</button>
@@ -2958,6 +2967,7 @@
   $('settingsBtn').addEventListener('click', function () {
     if (session && session.active) return;   // 集中中は設定を開けない
     paintGoalChips();
+    renderBackupStatus();
     openModal(settingsModal);
   });
   $('settingsClose').addEventListener('click', function () { closeModal(settingsModal); });
@@ -2971,6 +2981,175 @@
       toast('目あてをかえました');
     });
   });
+  // ============ ひかえ（バックアップ）============
+  // このアプリの控えはこの端末のなかにしかない。ホーム画面のアイコンを入れ直すと
+  // iOSはデータごと消すので、ファイルに書き出しておけるようにする
+  var BACKUP_APP = 'tezawari-focus';
+  function fileStamp(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  // 読み出しに失敗したら null を返す。中途半端な控えを「書き出せた」と言わないため
+  function collectBackup() {
+    var items = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k || k.indexOf('pf:') !== 0) continue;
+        if (k === 'pf:backupAt') continue;   // 「いつ書き出したか」自体は控えに入れない
+        var v = localStorage.getItem(k);
+        if (typeof v !== 'string') return null;
+        items[k] = v;
+      }
+    } catch (e) { return null; }
+    return { app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), items: items };
+  }
+  function renderBackupStatus() {
+    var at = parseInt(lsGet('pf:backupAt', '0'), 10);
+    var n = readGarden().length;
+    var el = $('backupStatus');
+    if (Number.isFinite(at) && at > 0) {
+      el.textContent = '最後に書き出したのは ' + fmtDate(at) + '。それから迎えたなかまは、ファイルには入っていません。';
+    } else if (n > 0) {
+      el.textContent = 'まだ一度も書き出していません。なかま' + n + '匹の記録は、この端末のなかにしかありません。';
+    } else {
+      el.textContent = 'なかまが増えたら、ときどきファイルに書き出しておくと安心です。';
+    }
+  }
+  function saveBlobAsFile(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  $('exportBtn').addEventListener('click', function () {
+    var data = collectBackup();
+    if (!data || !Object.keys(data.items).length) {
+      alert('いまの記録を読み出せませんでした。書き出しは取りやめます。');
+      return;
+    }
+    var name = '手ざわり集中-ひかえ-' + fileStamp(new Date()) + '.json';
+    var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    function done() { lsSet('pf:backupAt', String(Date.now())); renderBackupStatus(); toast('書き出しました'); }
+    // iPhoneでは共有シートから「ファイルに保存」できるほうが確実。
+    // ただし canShare が true でも share が失敗する環境があるので、
+    // そのときは黙って終わらせず、必ず普通の保存に切り替える
+    var file = null;
+    try { file = new File([blob], name, { type: 'application/json' }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      navigator.share({ files: [file], title: name }).then(done).catch(function (err) {
+        if (err && err.name === 'AbortError') return;   // 自分でやめただけなので何も言わない
+        saveBlobAsFile(blob, name);
+        done();
+      });
+      return;
+    }
+    saveBlobAsFile(blob, name);
+    done();
+  });
+
+  // 控えで置きかえる。localStorageは複数キーをまとめて書けないので、
+  // 「先に控え置き場へ全部書けることを確かめてから、本番を消して移す」順にする。
+  // こうすれば、書けないほど容量が足りないときは何も触らずに終われる
+  // 控えのうち、実際に戻せるキーだけを取り出す
+  function restorableKeys(items) {
+    return Object.keys(items).filter(function (k) {
+      return k.indexOf('pf:') === 0 && typeof items[k] === 'string';
+    });
+  }
+  function readAllPf() {
+    var cur = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('pf:') === 0) cur[k] = localStorage.getItem(k);
+    }
+    return cur;
+  }
+  function restoreBackup(items) {
+    var keys = restorableKeys(items);
+    if (!keys.length) return false;   // 空の控えで今の記録を消さない（呼ぶ前にも確かめている）
+    // いまの記録はJSの変数に控える。localStorageの中に置き場をつくると
+    // 「今の記録＋控え」の両方が同時に入る容量が要るので、入るはずの控えが入らなくなる
+    var prev;
+    try { prev = readAllPf(); }
+    catch (e) { alert('いまの記録を読めませんでした。もう一度お試しください。'); return false; }
+    // そもそも書ける状態かを先に確かめる。書けない端末（プライベートモード等）で
+    // 消してしまうと、元の記録も書き戻せずに失われる
+    if (!lsSet('pf:__probe', '1')) {
+      alert('この端末では記録を保存できないようです。もとの記録はそのままにします。');
+      return false;
+    }
+    lsRemove('pf:__probe');
+    // 先にぜんぶ消してから書く。消したぶん場所が空くので、いちばん入りやすい。
+    // 上書きだけだと、控えに入っていないキーが残って古い記録と混ざる
+    var ok = true;
+    Object.keys(prev).forEach(function (k) { if (!lsRemove(k)) ok = false; });
+    if (ok) keys.forEach(function (k) { if (ok && !lsSet(k, items[k])) ok = false; });
+    if (!ok) {
+      var restored = rollbackTo(prev);
+      // 元へ戻せたかどうかで言うことを変える。戻せていないのに「そのままです」とは言わない
+      alert(restored
+        ? '戻しきれませんでした。もとの記録はそのままです。空き容量を確かめて、もう一度お試しください。'
+        : '戻す途中で失敗し、もとの記録も書き戻せませんでした。ひかえファイルは残っているので、空き容量を空けてからもう一度お試しください。');
+      return false;
+    }
+    return true;
+  }
+  // 元の記録へ戻す。書き足すだけだと控えのキーが残って混ざるので、
+  // いったんpf:キーをぜんぶ消してから書き戻し、その成否まで見る。
+  // 元の値はもともと入っていたぶんなので、消したあとなら必ず収まる
+  function rollbackTo(prev) {
+    var ok = true;
+    try {
+      Object.keys(readAllPf()).forEach(function (k) { if (!lsRemove(k)) ok = false; });
+    } catch (e) { return false; }
+    Object.keys(prev).forEach(function (k) { if (!lsSet(k, prev[k])) ok = false; });
+    return ok;
+  }
+
+  $('importBtn').addEventListener('click', function () { $('importInput').click(); });
+  $('importInput').addEventListener('change', function () {
+    var input = $('importInput');
+    var file = input.files && input.files[0];
+    input.value = '';   // 同じファイルをもう一度選んでも反応するように戻す
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onerror = function () { alert('ファイルを読めませんでした。'); };
+    reader.onload = function (e) {
+      var data;
+      try { data = JSON.parse(e.target.result); } catch (err) { data = null; }
+      if (!data || data.app !== BACKUP_APP || !data.items || typeof data.items !== 'object') {
+        alert('「手ざわり集中のひかえ」のファイルではないようです。');
+        return;
+      }
+      // 中身が空・壊れている控えで今の記録を消してしまわないよう、
+      // 戻せる項目が1つでもあることを確かめてから先へ進む
+      if (restorableKeys(data.items).length === 0) {
+        alert('このひかえには戻せる中身がありませんでした。今の記録はそのままにします。');
+        return;
+      }
+      // 中身が読めない控えで今の記録を潰さないよう、戻す前に数えて見せる
+      var pets = 0, mins = 0;
+      try {
+        var g = JSON.parse(data.items['pf:garden'] || '[]');
+        if (Array.isArray(g)) {
+          pets = g.length;
+          g.forEach(function (x) { if (x && x.source !== 'shop' && Number.isFinite(x.minutes)) mins += x.minutes; });
+        }
+      } catch (err2) {}
+      var now = readGarden().length;
+      if (!confirm('このひかえには なかま' + pets + '匹・集中' + fmtHours(mins) + 'ぶんが入っています。\n' +
+                   'いまの記録（なかま' + now + '匹）を消して、これで置きかえます。よろしいですか？')) return;
+      if (!restoreBackup(data.items)) return;
+      alert('戻しました。画面を開き直します。');
+      location.reload();
+    };
+    reader.readAsText(file);
+  });
+
   $('privacyBtn').addEventListener('click', function () { location.href = 'privacy.html'; });
   $('howtoBtn').addEventListener('click', function () {
     closeModal(settingsModal);
@@ -2980,9 +3159,10 @@
     if (session && session.active) return;
     if (!confirm('なかま・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
     // pf:gift も戻す。消したあとは1匹目からやり直しになるので、贈り物も同じようにやり直す
-    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:gift'].every(function (k) { return lsRemove(k); });
+    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:gift', 'pf:backupAt'].every(function (k) { return lsRemove(k); });
     if (!ok) { alert('消せませんでした。もう一度お試しください。'); return; }
     closeModal(settingsModal);
+    renderBackupStatus();
     RENDERERS[currentView]();
     toast('消しました');
   });
