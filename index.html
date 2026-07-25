@@ -521,6 +521,19 @@
   }
   .g-card .gc-buy:disabled { background: var(--paper-3); color: var(--ink-4); border: 1px solid var(--edge); }
 
+  /* 図鑑の区切り見出し。ひと並びのなかで「品種」と「雑種の毛色」の境目を示す */
+  .grid-head {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: var(--s2);
+    margin: var(--s3) 0 2px;
+    font-size: var(--t-sm); color: var(--ink-3); letter-spacing: 0.08em;
+  }
+  .grid-head:first-child { margin-top: 0; }
+  .grid-head::after {
+    content: ''; flex: 1; height: 1px; background: var(--edge);
+  }
+  .grid-head b { font-weight: 400; color: var(--ink-4); letter-spacing: 0; }
+
   /* 貯まった時間の帯 */
   .wallet {
     display: flex; align-items: center; justify-content: space-between;
@@ -2398,7 +2411,22 @@
     var grid = $('rosterGrid');
     grid.innerHTML = '';
     PET_TYPES.forEach(function (type) {
-      breedList(type).forEach(function (b) {
+      var breeds = breedList(type);
+      // 「品種」と「雑種の毛色」はくくり方が違うので、境目に見出しを入れる
+      var groups = [
+        { label: '品種', items: breeds.filter(function (b) { return b.pedigree; }) },
+        { label: '雑種の毛色', items: breeds.filter(function (b) { return !b.pedigree; }) }
+      ];
+      groups.forEach(function (grp) {
+      if (!grp.items.length) return;
+      var head = document.createElement('div');
+      head.className = 'grid-head';
+      var haveCount = grp.items.filter(function (b) {
+        return b.colors.some(function (v) { return owned[type + ':' + v.key]; });
+      }).length;
+      head.innerHTML = grp.label + ' <b>' + haveCount + '/' + grp.items.length + '</b>';
+      grid.appendChild(head);
+      grp.items.forEach(function (b) {
         // 1色だけの品種は、そのまま迎えるボタンつきのカードにする
         if (b.colors.length === 1) {
           grid.appendChild(buildColorCard(type, b.colors[0], owned, mileage, function () {
@@ -2427,6 +2455,7 @@
         btn.addEventListener('click', function () { openColorPick(type, b); });
         card.appendChild(btn);
         grid.appendChild(card);
+      });
       });
     });
   }
