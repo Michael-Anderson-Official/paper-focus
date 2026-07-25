@@ -5,7 +5,7 @@
 //   github.io オリジン上にいる。activate時の掃除は必ずこのアプリのプレフィックスだけに絞り、
 //   他アプリのキャッシュを誤って消さないようにする
 var CACHE_PREFIX = 'tezawari-focus-';
-var CACHE = CACHE_PREFIX + 'v25';
+var CACHE = CACHE_PREFIX + 'v26';
 var SHELL = [
   './',
   './manifest.webmanifest',
