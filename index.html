@@ -1001,6 +1001,11 @@
     box-shadow: 0 2px 5px rgba(50, 70, 40, 0.1);
   }
 
+  /* 家具となかまは同じ面に置き、下にいるものほど手前に重ねる（奥行きを出すため） */
+  .room-furniture { position: absolute; inset: 0; }
+  .room-furn { position: absolute; cursor: pointer; }
+  .room-furn svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(60, 45, 25, 0.28)); }
+  .room-furn:active { transform: translateY(1px); }
   .room-pets { position: absolute; inset: 0; }
   /* 歩く速さは1匹ずつ違うので、移動にかかる時間は --walk-ms で個別に渡す */
   .room-pet {
@@ -1025,6 +1030,18 @@
   @keyframes petBreathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.02); } }
   @keyframes petStep { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
   @keyframes petStepFlip { 0%, 100% { transform: scaleX(-1) translateY(0) rotate(2deg); } 50% { transform: scaleX(-1) translateY(-4px) rotate(-2deg); } }
+  /* つめとぎ中は体をのばして前後にこする */
+  .room-pet.scratching .rp-fig { animation: petScratch 0.5s ease-in-out infinite; }
+  @keyframes petScratch {
+    0%, 100% { transform: translateY(-4px) scaleY(1.08) rotate(-3deg); }
+    50%      { transform: translateY(-7px) scaleY(1.12) rotate(3deg); }
+  }
+  /* ごはん中はうつむいて上下する */
+  .room-pet.eating .rp-fig { animation: petEat 0.72s ease-in-out infinite; }
+  @keyframes petEat {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50%      { transform: translateY(4px) scaleY(0.94); }
+  }
   .tail {
     transform-box: view-box; transform-origin: 37px 54px;
     animation: tailSway 1.7s ease-in-out infinite;
@@ -1045,7 +1062,10 @@
   @media (prefers-reduced-motion: reduce) {
     /* 上の全体指定は時間を詰めるだけなので、くり返し動くものは個別に止める
        （詰めただけだと、雲のような無限アニメーションは逆に高速でちらつく） */
-    .room-pet, .room-pet .rp-fig, .tail, .room-cloud { animation: none; }
+    /* 詳細度で負けると止まらないので、動きのつく組み合わせを明示して打ち消す */
+    .room-pet, .room-pet .rp-fig, .tail, .room-cloud,
+    .room-pet.walking .rp-fig, .room-pet.flip.walking .rp-fig,
+    .room-pet.scratching .rp-fig, .room-pet.eating .rp-fig { animation: none; }
     .room-cloud { opacity: 0.85; }
   }
 </style>
@@ -1171,6 +1191,7 @@
           <div class="room-doormat"></div>
           <div class="room-flowerbed"></div>
           <div class="room-pond"></div>
+          <div class="room-furniture" id="roomFurniture"></div>
           <div class="room-pets" id="roomPets"></div>
           <div class="room-empty" id="roomEmpty" style="display:none;"></div>
         </div>
@@ -1244,8 +1265,8 @@
     <!-- ============ ハウスを置く ============ -->
     <div class="modal" id="shopModal">
       <div class="sheet">
-        <h2>ハウスを置く</h2>
-        <p class="sub">集中して貯まった時間で、なかま用のハウスを置けます。1つのハウスには3匹まで入ります。</p>
+        <h2>置くもの</h2>
+        <p class="sub">集中して貯まった時間で置けます。ハウスには3匹まで入ります。家具はなかまが自分で使いに行きます。</p>
         <div class="wallet">貯まった時間<b id="walletShop">-</b></div>
         <div class="grid" id="houseGrid"></div>
         <div class="sheet-btns">
@@ -1300,6 +1321,19 @@
           <button type="button" class="btn-quiet" id="nameCancel">とじる</button>
           <span class="spacer"></span>
           <button type="button" class="btn-quiet primary" id="nameSave">きめる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 家具の置き場所を選ぶ ============ -->
+    <div class="modal" id="spotModal">
+      <div class="sheet">
+        <h2 id="spotTitle">どこに置きますか？</h2>
+        <p class="sub" id="spotSub"></p>
+        <div class="chips grid2" id="spotChips"></div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet" id="spotCancel">とじる</button>
         </div>
       </div>
     </div>
@@ -1919,6 +1953,87 @@
     });
     return { occupants: occupants, unhoused: unhoused };
   }
+  // ---- 家具 ----
+  // 置いて終わりの飾りではなく、なかまの行き先になるもの。
+  // 猫はときどき家具をめざして歩き、そこで登る・丸まる・爪をとぐ・食べる
+  var FURNITURE = {
+    tower:   { name: 'キャットタワー', price: 30, use: 'climb',   w: 48, h: 96 },
+    cushion: { name: 'クッション',     price: 15, use: 'sleep',   w: 46, h: 22 },
+    scratch: { name: 'つめとぎ',       price: 15, use: 'scratch', w: 24, h: 56 },
+    bowl:    { name: 'ごはん皿',       price: 20, use: 'eat',     w: 36, h: 16 }
+  };
+  // 置き場所。部屋の広さは端末で変わるので、割合で持って描くときに実寸へ直す
+  var FURN_SPOTS = [
+    { key: 'nw', name: '左おく', fx: 0.02, fy: 0.00 },
+    { key: 'ne', name: '右おく', fx: 0.74, fy: 0.00 },
+    { key: 'sw', name: '左まえ', fx: 0.02, fy: 0.58 },
+    { key: 'se', name: '右まえ', fx: 0.74, fy: 0.58 }
+  ];
+  function isFurnKind(k) { return Object.prototype.hasOwnProperty.call(FURNITURE, k); }
+  function isSpotKey(s) { return FURN_SPOTS.some(function (p) { return p.key === s; }); }
+  function furnValid(f) {
+    return f && typeof f === 'object' && typeof f.id === 'string' && f.id &&
+      isFurnKind(f.kind) && isRoomKey(f.room) && isSpotKey(f.spot);
+  }
+  function readFurniture() {
+    try {
+      var raw = JSON.parse(lsGet('pf:furniture', '[]'));
+      return Array.isArray(raw) ? raw.filter(furnValid) : [];
+    } catch (e) { return []; }
+  }
+  function writeFurniture(arr) { return lsSet('pf:furniture', JSON.stringify(arr)); }
+  // 同じ部屋の同じ置き場所は1つまで（重ねて置けてしまうと何が置いてあるか分からなくなる）
+  function spotTaken(room, spot) {
+    return readFurniture().some(function (f) { return f.room === room && f.spot === spot; });
+  }
+  function buyFurniture(kind, room, spot) {
+    if (!isFurnKind(kind) || !isRoomKey(room) || !isSpotKey(spot)) return false;
+    if (spotTaken(room, spot)) return false;
+    var price = FURNITURE[kind].price;
+    if (readMileage() < price) return false;
+    var before = readFurniture();
+    var arr = before.concat([{ id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: kind, room: room, spot: spot }]);
+    if (!writeFurniture(arr)) return false;
+    if (!spendMileage(price)) { writeFurniture(before); return false; }   // 引けなければ置いたぶんも戻す
+    return true;
+  }
+  function removeFurniture(id) {
+    var arr = readFurniture();
+    var out = arr.filter(function (f) { return f.id !== id; });
+    if (out.length === arr.length) return false;
+    return writeFurniture(out);
+  }
+  function furnitureSVG(kind) {
+    var L = LINE;
+    if (kind === 'tower') {
+      return '<svg viewBox="0 0 48 96" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="6" y="82" width="36" height="11" rx="3" fill="#c9a876" stroke="' + L + '" stroke-width="2"/>' +
+        '<rect x="20" y="40" width="8" height="44" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
+        '<rect x="6" y="30" width="36" height="11" rx="3" fill="#d9b98a" stroke="' + L + '" stroke-width="2"/>' +
+        '<rect x="20" y="14" width="8" height="18" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
+        '<ellipse cx="24" cy="11" rx="17" ry="8" fill="#e6cba0" stroke="' + L + '" stroke-width="2"/>' +
+        '<ellipse cx="24" cy="10" rx="11" ry="4.5" fill="#000" opacity="0.1"/>' +
+      '</svg>';
+    }
+    if (kind === 'cushion') {
+      return '<svg viewBox="0 0 46 22" xmlns="http://www.w3.org/2000/svg">' +
+        '<ellipse cx="23" cy="12" rx="21" ry="9" fill="#d98a97" stroke="' + L + '" stroke-width="2"/>' +
+        '<ellipse cx="23" cy="10" rx="14" ry="5" fill="#000" opacity="0.12"/>' +
+      '</svg>';
+    }
+    if (kind === 'scratch') {
+      return '<svg viewBox="0 0 24 56" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="3" y="46" width="18" height="8" rx="2" fill="#c9a876" stroke="' + L + '" stroke-width="2"/>' +
+        '<rect x="7" y="4" width="10" height="44" rx="3" fill="#d8c49a" stroke="' + L + '" stroke-width="2"/>' +
+        '<path d="M8 12 h8 M8 20 h8 M8 28 h8 M8 36 h8" stroke="rgba(63,52,44,0.35)" stroke-width="1.4"/>' +
+      '</svg>';
+    }
+    return '<svg viewBox="0 0 36 16" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="18" cy="9" rx="16" ry="6" fill="#8fb6d9" stroke="' + L + '" stroke-width="2"/>' +
+      '<ellipse cx="18" cy="8" rx="10" ry="3" fill="#c9564a" opacity="0.5"/>' +
+    '</svg>';
+  }
+
   function houseSVG(species) {
     var t = HOUSE_TYPES[species] || { color: '#c9b8a0' };
     return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
@@ -2318,13 +2433,53 @@
       el.style.zIndex = String(Math.round(by));   // 手前にいる子ほど上に重ねる
       petsLayer.appendChild(el);
     });
+    renderFurniture(bounds);
     startPetLife(bounds);
 
-    var isEmpty = (roomHouseCount === 0 && floorEntries.length === 0);
+    // 家具だけ置いた部屋を「何もありません」と言わない
+    var isEmpty = (roomHouseCount === 0 && floorEntries.length === 0 && furnPlaced.length === 0);
     empty.style.display = isEmpty ? 'block' : 'none';
     empty.innerHTML = garden.length === 0
       ? 'まだ なかまがいません。<br>ホームの「集中をはじめる」から。'
       : 'この部屋にはまだ何もありません。<br>下の「＋ ハウスを置く」から。';
+  }
+
+  // ---- 家具を部屋に置く ----
+  // 置き場所は割合で持っているので、描くときに今の部屋の広さから実寸へ直す。
+  // 端末の幅が変わっても同じ位置関係になる
+  var furnPlaced = [];   // { id, kind, use, x, y, w, h }
+  function spotPos(spot, bounds) {
+    var p = FURN_SPOTS.filter(function (s) { return s.key === spot; })[0] || FURN_SPOTS[0];
+    return {
+      x: bounds.left + p.fx * (bounds.right - bounds.left),
+      y: bounds.top + p.fy * (bounds.bottom - bounds.top)
+    };
+  }
+  function renderFurniture(bounds) {
+    var layer = $('roomFurniture');
+    layer.innerHTML = '';
+    furnPlaced = [];
+    readFurniture().filter(function (f) { return f.room === currentRoom; }).forEach(function (f) {
+      var def = FURNITURE[f.kind];
+      var pos = spotPos(f.spot, bounds);
+      var el = document.createElement('div');
+      el.className = 'room-furn';
+      el.dataset.id = f.id;
+      el.style.left = pos.x + 'px';
+      el.style.top = pos.y + 'px';
+      el.style.width = def.w + 'px';
+      el.style.height = def.h + 'px';
+      el.style.zIndex = String(Math.round(pos.y + def.h));   // 足もとの高さで前後を決める
+      el.innerHTML = furnitureSVG(f.kind);
+      el.title = def.name + '・タップでしまう';
+      el.addEventListener('click', function () {
+        if (!confirm(def.name + 'をしまいますか？（戻すときはまた置き直しになります）')) return;
+        if (removeFurniture(f.id)) { renderHouse(); toast('しまいました'); }
+        else toast('しまえませんでした');
+      });
+      layer.appendChild(el);
+      furnPlaced.push({ id: f.id, kind: f.kind, use: def.use, x: pos.x, y: pos.y, w: def.w, h: def.h });
+    });
   }
 
   // ---- なかまの暮らし ----
@@ -2338,6 +2493,10 @@
   function stopPetLife() {
     lifeTimers.forEach(clearTimeout);
     lifeTimers = [];
+    furnBusy = {};   // 途中で止めた家具の使用中を持ち越さない
+    document.querySelectorAll('#roomPets > .room-pet').forEach(function (el) {
+      el.classList.remove('scratching', 'eating', 'walking');
+    });
   }
   function later(fn, ms) { lifeTimers.push(setTimeout(fn, ms)); }
 
@@ -2352,13 +2511,74 @@
   // 見ていない画面で動かし続けても意味がないので、おうち以外に移ったら止める
   function petLifeShouldRun() { return currentView === 'house' && !document.hidden; }
 
+  // いま誰かが使っている家具。同じ家具に2匹が重なって乗らないようにする
+  var furnBusy = {};
+  function freeFurniture(el) {
+    return furnPlaced.filter(function (f) { return !furnBusy[f.id] || furnBusy[f.id] === el.dataset.id; });
+  }
   function petAct(el) {
     if (!lifeBounds || !el.isConnected) return;
     if (!petLifeShouldRun()) { later(function () { petAct(el); }, 1500); return; }
     var roll = Math.random();
-    if (roll < 0.16) petNap(el);
-    else if (roll < 0.34) later(function () { petAct(el); }, 1800 + Math.random() * 4000);   // その場でひと休み
+    // 家具があるときは、そこそこの割合で家具をめざす。置いたものが使われないと意味がない
+    var open = freeFurniture(el);
+    if (open.length && roll < 0.42) { petUseFurniture(el, open[Math.floor(Math.random() * open.length)]); return; }
+    if (roll < 0.52) petNap(el);
+    else if (roll < 0.64) later(function () { petAct(el); }, 1800 + Math.random() * 4000);   // その場でひと休み
     else petWalk(el);
+  }
+
+  // 家具まで歩いて、その家具に合った動きをする
+  function petUseFurniture(el, f) {
+    furnBusy[f.id] = el.dataset.id;
+    function release() { if (furnBusy[f.id] === el.dataset.id) delete furnBusy[f.id]; }
+    // 登るものは上に乗り、それ以外は足もとへ行く
+    var tx = f.x + f.w / 2 - 29;                       // なかまの絵は幅58pxなので中心を合わせる
+    var ty = (f.use === 'climb') ? f.y - 34 : f.y + f.h - 44;
+    moveTo(el, tx, ty, function () {
+      if (!el.isConnected || !petLifeShouldRun()) { release(); later(function () { petAct(el); }, 1500); return; }
+      var svg = el.querySelector('svg');
+      if (f.use === 'scratch') {
+        el.classList.add('scratching');
+        later(function () {
+          el.classList.remove('scratching');
+          release();
+          later(function () { petAct(el); }, 600);
+        }, 2600 + Math.random() * 1500);
+      } else if (f.use === 'eat') {
+        el.classList.add('eating');
+        later(function () {
+          el.classList.remove('eating');
+          release();
+          later(function () { petAct(el); }, 600);
+        }, 2600 + Math.random() * 1500);
+      } else {
+        // キャットタワーの上、クッションの上では丸くなって眠る
+        paintPet(svg, 0);
+        later(function () {
+          paintPet(svg, 1);
+          release();
+          later(function () { petAct(el); }, 800 + Math.random() * 1500);
+        }, 7000 + Math.random() * 9000);
+      }
+    });
+  }
+
+  // 指定の場所まで歩いて、着いたら done を呼ぶ
+  function moveTo(el, tx, ty, done) {
+    var b = lifeBounds;
+    tx = Math.min(b.right, Math.max(b.left, tx));
+    ty = Math.min(b.bottom + 40, Math.max(b.top - 40, ty));   // 家具の上に乗るぶんは範囲より少し外へ出てよい
+    var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
+    var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
+    var ms = Math.max(400, Math.round(dist / WALK_SPEED * 1000));
+    el.style.setProperty('--walk-ms', ms + 'ms');
+    el.classList.toggle('flip', tx < x0);
+    el.classList.add('walking');
+    el.style.left = tx + 'px';
+    el.style.top = ty + 'px';
+    el.style.zIndex = String(Math.round(ty));
+    later(function () { el.classList.remove('walking'); done(); }, ms + 150);
   }
 
   // ほかの子とどれだけ離れているか。近すぎる行き先は選ばないようにするために使う
@@ -2539,6 +2759,11 @@
     $('walletShop').textContent = fmtHours(mileage);
     var grid = $('houseGrid');
     grid.innerHTML = '';
+
+    var fh = document.createElement('div');
+    fh.className = 'grid-head';
+    fh.textContent = 'ハウス';
+    grid.appendChild(fh);
     PET_TYPES.forEach(function (species) {
       var t = HOUSE_TYPES[species];
       var card = document.createElement('div');
@@ -2564,7 +2789,75 @@
       card.appendChild(buyBtn);
       grid.appendChild(card);
     });
+
+    // 家具。ハウスと違って、なかまが自分で使いに行く
+    var placed = readFurniture();
+    var gh = document.createElement('div');
+    gh.className = 'grid-head';
+    gh.textContent = '家具';
+    grid.appendChild(gh);
+    Object.keys(FURNITURE).forEach(function (kind) {
+      var def = FURNITURE[kind];
+      var have = placed.filter(function (f) { return f.kind === kind; }).length;
+      var card = document.createElement('div');
+      card.className = 'g-card' + (have ? ' owned' : '');
+      card.innerHTML = furnitureSVG(kind);
+      var svg = card.querySelector('svg');
+      svg.style.width = '48px';
+      svg.style.height = '52px';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'gc-name';
+      nameEl.textContent = def.name + (have ? '（' + have + '）' : '');
+      card.appendChild(nameEl);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gc-buy';
+      btn.textContent = def.price + '分で置く';
+      btn.disabled = mileage < def.price;
+      btn.addEventListener('click', function () {
+        openRoomPick(def.name + 'をどの部屋に置きますか？', function (room) {
+          openSpotPick(def, room, function (spot) {
+            if (!buyFurniture(kind, room, spot)) { toast('置けませんでした'); return; }
+            renderShop();
+            renderHouse();
+            toast('置きました');
+          });
+        });
+      });
+      card.appendChild(btn);
+      grid.appendChild(card);
+    });
   }
+
+  // ---- 家具の置き場所をえらぶ ----
+  var spotModal = $('spotModal');
+  var spotCallback = null;
+  function openSpotPick(def, room, cb) {
+    var roomName = (ROOMS.filter(function (r) { return r.key === room; })[0] || {}).name || '';
+    $('spotTitle').textContent = def.name + 'をどこに置きますか？';
+    $('spotSub').textContent = roomName + 'のなかの置き場所をえらんでください。';
+    var chips = $('spotChips');
+    chips.innerHTML = '';
+    FURN_SPOTS.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      var taken = spotTaken(room, s.key);
+      b.textContent = s.name + (taken ? '（ふさがっています）' : '');
+      b.disabled = taken;
+      if (taken) { b.style.opacity = '0.45'; }
+      b.addEventListener('click', function () {
+        var fn = spotCallback;
+        closeModal(spotModal);
+        spotCallback = null;
+        if (fn) fn(s.key);
+      });
+      chips.appendChild(b);
+    });
+    spotCallback = cb;
+    openModal(spotModal);
+  }
+  $('spotCancel').addEventListener('click', function () { closeModal(spotModal); spotCallback = null; });
+  dismissOnBackdrop(spotModal, function () { spotCallback = null; });
 
   // ============ モーダルの開閉 ============
   // 開いているシートを覚えておき、集中をはじめるときに全部閉じる
@@ -3234,7 +3527,7 @@
     if (session && session.active) return;
     if (!confirm('なかま・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
     // pf:gift も戻す。消したあとは1匹目からやり直しになるので、贈り物も同じようにやり直す
-    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:gift', 'pf:backupAt'].every(function (k) { return lsRemove(k); });
+    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:furniture', 'pf:gift', 'pf:backupAt'].every(function (k) { return lsRemove(k); });
     if (!ok) { alert('消せませんでした。もう一度お試しください。'); return; }
     closeModal(settingsModal);
     renderBackupStatus();
