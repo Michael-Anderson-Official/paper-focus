@@ -642,17 +642,29 @@
   .room-scene.room-genkan .room-rug { background: radial-gradient(ellipse at center, #d9d2c0 0%, #d9d2c0 62%, #c7bfa8 63%, #c7bfa8 100%); }
 
   .room-pets { position: absolute; inset: 0; }
+  /* 歩く速さは1匹ずつ違うので、移動にかかる時間は --walk-ms で個別に渡す */
   .room-pet {
     position: absolute; text-align: center; cursor: pointer; width: 58px;
-    transition: left 1.1s ease-in-out, top 1.1s ease-in-out;
-    animation: petBob 2.3s ease-in-out infinite;
+    transition: left var(--walk-ms, 1200ms) linear, top var(--walk-ms, 1200ms) linear;
+  }
+  .room-pet .rp-fig {
+    display: block; width: 52px; height: 52px; margin: 0 auto;
+    animation: petBreathe 2.6s ease-in-out infinite;
     animation-delay: var(--pet-delay, 0s);
   }
-  .room-pet:active svg { transform: scale(0.94); }
-  .room-pet svg { width: 52px; height: 52px; display: block; margin: 0 auto; filter: drop-shadow(0 3px 3px rgba(60, 45, 25, 0.25)); transition: transform 0.15s; }
+  /* 進む向きに体を向ける。左へ行くときだけ左右反転する */
+  .room-pet.flip .rp-fig { transform: scaleX(-1); }
+  /* 歩いているあいだは、呼吸よりも速く上下にはずむ */
+  .room-pet.walking .rp-fig { animation: petStep 0.42s ease-in-out infinite; }
+  .room-pet.flip.walking .rp-fig { animation: petStepFlip 0.42s ease-in-out infinite; }
+  .room-pet:active .rp-fig { animation: none; transform: scale(0.94); }
+  .room-pet.flip:active .rp-fig { transform: scaleX(-1) scale(0.94); }
+  .room-pet svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px rgba(60, 45, 25, 0.25)); }
   .room-pet .pc-name { font-size: 10px; color: #6b4a20; font-weight: 700; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); line-height: 1.2; }
   .room-pet .pc-breed { font-size: 8px; color: #7a6a4a; line-height: 1.2; }
-  @keyframes petBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes petBreathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.02); } }
+  @keyframes petStep { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
+  @keyframes petStepFlip { 0%, 100% { transform: scaleX(-1) translateY(0) rotate(2deg); } 50% { transform: scaleX(-1) translateY(-4px) rotate(-2deg); } }
   .tail {
     transform-box: view-box; transform-origin: 37px 54px;
     animation: tailSway 1.7s ease-in-out infinite;
@@ -1565,8 +1577,11 @@
     var el = document.createElement('div');
     el.className = 'room-pet';
     el.dataset.id = g.id;
-    el.style.setProperty('--pet-delay', '-' + (hashStr(g.id) % 230) / 100 + 's');   // 呼吸・しっぽ揺れをずらす
-    fillPet(el, g.type, g.key, 1);
+    el.style.setProperty('--pet-delay', '-' + (hashStr(g.id) % 260) / 100 + 's');   // 呼吸・しっぽ揺れをずらす
+    var fig = document.createElement('div');
+    fig.className = 'rp-fig';
+    fillPet(fig, g.type, g.key, 1);
+    el.appendChild(fig);
     var v = petVariant(g.type, g.key);
     if (g.name) {
       var nameEl = document.createElement('div');
@@ -1630,25 +1645,57 @@
     });
     var roomHouseCount = housesLayer.childElementCount;
 
-    // ハウスに入りきらない・対応するハウスがまだ無いなかまは、リビングの床にそのまま出す
-    var floorEntries = (currentRoom === 'living') ? assign.unhoused : [];
-    var floorRows = Math.max(1, Math.ceil(floorEntries.length / FLOOR_COLS));
-    floorEntries.forEach(function (g, i) {
-      var col = i % FLOOR_COLS, row = Math.floor(i / FLOOR_COLS);
-      var h = hashStr(g.id);
-      var jx = (h % 22) - 11, jy = ((h >>> 5) % 16) - 8;   // 符号なしシフト（>>だとジッターが想定範囲外に出る）
-      var baseX = FLOOR_LEFT + col * FLOOR_CELL_W + jx, baseY = FLOOR_TOP + row * FLOOR_CELL_H + jy;
-      var el = buildRoomPet(g);
-      el.dataset.baseX = baseX;   // うろうろ移動の基準位置
-      el.dataset.baseY = baseY;
-      el.style.left = baseX + 'px';
-      el.style.top = baseY + 'px';
-      petsLayer.appendChild(el);
+    // この部屋にいるなかま＝この部屋にハウスがある子＋（リビングなら）まだハウスが無い子。
+    // ハウスの中でじっとしているのではなく、その部屋を自由に歩き回る
+    var roomHouseIds = {};
+    houses.forEach(function (h) { if (h.room === currentRoom) roomHouseIds[h.id] = true; });
+    var floorEntries = [];
+    Object.keys(assign.occupants).forEach(function (hid) {
+      if (roomHouseIds[hid]) floorEntries = floorEntries.concat(assign.occupants[hid]);
     });
+    if (currentRoom === 'living') floorEntries = floorEntries.concat(assign.unhoused);
 
+    var floorRows = Math.max(2, Math.ceil(floorEntries.length / FLOOR_COLS));
     var rugHeight = Math.max(150, floorRows * FLOOR_CELL_H + 44);
     $('roomRug').style.height = rugHeight + 'px';
     scene.style.height = (FLOOR_TOP - 36 + rugHeight + 30) + 'px';
+
+    // 歩ける範囲。部屋の幅は端末によって変わるので、描いたあとの実寸から決める
+    var sceneW = scene.clientWidth || 340;
+    var bounds = {
+      left: 10,
+      right: Math.max(30, sceneW - 68),
+      top: FLOOR_TOP - 40,
+      bottom: FLOOR_TOP - 40 + Math.max(40, rugHeight - 34)
+    };
+    // 最初の居場所はidから決める（開くたびに散らばり方が変わらないように）。
+    // ただし素直にidから1点だけ選ぶと重なることがあるので、候補をいくつか出して
+    // すでに置いた子からいちばん離れているものを採る
+    var placed = [];
+    floorEntries.forEach(function (g) {
+      var seed = hashStr(g.id);
+      var bx = bounds.left, by = bounds.top, bestGap = -1;
+      for (var k = 0; k < 8; k++) {
+        var r1 = (Math.imul(seed ^ (k * 0x9e3779b9), 0x85ebca6b) >>> 0) / 4294967296;
+        var r2 = (Math.imul(seed ^ (k * 0xc2b2ae35), 0x27d4eb2f) >>> 0) / 4294967296;
+        var cx = bounds.left + r1 * (bounds.right - bounds.left);
+        var cy = bounds.top + r2 * (bounds.bottom - bounds.top);
+        var gap = Infinity;
+        placed.forEach(function (p) {
+          var d = Math.sqrt((p[0] - cx) * (p[0] - cx) + (p[1] - cy) * (p[1] - cy));
+          if (d < gap) gap = d;
+        });
+        if (gap > bestGap) { bestGap = gap; bx = cx; by = cy; }
+        if (gap >= 58) break;
+      }
+      placed.push([bx, by]);
+      var el = buildRoomPet(g);
+      el.style.left = bx + 'px';
+      el.style.top = by + 'px';
+      el.style.zIndex = String(Math.round(by));   // 手前にいる子ほど上に重ねる
+      petsLayer.appendChild(el);
+    });
+    startPetLife(bounds);
 
     var isEmpty = (roomHouseCount === 0 && floorEntries.length === 0);
     empty.style.display = isEmpty ? 'block' : 'none';
@@ -1657,20 +1704,86 @@
       : 'この部屋にはまだ何もありません。<br>下の「＋ ハウスを置く」から。';
   }
 
-  // ラグの上のなかまが、たまに基準位置の近くを少し歩く
-  var wanderTimer = 0;
-  function scheduleWander() {
-    clearTimeout(wanderTimer);
-    wanderTimer = setTimeout(function () { wanderStep(); scheduleWander(); }, 3500 + Math.random() * 3000);
+  // ---- なかまの暮らし ----
+  // 1匹ずつ別々の間合いで「歩く→ひと休み→たまに昼寝」をくり返す。
+  // 全員を1つのタイマーで動かすと歩調がそろって作り物に見えるので、必ず1匹ごとに持つ
+  var lifeTimers = [];
+  var lifeBounds = null;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var WALK_SPEED = 26;   // 1秒あたりに進むピクセル。ゆっくり歩かせる
+
+  function stopPetLife() {
+    lifeTimers.forEach(clearTimeout);
+    lifeTimers = [];
   }
-  function wanderStep() {
-    var candidates = document.querySelectorAll('#roomPets > .room-pet');
-    if (!candidates.length) return;
-    var el = candidates[Math.floor(Math.random() * candidates.length)];
-    var baseX = parseFloat(el.dataset.baseX), baseY = parseFloat(el.dataset.baseY);
-    if (!Number.isFinite(baseX) || !Number.isFinite(baseY)) return;
-    el.style.left = (baseX + Math.random() * 24 - 12) + 'px';
-    el.style.top = (baseY + Math.random() * 18 - 9) + 'px';
+  function later(fn, ms) { lifeTimers.push(setTimeout(fn, ms)); }
+
+  function startPetLife(bounds) {
+    stopPetLife();
+    lifeBounds = bounds;
+    if (reduceMotion) return;   // 動きを控える設定のときは、その場にいてもらう
+    document.querySelectorAll('#roomPets > .room-pet').forEach(function (el) {
+      later(function () { petAct(el); }, 400 + Math.random() * 4000);   // 出だしをばらけさせる
+    });
+  }
+  // 見ていない画面で動かし続けても意味がないので、おうち以外に移ったら止める
+  function petLifeShouldRun() { return currentView === 'house' && !document.hidden; }
+
+  function petAct(el) {
+    if (!lifeBounds || !el.isConnected) return;
+    if (!petLifeShouldRun()) { later(function () { petAct(el); }, 1500); return; }
+    var roll = Math.random();
+    if (roll < 0.16) petNap(el);
+    else if (roll < 0.34) later(function () { petAct(el); }, 1800 + Math.random() * 4000);   // その場でひと休み
+    else petWalk(el);
+  }
+
+  // ほかの子とどれだけ離れているか。近すぎる行き先は選ばないようにするために使う
+  function nearestGap(el, x, y) {
+    var min = Infinity;
+    document.querySelectorAll('#roomPets > .room-pet').forEach(function (o) {
+      if (o === el) return;
+      var ox = parseFloat(o.style.left) || 0, oy = parseFloat(o.style.top) || 0;
+      var d = Math.sqrt((ox - x) * (ox - x) + (oy - y) * (oy - y));
+      if (d < min) min = d;
+    });
+    return min;
+  }
+  function petWalk(el) {
+    var b = lifeBounds;
+    var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
+    // 遠くへ一気に行かず、今いる場所のまわりを選ぶ。部屋の端は超えない。
+    // 重なって見えないよう、ほかの子から離れた行き先を何回か引き直して選ぶ
+    var tx = x0, ty = y0, best = -1;
+    for (var i = 0; i < 5; i++) {
+      var cx = Math.min(b.right, Math.max(b.left, x0 + (Math.random() - 0.5) * 190));
+      var cy = Math.min(b.bottom, Math.max(b.top, y0 + (Math.random() - 0.5) * 110));
+      var gap = nearestGap(el, cx, cy);
+      if (gap > best) { best = gap; tx = cx; ty = cy; }
+      if (gap >= 56) break;   // じゅうぶん離れていれば、それ以上は探さない
+    }
+    var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
+    if (dist < 6) { later(function () { petAct(el); }, 1500); return; }
+    var ms = Math.round(dist / WALK_SPEED * 1000);
+    el.style.setProperty('--walk-ms', ms + 'ms');
+    el.classList.toggle('flip', tx < x0);
+    el.classList.add('walking');
+    el.style.left = tx + 'px';
+    el.style.top = ty + 'px';
+    el.style.zIndex = String(Math.round(ty));
+    later(function () {
+      el.classList.remove('walking');
+      petAct(el);
+    }, ms + 200);
+  }
+
+  function petNap(el) {
+    var svg = el.querySelector('svg');
+    paintPet(svg, 0);   // 目を閉じてZzzを出す
+    later(function () {
+      paintPet(svg, 1);
+      later(function () { petAct(el); }, 800 + Math.random() * 2000);
+    }, 5000 + Math.random() * 8000);
   }
 
   // ============ 図鑑 ============
@@ -1784,6 +1897,7 @@
     document.querySelectorAll('#tabbar .tab').forEach(function (b) {
       b.classList.toggle('on', b.dataset.view === name);
     });
+    if (name !== 'house') stopPetLife();   // 見えていない部屋で歩かせ続けない
     RENDERERS[name]();
     var v = $(VIEWS[name]);
     if (v) v.scrollTop = 0;
@@ -1878,7 +1992,7 @@
   var GRACE_COUNT = 3;         // 1セッションで許す離脱の回数
   var SESS_CIRC = 2 * Math.PI * 110;
   var sessionScreen = $('sessionScreen');
-  var session = null;   // { minutes, totalMs, startPerf, active, svg, pet, hiddenPerf, hiddenWall, awayMs, awayCount, warned }
+  var session = null;   // { minutes, totalMs, startPerf, active, svg, pet, hiddenPerf, hiddenWall, awayMs, awayTotalMs, awayCount, warned }
   var wakeLock = null;
 
   function setSessionBg(progress) {
@@ -1920,7 +2034,8 @@
     session = {
       minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(),
       active: true, svg: svg, pet: pet,
-      hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayCount: 0, warned: false
+      // awayMs=経過から差し引く長さ / awayTotalMs=猶予の使いすぎを見る合計（測り方が違う）
+      hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayTotalMs: 0, awayCount: 0, warned: false
     };
     sessionScreen.classList.add('show');
     $('settingsBtn').style.display = 'none';   // セッション中は設定にキーボード操作等でも届かないようにする
@@ -1990,13 +2105,21 @@
     session.hiddenPerf = 0;
     session.hiddenWall = 0;
     if (byWall < 0) { finishSession(false, 'hidden'); return; }
-    var away = Math.max(0, byPerf, byWall);
-    session.awayMs += away;
+    // 「どれだけ離れていたか」の判定と、「経過から差し引く長さ」は別物。
+    // 判定は長いほうを採る（裏でperf時計が止まる端末を壁時計で捕まえるため）が、
+    // 差し引くのは perf 時計が実際に数えてしまったぶんだけにする。
+    // 壁時計のぶんまで引くと、止まっていた端末では引きすぎて集中時間が延びてしまう
+    var awayJudged = Math.max(0, byPerf, byWall);
+    var awayCounted = Math.max(0, byPerf);
+    session.awayMs += awayCounted;
+    session.awayTotalMs += awayJudged;
     session.awayCount++;
-    if (away > GRACE_MS || session.awayMs > GRACE_TOTAL_MS || session.awayCount > GRACE_COUNT) {
+    if (awayJudged > GRACE_MS || session.awayTotalMs > GRACE_TOTAL_MS || session.awayCount > GRACE_COUNT) {
       finishSession(false, 'hidden');
       return;
     }
+    // 画面が隠れた時点で解除されているので、続けるなら取り直す
+    requestWakeLock();
     if (!session.warned) {
       session.warned = true;   // 1回だけ知らせる（毎回出すと逃げ道を教えることになる）
       var warn = $('sessWarn');
@@ -2120,7 +2243,6 @@
     b.classList.toggle('active', b.dataset.room === currentRoom);
   });
   switchView('home');
-  scheduleWander();
   if (!lsGet('pf:seen', '')) openModal(introModal);
 
   if ('serviceWorker' in navigator) {
