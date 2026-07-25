@@ -505,6 +505,9 @@
   /* 白っぽい毛色（三毛猫・ペルシャなど）は紙の地に溶けてしまうので、うすい影で輪郭を出す */
   .g-card svg { width: 54px; height: 60px; filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.34)); }
   .g-card.locked svg { filter: grayscale(1) brightness(0.86); opacity: 0.42; }
+  /* 毛色をえらぶシートでは、まだ迎えていない子も本当の色で見せる（見比べて選ぶ場所なので） */
+  #colorGrid .g-card.locked svg { filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.34)); opacity: 0.92; }
+  #colorGrid .g-card.locked .gc-name { color: var(--ink-2); }
   .g-card .gc-name { font-size: 10px; color: var(--ink-3); line-height: 1.35; min-height: 2.4em; padding: 0 2px; }
   .g-card.owned .gc-name { color: var(--ink); font-weight: 600; }
   .g-card .gc-mark { font-size: 10px; color: var(--accent); margin-top: auto; padding-top: 4px; }
@@ -1279,6 +1282,20 @@
       </div>
     </div>
 
+    <!-- ============ 毛色を選ぶ ============ -->
+    <div class="modal" id="colorModal">
+      <div class="sheet">
+        <h2 id="colorTitle"></h2>
+        <p class="sub" id="colorSub"></p>
+        <div class="wallet">貯まった時間<b id="walletColor">-</b></div>
+        <div class="grid" id="colorGrid"></div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet" id="colorClose">とじる</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ============ 部屋を選ぶ ============ -->
     <div class="modal" id="roomPickModal">
       <div class="sheet">
@@ -1373,17 +1390,46 @@
   // ---- ペット。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
   var PET_TYPES = ['cat'];
   var PET_VARIANTS = {
+    // breed=図鑑に並ぶ「品種」、tone=その品種のなかの毛色（1色だけの品種はnull）、
+    // pedigree=血統のある品種かどうか（値段が変わる）。keyは保存に使う固定IDなので変えない
     cat: [
-      { key: 'american-shorthair', name: 'アメリカンショートヘア', color: '#b8b0a0', pattern: 'tabby' },
-      { key: 'russian-blue',       name: 'ロシアンブルー',           color: '#8a97a0', pattern: 'solid' },
-      { key: 'scottish-fold',      name: 'スコティッシュフォールド', color: '#c9bfae', pattern: 'fold' },
-      { key: 'maine-coon',         name: 'メインクーン',             color: '#a37a4e', pattern: 'tufted-tabby' },
-      { key: 'persian',            name: 'ペルシャ',                 color: '#f3ece0', pattern: 'fluffy' },
-      { key: 'siamese',            name: 'シャム',                   color: '#f0e6d2', pattern: 'points' },
-      { key: 'bengal',             name: 'ベンガル',                 color: '#e0a952', pattern: 'spots' },
-      { key: 'abyssinian',         name: 'アビシニアン',             color: '#b06a3f', pattern: 'solid' },
-      { key: 'british-shorthair',  name: 'ブリティッシュショートヘア', color: '#a3a89c', pattern: 'round' },
-      { key: 'calico',             name: '三毛猫',                   color: '#f3ece0', pattern: 'calico' }
+      // ---- 品種 ----
+      { key: 'american-shorthair', breed: 'アメリカンショートヘア', tone: 'シルバータビー', pedigree: true, color: '#b8b0a0', pattern: 'tabby' },
+      { key: 'ash-brown',          breed: 'アメリカンショートヘア', tone: 'ブラウンタビー', pedigree: true, color: '#a98b63', pattern: 'tabby' },
+      { key: 'russian-blue',       breed: 'ロシアンブルー',         tone: null,             pedigree: true, color: '#8a97a0', pattern: 'solid' },
+      { key: 'scottish-fold',      breed: 'スコティッシュフォールド', tone: 'シルバー',     pedigree: true, color: '#c9bfae', pattern: 'fold' },
+      { key: 'fold-cream',         breed: 'スコティッシュフォールド', tone: 'クリーム',     pedigree: true, color: '#e6d7bb', pattern: 'fold' },
+      { key: 'maine-coon',         breed: 'メインクーン',           tone: 'ブラウンタビー', pedigree: true, color: '#a37a4e', pattern: 'tufted-tabby' },
+      { key: 'coon-black',         breed: 'メインクーン',           tone: 'ブラック',       pedigree: true, color: '#5a534b', pattern: 'tufted-solid', eye: '#e9c257' },
+      { key: 'coon-cream',         breed: 'メインクーン',           tone: 'クリーム',       pedigree: true, color: '#e0cfae', pattern: 'tufted-tabby' },
+      { key: 'persian',            breed: 'ペルシャ',               tone: 'ホワイト',       pedigree: true, color: '#f3ece0', pattern: 'fluffy' },
+      { key: 'persian-cream',      breed: 'ペルシャ',               tone: 'クリーム',       pedigree: true, color: '#e8d9bd', pattern: 'fluffy' },
+      { key: 'persian-grey',       breed: 'ペルシャ',               tone: 'グレー',         pedigree: true, color: '#b2adaa', pattern: 'fluffy' },
+      { key: 'siamese',            breed: 'シャム',                 tone: 'シールポイント', pedigree: true, color: '#f0e6d2', pattern: 'points', accent: '#5a4030' },
+      { key: 'siamese-choco',      breed: 'シャム',                 tone: 'チョコポイント', pedigree: true, color: '#f2e8d8', pattern: 'points', accent: '#7a5642' },
+      { key: 'siamese-blue',       breed: 'シャム',                 tone: 'ブルーポイント', pedigree: true, color: '#eceae4', pattern: 'points', accent: '#6b7480' },
+      { key: 'bengal',             breed: 'ベンガル',               tone: 'ブラウン',       pedigree: true, color: '#e0a952', pattern: 'spots' },
+      { key: 'bengal-snow',        breed: 'ベンガル',               tone: 'スノー',         pedigree: true, color: '#ece0cc', pattern: 'spots' },
+      { key: 'abyssinian',         breed: 'アビシニアン',           tone: 'ルディ',         pedigree: true, color: '#b06a3f', pattern: 'solid' },
+      { key: 'aby-red',            breed: 'アビシニアン',           tone: 'レッド',         pedigree: true, color: '#c98352', pattern: 'solid' },
+      { key: 'aby-blue',           breed: 'アビシニアン',           tone: 'ブルー',         pedigree: true, color: '#9a9490', pattern: 'solid' },
+      { key: 'aby-fawn',           breed: 'アビシニアン',           tone: 'フォーン',       pedigree: true, color: '#cbb69a', pattern: 'solid' },
+      { key: 'somali-ruddy',       breed: 'ソマリ',                 tone: 'ルディ',         pedigree: true, color: '#b06a3f', pattern: 'fluffy' },
+      { key: 'somali-red',         breed: 'ソマリ',                 tone: 'レッド',         pedigree: true, color: '#c98352', pattern: 'fluffy' },
+      { key: 'somali-blue',        breed: 'ソマリ',                 tone: 'ブルー',         pedigree: true, color: '#9a9490', pattern: 'fluffy' },
+      { key: 'somali-fawn',        breed: 'ソマリ',                 tone: 'フォーン',       pedigree: true, color: '#cbb69a', pattern: 'fluffy' },
+      { key: 'british-shorthair',  breed: 'ブリティッシュショートヘア', tone: 'ブルー',     pedigree: true, color: '#a3a89c', pattern: 'round' },
+      { key: 'bsh-cream',          breed: 'ブリティッシュショートヘア', tone: 'クリーム',   pedigree: true, color: '#ded0b4', pattern: 'round' },
+      // ---- 日本でよく見る雑種の毛色。トラ3種は同じ縞で地の色だけが違う（実際そうなっている）----
+      { key: 'calico',    breed: '三毛猫',   tone: null, pedigree: false, color: '#f3ece0', pattern: 'calico' },
+      { key: 'chatora',   breed: '茶トラ',   tone: null, pedigree: false, color: '#dda05a', pattern: 'mackerel' },
+      { key: 'kijitora',  breed: 'キジトラ', tone: null, pedigree: false, color: '#8d7a5e', pattern: 'mackerel' },
+      { key: 'sabatora',  breed: 'サバトラ', tone: null, pedigree: false, color: '#9aa2a6', pattern: 'mackerel' },
+      { key: 'kuro',      breed: '黒猫',     tone: null, pedigree: false, color: '#4e4740', pattern: 'solid', eye: '#e9c257' },
+      { key: 'shiro',     breed: '白猫',     tone: null, pedigree: false, color: '#f7f2e8', pattern: 'solid' },
+      { key: 'hachiware', breed: 'ハチワレ', tone: null, pedigree: false, color: '#4e4740', pattern: 'hachiware', eye: '#c8d48a' },
+      { key: 'sabi',      breed: 'サビ猫',   tone: null, pedigree: false, color: '#c9884a', pattern: 'tortie' },
+      { key: 'chashiro',  breed: '茶白',     tone: null, pedigree: false, color: '#dda05a', pattern: 'bicolor' }
     ],
     // name は「固有の品種名」。無い子は SPECIES_NAME と tone を組み合わせて呼ぶ。
     // tone は毛色の呼び名で、品種名を持たない子を図鑑で見分けるためのもの
@@ -1399,15 +1445,24 @@
   function petLabel(type, key) {
     var v = petVariant(type, key);
     if (!v) return SPECIES_NAME[type] || '';
-    if (v.name) return v.name;
-    return (SPECIES_NAME[type] || '') + (v.tone ? '・' + v.tone : '');
+    return v.breed + (v.tone ? '・' + v.tone : '');
+  }
+  // 図鑑に並ぶ品種を、出てくる順に重複なく返す
+  function breedList(type) {
+    var seen = {}, out = [];
+    (PET_VARIANTS[type] || []).forEach(function (v) {
+      if (seen[v.breed]) { seen[v.breed].push(v); return; }
+      seen[v.breed] = [v];
+      out.push({ breed: v.breed, pedigree: !!v.pedigree, colors: seen[v.breed] });
+    });
+    return out;
   }
   function pickPet() {
     var type = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
     var variants = PET_VARIANTS[type];
     return { type: type, key: variants[Math.floor(Math.random() * variants.length)].key };
   }
-  function catPattern(pattern, c) {
+  function catPattern(pattern, c, accent) {
     switch (pattern) {
       case 'tabby':
         return '<path d="M17 44 Q25 41 33 44 M16 50 Q25 47 34 50" stroke="rgba(0,0,0,0.38)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
@@ -1420,12 +1475,45 @@
           var xy = pt.split(',');
           return '<ellipse cx="' + xy[0] + '" cy="' + xy[1] + '" rx="3.2" ry="2.4" fill="rgba(0,0,0,0.4)"/>';
         }).join('');
+      // シャムのポイント。耳と口もとが濃くなる。濃さの色は毛色ごとに変える
       case 'points':
-        return '<path d="M12 27 L17 15 L24 25 Z" fill="#5a4030"/><path d="M38 27 L33 15 L26 25 Z" fill="#5a4030"/>' +
-          '<ellipse cx="25" cy="33" rx="7" ry="5.5" fill="#5a4030" opacity="0.75"/>';
+        var pt = accent || '#5a4030';
+        return '<path d="M12.5 25 L15.5 8 L23.5 20 Z" fill="' + pt + '"/><path d="M37.5 25 L34.5 8 L26.5 20 Z" fill="' + pt + '"/>' +
+          '<ellipse cx="25" cy="32.5" rx="7.5" ry="5.6" fill="' + pt + '" opacity="0.78"/>';
+      // メインクーンのブラック。縞は出さず、房のある耳だけを描く
+      case 'tufted-solid':
+        return '<path d="M14 16 L10 8 M36 16 L40 8" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>';
       case 'fluffy':
         return '<path d="M9 40 q-4 -2 -3 -7 M8 47 q-4 1 -4 -4 M9 54 q-4 3 -6 0 M41 40 q4 -2 3 -7 M42 47 q4 1 4 -4 M41 54 q4 3 6 0" ' +
           'stroke="' + c + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+      // 茶トラ・キジトラ・サバトラに共通の縞。背中から脇へ流れる細い横縞と、額の「M」
+      case 'mackerel':
+        return '<path d="M14 41 Q25 38 36 41 M13 47 Q25 44 37 47 M14.5 53 Q25 50.5 35.5 53" ' +
+            'stroke="rgba(0,0,0,0.34)" stroke-width="2.3" fill="none" stroke-linecap="round"/>' +
+          '<path d="M19.5 20 L25 13.2 L30.5 20" stroke="rgba(0,0,0,0.42)" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M16.5 23 L21 21.4 M33.5 23 L29 21.4" stroke="rgba(0,0,0,0.3)" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+      // ハチワレ。額の真ん中から鼻すじへ白が抜け、口もと・胸もと・あしも白い
+      case 'hachiware':
+        return '<path d="M25 13.5 L20.6 27 Q25 30.5 29.4 27 Z" fill="#f7f2e8"/>' +
+          '<ellipse cx="25" cy="32.6" rx="8" ry="5.6" fill="#f7f2e8"/>' +
+          '<ellipse cx="25" cy="52" rx="9" ry="8.6" fill="#f7f2e8"/>' +
+          '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>' +
+          '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>';
+      // 茶白。口もと・胸もと・あしが白い
+      case 'bicolor':
+        return '<ellipse cx="25" cy="32.6" rx="8.5" ry="6" fill="#f7f2e8"/>' +
+          '<ellipse cx="25" cy="52" rx="9.5" ry="8.6" fill="#f7f2e8"/>' +
+          '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>' +
+          '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>';
+      // サビ猫。茶の地に黒がまだらに混ざる
+      case 'tortie':
+        return ['13,44,5,4', '20.5,40,4.2,3.4', '30,45,5.4,4.4', '35.5,52,4.6,3.6',
+                '18,54,5,4', '27.5,56,4.6,3.4', '23,48,3.6,3']
+          .map(function (s) {
+            var p = s.split(',');
+            return '<ellipse cx="' + p[0] + '" cy="' + p[1] + '" rx="' + p[2] + '" ry="' + p[3] + '" fill="#3b342c" opacity="0.86"/>';
+          }).join('') +
+          '<path d="M18.5 16.5 Q15 24 17.2 30 Q22 29 22.8 19.5 Z" fill="#3b342c" opacity="0.86"/>';
       case 'calico':
         // 体の左右に茶と黒のぶち、頭には片側だけ黒のぶち。
         // 顔（鼻・ひげ・目）は上に重なるので、頭のぶちは左寄りに小さく置いて潰さない
@@ -1436,7 +1524,7 @@
         return '';
     }
   }
-  function petBody(type, c, pattern) {
+  function petBody(type, c, pattern, accent) {
     switch (type) {
       case 'cat':
         var ears = (pattern === 'fold')
@@ -1462,7 +1550,7 @@
           // 頭
           '<circle cx="25" cy="26" r="13" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
           // 模様は体と頭の両方にかかる（額の縞・シャムの面など）ので、必ず頭を描いたあとに重ねる
-          catPattern(pattern, c) +
+          catPattern(pattern, c, accent) +
           '<ellipse cx="19.5" cy="19.5" rx="4.6" ry="3" fill="#fff" opacity="0.22"/>' +
           '<ellipse cx="25" cy="31.5" rx="7" ry="4.6" fill="#fff" opacity="0.26"/>' +
           // 鼻・口もと・ひげ・ほお
@@ -1477,22 +1565,33 @@
   }
   // 顔（目・閉じた目）の高さ。種類ごとに頭の位置が違うので個別に持つ
   var FACE_Y = { cat: 25 };
+  // 目。色の指定がなければ黒目、あればその色の虹彩に縦長の瞳孔を描く
+  function eyeArt(fy, eye) {
+    if (!eye) {
+      return '<ellipse cx="20" cy="' + fy + '" rx="2.4" ry="2.9" fill="' + LINE + '"/>' +
+        '<ellipse cx="30" cy="' + fy + '" rx="2.4" ry="2.9" fill="' + LINE + '"/>' +
+        '<circle cx="20.9" cy="' + (fy - 1) + '" r="0.9" fill="#fff"/>' +
+        '<circle cx="30.9" cy="' + (fy - 1) + '" r="0.9" fill="#fff"/>';
+    }
+    return '<ellipse cx="20" cy="' + fy + '" rx="2.6" ry="3.1" fill="' + eye + '" stroke="' + LINE + '" stroke-width="0.7"/>' +
+      '<ellipse cx="30" cy="' + fy + '" rx="2.6" ry="3.1" fill="' + eye + '" stroke="' + LINE + '" stroke-width="0.7"/>' +
+      '<ellipse cx="20" cy="' + fy + '" rx="1" ry="2.2" fill="' + LINE + '"/>' +
+      '<ellipse cx="30" cy="' + fy + '" rx="1" ry="2.2" fill="' + LINE + '"/>' +
+      '<circle cx="21.1" cy="' + (fy - 1.4) + '" r="0.75" fill="#fff"/>' +
+      '<circle cx="31.1" cy="' + (fy - 1.4) + '" r="0.75" fill="#fff"/>';
+  }
   function petSVG(type, key) {
     var v = petVariant(type, key) || { color: '#c9b8a0', pattern: 'solid' };
     var fy = FACE_Y[type] || 26;
     return '<svg viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
       '<text class="pet-zzz" x="31" y="' + (fy - 16) + '" font-size="10" fill="#8a8d99">Zzz</text>' +
-      '<g class="pet-body">' + petBody(type, v.color, v.pattern) + '</g>' +
+      '<g class="pet-body">' + petBody(type, v.color, v.pattern, v.accent) + '</g>' +
       // 眠っているあいだの閉じた目。のっぺらぼうに見えないよう、起きた目と入れ替える
       '<g class="pet-sleep"><path d="M16.8 ' + fy + ' q3.2 3.2 6.4 0 M26.8 ' + fy + ' q3.2 3.2 6.4 0" ' +
         'stroke="' + LINE + '" stroke-width="1.7" fill="none" stroke-linecap="round"/></g>' +
-      // 起きているときの目。つやを一点いれると生きて見える
-      '<g class="pet-eyes" opacity="0">' +
-        '<ellipse cx="20" cy="' + fy + '" rx="2.4" ry="2.9" fill="' + LINE + '"/>' +
-        '<ellipse cx="30" cy="' + fy + '" rx="2.4" ry="2.9" fill="' + LINE + '"/>' +
-        '<circle cx="20.9" cy="' + (fy - 1) + '" r="0.9" fill="#fff"/>' +
-        '<circle cx="30.9" cy="' + (fy - 1) + '" r="0.9" fill="#fff"/>' +
-      '</g>' +
+      // 起きているときの目。つやを一点いれると生きて見える。
+      // 黒っぽい毛色は目が地に溶けるので、その子だけ瞳の色を持たせて縦長の瞳孔を描く
+      '<g class="pet-eyes" opacity="0">' + eyeArt(fy, v.eye) + '</g>' +
       '<g class="pet-heart" opacity="0" transform="translate(25,8) scale(0.4)"><path d="M0 4 C -6 -3, -14 2, 0 12 C 14 2, 6 -3, 0 4 Z" fill="#e0788a"/></g>' +
     '</svg>';
   }
@@ -1572,7 +1671,8 @@
         var source = (g.source === 'shop') ? 'shop' : 'session';
         var minutes = (source === 'shop') ? 0 : g.minutes;
         if (g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
-        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source, origin: origin };
+        var paid = (Number.isFinite(g.paid) && g.paid > 0 && g.paid <= MAX_MILEAGE) ? g.paid : null;
+        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source, origin: origin, paid: paid };
       });
       // 読めなかった記録を捨てて上書きすると、原因が一時的なものでも二度と戻せない。
       // 捨てるぶんは必ず控えに退避してから、整えた側を書き戻す
@@ -1590,22 +1690,28 @@
   // 名前をつけるなど別の理由で保存し直しても、元の記録が消えないようにするため
   function writeGarden(arr) {
     var stored = arr.map(function (g) {
-      return {
+      var o = {
         id: g.id, minutes: g.minutes, completedAt: g.completedAt,
         type: g.origin ? g.origin.type : g.type,
         key: g.origin ? g.origin.key : g.key,
         name: g.name, source: g.source
       };
+      if (Number.isFinite(g.paid) && g.paid > 0) o.paid = g.paid;
+      return o;
     });
     return lsSet('pf:garden', JSON.stringify(stored));
   }
-  function addToGarden(minutes, pet, source) {
+  // paid = 迎えるのに使った時間。値段の決め方を変えても、
+  // 迎えたときにいくら払ったかは変わらないので、そのときの額を記録に残す
+  function addToGarden(minutes, pet, source, paid) {
     var arr = readGarden();
-    arr.push({
+    var rec = {
       id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       minutes: minutes, completedAt: Date.now(), type: pet.type, key: pet.key,
       name: '', source: source || 'session'
-    });
+    };
+    if (Number.isFinite(paid) && paid > 0) rec.paid = paid;
+    arr.push(rec);
     return writeGarden(arr);
   }
   function renameGardenEntry(id, name) {
@@ -1618,11 +1724,12 @@
   }
 
   // ---- 貯まった時間（分単位。値段は60分きざみ）----
-  // 図鑑でなかまを迎える値段。どの子も1時間でそろえてある
-  // （品種名を持つ子を2時間にしていたが、猫は全品種に名前があるため、
-  //   1時間の選択肢が無くなって最初の1匹が遠くなっていた）
-  var PET_PRICE = 60;
-  function petPrice() { return PET_PRICE; }
+  // 図鑑でなかまを迎える値段。血統のある品種は2時間、雑種の毛色は1時間
+  var PRICE_PEDIGREE = 120, PRICE_MIX = 60;
+  function petPrice(type, key) {
+    var v = petVariant(type, key);
+    return (v && v.pedigree) ? PRICE_PEDIGREE : PRICE_MIX;
+  }
   var MAX_MILEAGE = Number.MAX_SAFE_INTEGER;
   function readMileage() {
     var raw = lsGet('pf:mileage', '0');
@@ -1644,7 +1751,7 @@
     var price = petPrice(type, key);
     if (readMileage() < price) return false;
     var before = readGarden();
-    if (!addToGarden(0, { type: type, key: key }, 'shop')) return false;
+    if (!addToGarden(0, { type: type, key: key }, 'shop', price)) return false;
     if (!spendMileage(price)) { writeGarden(before); return false; }
     return true;
   }
@@ -2023,19 +2130,24 @@
     fillPet(fig, g.type, g.key, 1);
     el.appendChild(fig);
     var v = petVariant(g.type, g.key);
+    var label = petLabel(g.type, g.key);
     if (g.name) {
       var nameEl = document.createElement('div');
       nameEl.className = 'pc-name';
       nameEl.textContent = g.name;
       el.appendChild(nameEl);
-    } else if (v && v.name) {
+    } else if (v) {
+      // 名前をつけていない子は、品種（毛色があればそれも）を小さく出す
       var breedEl = document.createElement('div');
       breedEl.className = 'pc-breed';
-      breedEl.textContent = v.name;
+      breedEl.textContent = v.breed;
       el.appendChild(breedEl);
     }
-    var detail = (g.source === 'shop') ? fmtHours(petPrice(g.type, g.key)) + 'で迎えた' : g.minutes + '分・' + fmtDate(g.completedAt);
-    el.title = [g.name, v && v.name, detail].filter(Boolean).join(' · ');
+    // 値段は変わりうるので、迎えたときの額が残っていない古い記録では額を出さない
+    var detail = (g.source === 'shop')
+      ? (g.paid ? fmtHours(g.paid) + 'で迎えた' : '貯まった時間で迎えた')
+      : g.minutes + '分・' + fmtDate(g.completedAt);
+    el.title = [g.name, label, detail].filter(Boolean).join(' · ');
     el.addEventListener('click', function () { openNameModal(g.id, g.name); });
     return el;
   }
@@ -2230,50 +2342,109 @@
   }
 
   // ============ 図鑑 ============
-  function renderRoster() {
-    var garden = readGarden();
+  // 図鑑は「品種」ごとに1枚。毛色が何色もある品種は、たたいて毛色を選ぶ
+  function ownedMap() {
     var owned = {};
-    garden.forEach(function (g) { owned[g.type + ':' + g.key] = true; });
+    readGarden().forEach(function (g) { owned[g.type + ':' + g.key] = true; });
+    return owned;
+  }
+  // 1色の毛色カードをつくる（図鑑の一覧でも、毛色えらびのシートでも同じ見た目にする）
+  function buildColorCard(type, v, owned, mileage, onBuy) {
+    var isOwned = !!owned[type + ':' + v.key];
+    var price = petPrice(type, v.key);
+    var card = document.createElement('div');
+    card.className = 'g-card' + (isOwned ? ' owned' : ' locked');
+    var host = document.createElement('div');
+    fillPet(host, type, v.key, 1);
+    card.appendChild(host.firstChild);
+    var nameEl = document.createElement('div');
+    nameEl.className = 'gc-name';
+    nameEl.textContent = v.tone || v.breed;
+    card.appendChild(nameEl);
+    if (isOwned) {
+      var mark = document.createElement('div');
+      mark.className = 'gc-mark';
+      mark.textContent = 'なかま';
+      card.appendChild(mark);
+    } else {
+      var buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'gc-buy';
+      buyBtn.textContent = fmtHours(price) + 'で迎える';
+      buyBtn.disabled = mileage < price;
+      buyBtn.addEventListener('click', function () {
+        if (!buyPet(type, v.key)) { toast('迎えられませんでした'); return; }
+        toast('迎えました');
+        onBuy();
+      });
+      card.appendChild(buyBtn);
+    }
+    return card;
+  }
+
+  function renderRoster() {
+    var owned = ownedMap();
     var mileage = readMileage();
     $('walletRoster').textContent = fmtHours(mileage);
     var grid = $('rosterGrid');
     grid.innerHTML = '';
     PET_TYPES.forEach(function (type) {
-      PET_VARIANTS[type].forEach(function (v) {
-        var isOwned = !!owned[type + ':' + v.key];
-        var price = petPrice(type, v.key);
+      breedList(type).forEach(function (b) {
+        // 1色だけの品種は、そのまま迎えるボタンつきのカードにする
+        if (b.colors.length === 1) {
+          grid.appendChild(buildColorCard(type, b.colors[0], owned, mileage, function () {
+            renderRoster(); renderHome();
+          }));
+          return;
+        }
+        var have = b.colors.filter(function (v) { return owned[type + ':' + v.key]; });
         var card = document.createElement('div');
-        card.className = 'g-card' + (isOwned ? ' owned' : ' locked');
-        var petHost = document.createElement('div');
-        fillPet(petHost, type, v.key, 1);
-        card.appendChild(petHost.firstChild);
+        card.className = 'g-card' + (have.length ? ' owned' : ' locked');
+        var host = document.createElement('div');
+        // 持っている毛色があればその姿、無ければ代表の毛色を灰色で見せる
+        fillPet(host, type, (have[0] || b.colors[0]).key, 1);
+        card.appendChild(host.firstChild);
         var nameEl = document.createElement('div');
         nameEl.className = 'gc-name';
-        nameEl.textContent = petLabel(type, v.key);
+        nameEl.textContent = b.breed;
         card.appendChild(nameEl);
-        if (isOwned) {
-          var mark = document.createElement('div');
-          mark.className = 'gc-mark';
-          mark.textContent = 'なかま';
-          card.appendChild(mark);
-        } else {
-          var buyBtn = document.createElement('button');
-          buyBtn.type = 'button';
-          buyBtn.className = 'gc-buy';
-          buyBtn.textContent = fmtHours(price) + 'で迎える';
-          buyBtn.disabled = mileage < price;
-          buyBtn.addEventListener('click', function () {
-            if (!buyPet(type, v.key)) { toast('迎えられませんでした'); return; }
-            renderRoster();
-            renderHome();
-            toast('迎えました');
-          });
-          card.appendChild(buyBtn);
-        }
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gc-buy';
+        btn.style.background = 'var(--paper-3)';
+        btn.style.color = 'var(--ink-2)';
+        btn.style.border = '1px solid var(--edge)';
+        btn.textContent = '毛色 ' + have.length + '/' + b.colors.length;
+        btn.addEventListener('click', function () { openColorPick(type, b); });
+        card.appendChild(btn);
         grid.appendChild(card);
       });
     });
   }
+
+  // ---- 毛色えらび ----
+  var colorModal = $('colorModal');
+  function openColorPick(type, b) {
+    var owned = ownedMap();
+    var mileage = readMileage();
+    $('colorTitle').textContent = b.breed;
+    $('colorSub').textContent = b.pedigree
+      ? 'この品種には ' + b.colors.length + ' つの毛色があります。'
+      : '毛色をえらんでください。';
+    $('walletColor').textContent = fmtHours(mileage);
+    var grid = $('colorGrid');
+    grid.innerHTML = '';
+    b.colors.forEach(function (v) {
+      grid.appendChild(buildColorCard(type, v, owned, mileage, function () {
+        renderRoster();
+        renderHome();
+        openColorPick(type, b);   // 迎えたあとも同じ品種の毛色を見比べられるようにする
+      }));
+    });
+    openModal(colorModal);
+  }
+  $('colorClose').addEventListener('click', function () { closeModal(colorModal); });
+  dismissOnBackdrop(colorModal);
 
   // ============ ハウスを置く（お店） ============
   function renderShop() {
