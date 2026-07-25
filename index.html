@@ -1127,7 +1127,7 @@
       { key: 'british-shorthair',  name: 'ブリティッシュショートヘア', color: '#a3a89c', pattern: 'round' },
       { key: 'calico',             name: '三毛猫',                   color: '#f3ece0', pattern: 'calico' }
     ],
-    // name は「固有の品種名」。これがある子は値段が上がる（petPrice）。
+    // name は「固有の品種名」。無い子は SPECIES_NAME と tone を組み合わせて呼ぶ。
     // tone は毛色の呼び名で、品種名を持たない子を図鑑で見分けるためのもの
   };
   var SPECIES_NAME = { cat: '猫' };
@@ -1333,10 +1333,11 @@
   }
 
   // ---- 貯まった時間（分単位。値段は60分きざみ）----
-  function petPrice(type, key) {
-    var v = petVariant(type, key);
-    return (v && v.name) ? 120 : 60;
-  }
+  // 図鑑でなかまを迎える値段。どの子も1時間でそろえてある
+  // （品種名を持つ子を2時間にしていたが、猫は全品種に名前があるため、
+  //   1時間の選択肢が無くなって最初の1匹が遠くなっていた）
+  var PET_PRICE = 60;
+  function petPrice() { return PET_PRICE; }
   var MAX_MILEAGE = Number.MAX_SAFE_INTEGER;
   function readMileage() {
     var raw = lsGet('pf:mileage', '0');
