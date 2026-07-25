@@ -574,20 +574,38 @@
   .room-scene.room-genkan .room-wall { background: linear-gradient(180deg, #e2ded2, #cfc7b4); }
   .room-scene.room-genkan .room-floor-bg { background: repeating-linear-gradient(45deg, #c9c2ae 0, #c9c2ae 20px, #bab293 20px, #bab293 22px); }
 
-  /* 庭は屋外なので、壁と床ではなく空と芝生にする */
-  .room-scene.room-garden .room-wall { background: linear-gradient(180deg, #a9d6ea 0%, #cbe7ea 62%, #dfeed8 100%); }
+  /* 庭は屋外なので、壁と床ではなく空と芝生にする。空の色は窓の外と同じ変数を使う */
+  .room-scene.room-garden .room-wall {
+    background: linear-gradient(180deg, var(--sky-top, #a9d6ea), var(--sky-bot, #dfeed8));
+    transition: background 2s linear;
+  }
   .room-scene.room-garden .room-floor-bg {
     background:
       repeating-linear-gradient(96deg, rgba(255, 255, 255, 0.07) 0 3px, transparent 3px 9px),
       repeating-linear-gradient(90deg, #8fbb6d 0, #8fbb6d 26px, #86b365 26px, #86b365 52px);
+    filter: brightness(var(--land-lit, 1));
+    transition: filter 2s linear;
   }
+  .room-scene.room-garden .room-cloud,
+  .room-scene.room-garden .room-hedge,
+  .room-scene.room-garden .room-tree,
+  .room-scene.room-garden .room-fence,
+  .room-scene.room-garden .room-flowerbed,
+  .room-scene.room-garden .room-pond,
+  .room-scene.room-garden .room-rug {
+    filter: brightness(var(--land-lit, 1));
+    transition: filter 2s linear;
+  }
+  /* 庭の星。夜だけ見える */
+  .room-garden-sky { position: absolute; top: 0; left: 0; right: 0; height: 190px; pointer-events: none; }
 
-  .room-window, .room-sofa, .room-plant,
+  .room-window, .room-door, .room-sofa, .room-plant,
   .room-counter, .room-shelf, .room-fridge,
   .room-bed, .room-nightstand, .room-lamp, .room-wardrobe,
   .room-shoebox, .room-umbrella-stand, .room-doormat,
   .room-sun, .room-cloud, .room-hedge, .room-fence,
-  .room-tree, .room-flowerbed, .room-pond { display: none; }
+  .room-tree, .room-flowerbed, .room-pond, .room-garden-sky { display: none; }
+  .room-scene.room-garden .room-garden-sky,
   .room-scene.room-garden .room-sun,
   .room-scene.room-garden .room-cloud,
   .room-scene.room-garden .room-hedge,
@@ -595,7 +613,10 @@
   .room-scene.room-garden .room-tree,
   .room-scene.room-garden .room-flowerbed,
   .room-scene.room-garden .room-pond { display: block; }
+  /* 窓は玄関と庭をのぞく部屋に出る。玄関は窓ではなくドア */
   .room-scene.room-living .room-window,
+  .room-scene.room-kitchen .room-window,
+  .room-scene.room-bedroom .room-window { display: block; }
   .room-scene.room-living .room-sofa,
   .room-scene.room-living .room-plant { display: block; }
   .room-scene.room-kitchen .room-counter,
@@ -605,22 +626,91 @@
   .room-scene.room-bedroom .room-nightstand,
   .room-scene.room-bedroom .room-lamp,
   .room-scene.room-bedroom .room-wardrobe { display: block; }
+  .room-scene.room-genkan .room-door,
   .room-scene.room-genkan .room-shoebox,
   .room-scene.room-genkan .room-umbrella-stand,
   .room-scene.room-genkan .room-doormat { display: block; }
 
+  /* ---- 窓の外（今の時刻に合わせた空）----
+     空の色・太陽や月の位置は、JSが #roomScene に置く変数から受け取る。
+     同じ変数を玄関のドアのガラスと、庭の空でも使う */
   .room-window {
-    position: absolute; top: 22px; right: 24px; width: 74px; height: 92px;
-    background: linear-gradient(180deg, #bcd9ea, #dcecd8);
-    border: 4px solid #f3ece0; border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(60, 45, 25, 0.18);
+    position: absolute; top: 16px; width: 80px; height: 94px;
+    border: 4px solid #f3ece0; border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(60, 45, 25, 0.2), inset 0 0 0 1px rgba(120, 100, 60, 0.18);
     overflow: hidden;
+    background: #26324e;
   }
-  .room-window::before, .room-window::after { content: ''; position: absolute; background: rgba(243, 236, 224, 0.9); }
-  .room-window::before { left: 50%; top: 0; bottom: 0; width: 3px; transform: translateX(-50%); }
-  .room-window::after { top: 50%; left: 0; right: 0; height: 3px; transform: translateY(-50%); }
-  .room-window-leaf { position: absolute; bottom: 6px; left: 10px; width: 20px; height: 26px; background: #7fae6f; border-radius: 0 100% 0 100%; }
-  .room-window-leaf.l2 { left: 24px; bottom: 4px; width: 16px; height: 20px; background: #6ea45f; }
+  /* 部屋ごとに家具とぶつからない場所へ置く */
+  .room-scene.room-living .room-window { right: 22px; top: 20px; }
+  .room-scene.room-kitchen .room-window { left: 50%; margin-left: -40px; }
+  .room-scene.room-bedroom .room-window { left: 50%; margin-left: -40px; }
+
+  .rw-sky {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, var(--sky-top, #26324e), var(--sky-bot, #7fb8dd));
+    transition: background 2s linear;
+  }
+  .rw-stars { position: absolute; inset: 0; opacity: var(--star-op, 0); transition: opacity 2s linear; }
+  .rw-stars i {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
+  }
+  .rw-stars i:nth-child(1) { left: 16%; top: 14%; }
+  .rw-stars i:nth-child(2) { left: 62%; top: 9%; }
+  .rw-stars i:nth-child(3) { left: 38%; top: 26%; }
+  .rw-stars i:nth-child(4) { left: 80%; top: 20%; width: 1.5px; height: 1.5px; }
+  .rw-stars i:nth-child(5) { left: 25%; top: 40%; width: 1.5px; height: 1.5px; }
+  .rw-stars i:nth-child(6) { left: 70%; top: 36%; }
+  /* 太陽か月。時刻にあわせて弧を描くように動く */
+  .rw-orb {
+    position: absolute; width: 17px; height: 17px; border-radius: 50%;
+    left: var(--orb-x, 50%); top: var(--orb-y, 30%);
+    transform: translate(-50%, -50%);
+    background: var(--orb-bg, #f7dd8a);
+    box-shadow: 0 0 12px 3px var(--orb-glow, rgba(247, 221, 138, 0.6));
+    transition: left 2s linear, top 2s linear, background 2s linear, box-shadow 2s linear;
+  }
+  /* 遠くの丘 */
+  .rw-hill {
+    position: absolute; left: -12%; right: -12%; bottom: -14px; height: 34px;
+    background: radial-gradient(ellipse at 30% 100%, #4e7a52 0 60%, transparent 61%),
+      radial-gradient(ellipse at 72% 100%, #436d48 0 55%, transparent 56%);
+    filter: brightness(var(--land-lit, 1));
+    transition: filter 2s linear;
+  }
+  /* 桟 */
+  .rw-bars::before, .rw-bars::after { content: ''; position: absolute; background: rgba(243, 236, 224, 0.92); }
+  .rw-bars::before { left: 50%; top: 0; bottom: 0; width: 3px; transform: translateX(-50%); }
+  .rw-bars::after { top: 46%; left: 0; right: 0; height: 3px; }
+
+  /* ---- 玄関のドア ---- */
+  .room-door {
+    position: absolute; left: 50%; margin-left: -46px; top: 24px;
+    width: 92px; height: 152px;
+    background: linear-gradient(100deg, #b58a5c, #a37a4e 55%, #96703f);
+    border: 3px solid #7d5c38; border-radius: 4px 4px 2px 2px;
+    box-shadow: 0 4px 10px rgba(60, 45, 25, 0.28), inset 0 0 0 6px rgba(255, 255, 255, 0.06);
+  }
+  /* ドアの上半分にはめたガラス。ここにも外の空が映る */
+  .rd-pane {
+    position: absolute; left: 14px; right: 14px; top: 14px; height: 58px;
+    border: 3px solid #d8bb94; border-radius: 3px;
+    overflow: hidden;
+    background: #26324e;
+  }
+  .rd-pane .rw-orb { width: 12px; height: 12px; }
+  .rd-knob {
+    position: absolute; right: 11px; top: 50%; width: 10px; height: 10px;
+    margin-top: -5px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #f3e3b0, #c9a24e);
+    box-shadow: 0 1px 2px rgba(50, 35, 15, 0.5);
+  }
+  /* 下半分の彫り込み */
+  .room-door::after {
+    content: ''; position: absolute; left: 16px; right: 16px; top: 86px; bottom: 16px;
+    border: 2px solid rgba(90, 66, 38, 0.5); border-radius: 3px;
+  }
   /* ソファ。座面より背もたれを一段濃くし、肘掛けを両端に立てて家具らしく見せる */
   .room-sofa {
     position: absolute; left: 14px; top: 128px; width: 108px; height: 58px;
@@ -650,8 +740,9 @@
     background: #6ea45f; border-radius: 50% 50% 40% 12%;
     box-shadow: 9px -6px 0 -5px #7fae6f, -5px -4px 0 -7px #5f9450;
   }
+  /* 窓を真ん中の上に置いたので、カウンターは下へずらしてぶつからないようにする */
   .room-counter {
-    position: absolute; top: 60px; right: 20px; width: 90px; height: 56px;
+    position: absolute; top: 118px; right: 18px; width: 90px; height: 56px;
     background: linear-gradient(180deg, #f3ece0, #d9cdb4);
     border: 1.5px solid #b6935f; border-radius: 6px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
@@ -694,16 +785,22 @@
   .room-umbrella-stand { position: absolute; left: 24px; top: 110px; width: 20px; height: 36px; background: #7a8a94; border-radius: 4px 4px 8px 8px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2); }
   .room-umbrella-stand::before { content: ''; position: absolute; bottom: 30px; left: 2px; width: 3px; height: 40px; background: #5a4a30; transform: rotate(-8deg); }
   .room-umbrella-stand::after { content: ''; position: absolute; bottom: 60px; left: -4px; width: 16px; height: 10px; background: #c9564a; border-radius: 50% 50% 0 0; transform: rotate(-8deg); }
+  /* ドアの真下、床の上に敷く */
   .room-doormat {
-    position: absolute; left: 50%; top: 152px; transform: translateX(-50%);
+    position: absolute; left: 50%; top: 196px; transform: translateX(-50%);
     width: 76px; height: 26px; background: #a3a89c; border-radius: 6px;
     box-shadow: inset 0 0 0 3px #8a8f7f, 0 2px 4px rgba(60, 45, 25, 0.18);
   }
   /* ---- 庭 ---- */
+  /* 庭の太陽（夜は月）。窓の外と同じ時刻から位置を決める。
+     ただし庭の空は高さ190pxの帯なので、窓の%とは別に px でもらう */
   .room-sun {
-    position: absolute; top: 20px; right: 26px; width: 40px; height: 40px;
-    background: #f7dd8a; border-radius: 50%;
-    box-shadow: 0 0 0 9px rgba(247, 221, 138, 0.28), 0 0 22px rgba(247, 221, 138, 0.7);
+    position: absolute; width: 38px; height: 38px;
+    left: var(--orb-x, 76%); top: var(--orb-y-sky, 40px);
+    transform: translate(-50%, -50%);
+    background: var(--orb-bg, #f7dd8a); border-radius: 50%;
+    box-shadow: 0 0 0 9px var(--orb-glow, rgba(247, 221, 138, 0.28)), 0 0 26px var(--orb-glow, rgba(247, 221, 138, 0.7));
+    transition: left 2s linear, top 2s linear, background 2s linear, box-shadow 2s linear;
   }
   .room-cloud {
     position: absolute; height: 15px; border-radius: 999px;
@@ -924,7 +1021,21 @@
         <div class="room-houses" id="roomHouses"></div>
         <div class="room-scene room-living" id="roomScene">
           <div class="room-wall"></div>
-          <div class="room-window"><div class="room-window-leaf"></div><div class="room-window-leaf l2"></div></div>
+          <div class="room-window">
+            <div class="rw-sky"></div>
+            <div class="rw-stars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="rw-orb"></div>
+            <div class="rw-hill"></div>
+            <div class="rw-bars"></div>
+          </div>
+          <div class="room-door">
+            <div class="rd-pane">
+              <div class="rw-sky"></div>
+              <div class="rw-stars"><i></i><i></i><i></i></div>
+              <div class="rw-orb"></div>
+            </div>
+            <div class="rd-knob"></div>
+          </div>
           <div class="room-sofa"></div>
           <div class="room-plant"></div>
           <div class="room-counter"></div>
@@ -936,7 +1047,7 @@
           <div class="room-wardrobe"></div>
           <div class="room-shoebox"></div>
           <div class="room-umbrella-stand"></div>
-          <div class="room-doormat"></div>
+          <div class="room-garden-sky"><div class="rw-stars"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
           <div class="room-sun"></div>
           <div class="room-cloud c1"></div>
           <div class="room-cloud c2"></div>
@@ -947,6 +1058,7 @@
           <div class="room-fence"></div>
           <div class="room-rug" id="roomRug"></div>
           <!-- 花壇と池は芝生の上に置くものなので、床と広場より後ろに書いて重ねる -->
+          <div class="room-doormat"></div>
           <div class="room-flowerbed"></div>
           <div class="room-pond"></div>
           <div class="room-pets" id="roomPets"></div>
@@ -1727,6 +1839,55 @@
     return isRoomKey(r) ? r : 'living';
   })();
 
+  // ---- 窓の外の空（今の時刻に合わせる）----
+  // 色と、太陽・月の位置を #roomScene の変数に置く。窓・玄関のドアのガラス・庭の空が
+  // 同じ変数を見ているので、1か所で決めればどこも同じ時間帯になる
+  var SKY_STOPS = [
+    { until: 4.5,  top: '#0e1730', bot: '#28344f', star: 1,    land: 0.42 },   // 深夜
+    { until: 6.5,  top: '#3d4d73', bot: '#e8a67f', star: 0.35, land: 0.72 },   // 明け方
+    { until: 10,   top: '#7fb8dd', bot: '#d9ecf4', star: 0,    land: 1    },   // 朝
+    { until: 15.5, top: '#69ade0', bot: '#c6e3f0', star: 0,    land: 1.04 },   // 昼
+    { until: 17.5, top: '#8fb0d8', bot: '#f2d3a2', star: 0,    land: 0.98 },   // 夕方
+    { until: 19.5, top: '#45426f', bot: '#e08a6a', star: 0.4,  land: 0.72 },   // 日暮れ
+    { until: 24.1, top: '#0e1730', bot: '#28344f', star: 1,    land: 0.42 }    // 夜
+  ];
+  var SUN_UP = 5.5, SUN_DOWN = 18.5;   // このあいだが昼。外は太陽、そのほかは月
+  function skyNow(date) {
+    var d = date || new Date();
+    var h = d.getHours() + d.getMinutes() / 60;
+    var s = SKY_STOPS[SKY_STOPS.length - 1];
+    for (var i = 0; i < SKY_STOPS.length; i++) {
+      if (h < SKY_STOPS[i].until) { s = SKY_STOPS[i]; break; }
+    }
+    // 昇ってから沈むまでを 0→1 とし、弧を描くように動かす
+    var day = (h >= SUN_UP && h < SUN_DOWN);
+    var t = day
+      ? (h - SUN_UP) / (SUN_DOWN - SUN_UP)
+      : ((h - SUN_DOWN + 24) % 24) / ((24 - SUN_DOWN) + SUN_UP);
+    return {
+      top: s.top, bot: s.bot, star: s.star, land: s.land, isDay: day,
+      x: 10 + t * 80,                             // 左から右へ
+      y: 82 - Math.sin(t * Math.PI) * 62,         // 真ん中で高くなる
+      orb: day ? '#f9e39a' : '#e8ecf3',
+      glow: day ? 'rgba(249, 227, 154, 0.55)' : 'rgba(226, 234, 246, 0.4)'
+    };
+  }
+  function applySky() {
+    var scene = $('roomScene');
+    if (!scene) return;
+    var s = skyNow();
+    scene.style.setProperty('--sky-top', s.top);
+    scene.style.setProperty('--sky-bot', s.bot);
+    scene.style.setProperty('--star-op', String(s.star));
+    scene.style.setProperty('--land-lit', String(s.land));
+    scene.style.setProperty('--orb-x', s.x.toFixed(1) + '%');
+    scene.style.setProperty('--orb-y', s.y.toFixed(1) + '%');
+    // 庭の空は高さ190pxの帯。生垣(150px〜)に埋まらないよう 14〜132px に収める
+    scene.style.setProperty('--orb-y-sky', (14 + s.y / 100 * 118).toFixed(0) + 'px');
+    scene.style.setProperty('--orb-bg', s.orb);
+    scene.style.setProperty('--orb-glow', s.glow);
+  }
+
   function buildRoomPet(g) {
     var el = document.createElement('div');
     el.className = 'room-pet';
@@ -1793,6 +1954,7 @@
     petsLayer.innerHTML = '';
     housesLayer.innerHTML = '';
     scene.className = 'room-scene room-' + currentRoom;
+    applySky();
 
     houses.filter(function (h) { return h.room === currentRoom; }).forEach(function (h) {
       housesLayer.appendChild(buildHouseEl(h, assign.occupants[h.id] || []));
@@ -2543,6 +2705,9 @@
     b.classList.toggle('active', b.dataset.room === currentRoom);
   });
   switchView('home');
+  applySky();
+  // 開きっぱなしでも外の景色が今の時刻からずれないよう、ときどき塗り直す
+  setInterval(applySky, 300000);
   if (!lsGet('pf:seen', '')) openModal(introModal);
 
   if ('serviceWorker' in navigator) {
