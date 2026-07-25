@@ -1442,6 +1442,15 @@
       { key: 'somali-fawn',        breed: 'ソマリ',                 tone: 'フォーン',       pedigree: true, color: '#cbb69a', pattern: 'fluffy' },
       { key: 'british-shorthair',  breed: 'ブリティッシュショートヘア', tone: 'ブルー',     pedigree: true, color: '#a3a89c', pattern: 'round' },
       { key: 'bsh-cream',          breed: 'ブリティッシュショートヘア', tone: 'クリーム',   pedigree: true, color: '#ded0b4', pattern: 'round' },
+      // 短足。からだつきを shape で変える
+      { key: 'munchkin-tabby',     breed: 'マンチカン',             tone: '茶トラ',         pedigree: true, color: '#dda05a', pattern: 'mackerel', shape: 'short' },
+      { key: 'munchkin-grey',      breed: 'マンチカン',             tone: 'グレー',         pedigree: true, color: '#a3a89c', pattern: 'solid',    shape: 'short' },
+      { key: 'munchkin-cream',     breed: 'マンチカン',             tone: 'クリーム',       pedigree: true, color: '#e6d7bb', pattern: 'solid',    shape: 'short' },
+      { key: 'ragdoll-seal',       breed: 'ラグドール',             tone: 'シールポイント', pedigree: true, color: '#f2ece0', pattern: 'points-fluffy', accent: '#6b4c3a', eye: '#8fb8dd' },
+      { key: 'ragdoll-blue',       breed: 'ラグドール',             tone: 'ブルーポイント', pedigree: true, color: '#eceae4', pattern: 'points-fluffy', accent: '#6b7480', eye: '#8fb8dd' },
+      { key: 'exotic-cream',       breed: 'エキゾチックショートヘア', tone: 'クリーム',      pedigree: true, color: '#e8d9bd', pattern: 'flat', shape: 'flat' },
+      { key: 'exotic-grey',        breed: 'エキゾチックショートヘア', tone: 'グレー',        pedigree: true, color: '#b2adaa', pattern: 'flat', shape: 'flat' },
+      { key: 'sphynx',             breed: 'スフィンクス',           tone: null,             pedigree: true, color: '#e2bfae', pattern: 'sphynx', shape: 'sphynx' },
       // ---- 日本でよく見る雑種の毛色。トラ3種は同じ縞で地の色だけが違う（実際そうなっている）----
       { key: 'calico',    breed: '三毛猫',   tone: null, pedigree: false, color: '#f3ece0', pattern: 'calico' },
       { key: 'chatora',   breed: '茶トラ',   tone: null, pedigree: false, color: '#dda05a', pattern: 'mackerel' },
@@ -1451,7 +1460,11 @@
       { key: 'shiro',     breed: '白猫',     tone: null, pedigree: false, color: '#f7f2e8', pattern: 'solid' },
       { key: 'hachiware', breed: 'ハチワレ', tone: null, pedigree: false, color: '#4e4740', pattern: 'hachiware', eye: '#c8d48a' },
       { key: 'sabi',      breed: 'サビ猫',   tone: null, pedigree: false, color: '#c9884a', pattern: 'tortie' },
-      { key: 'chashiro',  breed: '茶白',     tone: null, pedigree: false, color: '#dda05a', pattern: 'bicolor' }
+      { key: 'chashiro',  breed: '茶白',     tone: null, pedigree: false, color: '#dda05a', pattern: 'bicolor' },
+      { key: 'kijishiro', breed: 'キジ白',   tone: null, pedigree: false, color: '#8d7a5e', pattern: 'mackerel-bicolor' },
+      { key: 'sabashiro', breed: 'サバ白',   tone: null, pedigree: false, color: '#9aa2a6', pattern: 'mackerel-bicolor' },
+      { key: 'buchi',     breed: '黒白ブチ', tone: null, pedigree: false, color: '#f7f2e8', pattern: 'buchi', tail: '#3b342c' },
+      { key: 'cream',     breed: 'クリーム', tone: null, pedigree: false, color: '#eccfa0', pattern: 'solid' }
     ],
     // name は「固有の品種名」。無い子は SPECIES_NAME と tone を組み合わせて呼ぶ。
     // tone は毛色の呼び名で、品種名を持たない子を図鑑で見分けるためのもの
@@ -1497,6 +1510,25 @@
           var xy = pt.split(',');
           return '<ellipse cx="' + xy[0] + '" cy="' + xy[1] + '" rx="3.2" ry="2.4" fill="rgba(0,0,0,0.4)"/>';
         }).join('');
+      // キジ白・サバ白。トラの縞に、口もと・胸もと・あしの白が重なる
+      case 'mackerel-bicolor':
+        return catPattern('mackerel', c) + catPattern('bicolor', c);
+      // 黒白ブチ。白い地に黒いぶちが乗る（ハチワレとは白の抜け方が違う）
+      case 'buchi':
+        return '<path d="M11 22 Q9 32 13 38 Q22 36 21.5 21 Q16 17 11 22 Z" fill="#3b342c"/>' +
+          '<ellipse cx="33" cy="44" rx="9" ry="8" fill="#3b342c"/>' +
+          '<ellipse cx="16" cy="52" rx="6.5" ry="5.5" fill="#3b342c"/>';
+      // ラグドール。ポイントに長毛のふさふさを重ねる
+      case 'points-fluffy':
+        return catPattern('points', c, accent) + catPattern('fluffy', c);
+      // エキゾチックショートヘアのぺちゃ顔。ほおのふくらみを描く
+      case 'flat':
+        return '<ellipse cx="16.5" cy="30" rx="5" ry="4.4" fill="#fff" opacity="0.16"/>' +
+          '<ellipse cx="33.5" cy="30" rx="5" ry="4.4" fill="#fff" opacity="0.16"/>';
+      // スフィンクス。毛が無いぶん、額と首すじのしわを描く
+      case 'sphynx':
+        return '<path d="M19 17.5 Q25 15.5 31 17.5 M20 21 Q25 19.5 30 21" stroke="rgba(90,60,55,0.45)" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+          '<path d="M17 38 Q25 41 33 38" stroke="rgba(90,60,55,0.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
       // シャムのポイント。耳と口もとが濃くなる。濃さの色は毛色ごとに変える
       case 'points':
         var pt = accent || '#5a4030';
@@ -1546,39 +1578,53 @@
         return '';
     }
   }
-  function petBody(type, c, pattern, accent) {
+  function petBody(type, c, pattern, accent, shape, tail) {
     switch (type) {
       case 'cat':
+        // shape でからだつきを変える。short=短足（マンチカン）、flat=ぺちゃ顔、sphynx=無毛で耳が大きい
+        var isShort = shape === 'short', isFlat = shape === 'flat', isSphynx = shape === 'sphynx';
         var ears = (pattern === 'fold')
           ? '<ellipse cx="16" cy="17" rx="5" ry="3.6" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
             '<ellipse cx="34" cy="17" rx="5" ry="3.6" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>'
+          : isSphynx
+          ? '<path d="M9.5 26 L13 2.5 L25.5 18 Z" fill="' + c + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
+            '<path d="M40.5 26 L37 2.5 L24.5 18 Z" fill="' + c + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
+            '<path d="M13.5 22 L15 9 L21.5 17 Z" fill="#e8b4b0" opacity="0.75"/>' +
+            '<path d="M36.5 22 L35 9 L28.5 17 Z" fill="#e8b4b0" opacity="0.75"/>'
           : '<path d="M12 25 L15.5 7 L24 20 Z" fill="' + c + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
             '<path d="M38 25 L34.5 7 L26 20 Z" fill="' + c + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
             '<path d="M15.8 21 L17.2 12.5 L20.6 18.5 Z" fill="#f2b6bd"/>' +
             '<path d="M34.2 21 L32.8 12.5 L29.4 18.5 Z" fill="#f2b6bd"/>';
-        var bodyRx = (pattern === 'round') ? 17 : 15.5;
+        var bodyRx = isShort ? 17.5 : (pattern === 'round' || isFlat) ? 17 : 15.5;
+        var bodyRy = isShort ? 11.5 : 13.5;
+        var bodyCy = isShort ? 49.5 : 47;
+        var pawCy = isShort ? 58 : 58.5;
+        var pawRy = isShort ? 3 : 4.2;
+        var tailC = tail || c;
         return (
           // しっぽ。太い線で輪郭を引き、その上に色をのせて縁取りにする
           '<path class="tail" d="M34 55 Q48 54 47.5 42 Q47 33 40.5 30.5" fill="none" stroke="' + LINE + '" stroke-width="9.5" stroke-linecap="round"/>' +
-          '<path class="tail" d="M34 55 Q48 54 47.5 42 Q47 33 40.5 30.5" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
+          '<path class="tail" d="M34 55 Q48 54 47.5 42 Q47 33 40.5 30.5" fill="none" stroke="' + tailC + '" stroke-width="6" stroke-linecap="round"/>' +
           // 前あし
-          '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
-          '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
+          '<ellipse cx="16.5" cy="' + pawCy + '" rx="5" ry="' + pawRy + '" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
+          '<ellipse cx="33.5" cy="' + pawCy + '" rx="5" ry="' + pawRy + '" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
           // 体。下を暗く、胸もとを明るくして丸みを出す
-          '<ellipse cx="25" cy="47" rx="' + bodyRx + '" ry="13.5" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
-          '<ellipse cx="25" cy="55.5" rx="' + (bodyRx - 3) + '" ry="4.5" fill="#000" opacity="0.09"/>' +
-          '<ellipse cx="25" cy="48" rx="8.5" ry="7" fill="#fff" opacity="0.2"/>' +
+          '<ellipse cx="25" cy="' + bodyCy + '" rx="' + bodyRx + '" ry="' + bodyRy + '" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
+          '<ellipse cx="25" cy="' + (bodyCy + 8.5) + '" rx="' + (bodyRx - 3) + '" ry="4.5" fill="#000" opacity="0.09"/>' +
+          '<ellipse cx="25" cy="' + (bodyCy + 1) + '" rx="8.5" ry="7" fill="#fff" opacity="0.2"/>' +
           ears +
           // 頭
           '<circle cx="25" cy="26" r="13" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
           // 模様は体と頭の両方にかかる（額の縞・シャムの面など）ので、必ず頭を描いたあとに重ねる
           catPattern(pattern, c, accent) +
           '<ellipse cx="19.5" cy="19.5" rx="4.6" ry="3" fill="#fff" opacity="0.22"/>' +
-          '<ellipse cx="25" cy="31.5" rx="7" ry="4.6" fill="#fff" opacity="0.26"/>' +
+          // ぺちゃ顔は口もとを横に広く、低く
+          '<ellipse cx="25" cy="' + (isFlat ? 32.5 : 31.5) + '" rx="' + (isFlat ? 9 : 7) + '" ry="' + (isFlat ? 4 : 4.6) + '" fill="#fff" opacity="0.26"/>' +
           // 鼻・口もと・ひげ・ほお
-          '<path d="M22.6 29.4 L27.4 29.4 L25 32.3 Z" fill="#d4747a" stroke="' + LINE + '" stroke-width="0.8" stroke-linejoin="round"/>' +
+          '<path d="M22.6 ' + (isFlat ? 30.4 : 29.4) + ' L27.4 ' + (isFlat ? 30.4 : 29.4) + ' L25 ' + (isFlat ? 32.6 : 32.3) + ' Z" fill="#d4747a" stroke="' + LINE + '" stroke-width="0.8" stroke-linejoin="round"/>' +
           '<path d="M25 32.3 q-2.6 3 -5 1.5 M25 32.3 q2.6 3 5 1.5" stroke="' + LINE + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
-          '<path d="M13 27 L3.5 25 M13 30 L3.5 31.5 M37 27 L46.5 25 M37 30 L46.5 31.5" stroke="' + LINE + '" stroke-width="1" opacity="0.5" stroke-linecap="round"/>' +
+          // 無毛の子はひげを描かない
+          (isSphynx ? '' : '<path d="M13 27 L3.5 25 M13 30 L3.5 31.5 M37 27 L46.5 25 M37 30 L46.5 31.5" stroke="' + LINE + '" stroke-width="1" opacity="0.5" stroke-linecap="round"/>') +
           '<ellipse cx="15.6" cy="30.6" rx="3.2" ry="2" fill="#f4a3ae" opacity="0.72"/>' +
           '<ellipse cx="34.4" cy="30.6" rx="3.2" ry="2" fill="#f4a3ae" opacity="0.72"/>'
         );
@@ -1607,7 +1653,7 @@
     var fy = FACE_Y[type] || 26;
     return '<svg viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
       '<text class="pet-zzz" x="31" y="' + (fy - 16) + '" font-size="10" fill="#8a8d99">Zzz</text>' +
-      '<g class="pet-body">' + petBody(type, v.color, v.pattern, v.accent) + '</g>' +
+      '<g class="pet-body">' + petBody(type, v.color, v.pattern, v.accent, v.shape, v.tail) + '</g>' +
       // 眠っているあいだの閉じた目。のっぺらぼうに見えないよう、起きた目と入れ替える
       '<g class="pet-sleep"><path d="M16.8 ' + fy + ' q3.2 3.2 6.4 0 M26.8 ' + fy + ' q3.2 3.2 6.4 0" ' +
         'stroke="' + LINE + '" stroke-width="1.7" fill="none" stroke-linecap="round"/></g>' +
