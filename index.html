@@ -972,7 +972,7 @@
     <div class="modal" id="shopModal">
       <div class="sheet">
         <h2>ハウスを置く</h2>
-        <p class="sub">集中して貯まった時間で、なかま用のハウスを置けます。1つのハウスには4匹まで入ります。</p>
+        <p class="sub">集中して貯まった時間で、なかま用のハウスを置けます。1つのハウスには3匹まで入ります。</p>
         <div class="wallet">貯まった時間<b id="walletShop">-</b></div>
         <div class="grid" id="houseGrid"></div>
         <div class="sheet-btns">
@@ -1422,7 +1422,7 @@
     hamster: { name: 'ケージ',     color: '#e0b96e' },
     turtle:  { name: '水槽',       color: '#7fb08a' }
   };
-  var HOUSE_CAPACITY = 4;
+  var HOUSE_CAPACITY = 3;
   var HOUSE_PRICE = 60;
   function isRoomKey(k) { return ROOMS.some(function (r) { return r.key === k; }); }
   function coreHouseValid(h) {
@@ -1445,6 +1445,20 @@
     var arr = before.concat([{ id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), species: species, room: room }]);
     if (!writeHouses(arr)) return false;
     if (!spendMileage(HOUSE_PRICE)) { writeHouses(before); return false; }   // 買えなかったので置いたぶんも戻す
+    return true;
+  }
+  // はじめて なかまができたときに、その子に合ったハウスを1つだけ贈る。
+  // まだ1匹もいないうちに配ると、6種のうち当たらなかった種類のハウスは
+  // ずっと空のままになってしまうので、1匹目が決まってから渡す
+  function grantFirstHouse(pet) {
+    if (lsGet('pf:gift', '')) return false;   // 贈るのは1回きり
+    if (readHouses().length) { lsSet('pf:gift', '1'); return false; }
+    var arr = [{
+      id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      species: pet.type, room: 'living'
+    }];
+    if (!writeHouses(arr)) return false;
+    lsSet('pf:gift', '1');
     return true;
   }
   function moveHouse(id, room) {
@@ -2199,10 +2213,12 @@
     if (success) {
       var saved = addToGarden(minutes, pet, 'session');
       if (saved) addMileage(minutes);
+      // 1匹目のときだけ、その子に合ったハウスを贈る
+      var gifted = saved && readGarden().length === 1 && grantFirstHouse(pet);
       RENDERERS[currentView]();
-      showResult(true, minutes, saved ? null : 'savefail', pet);
+      showResult(true, minutes, saved ? null : 'savefail', pet, gifted);
     } else {
-      showResult(false, minutes, reason, pet);
+      showResult(false, minutes, reason, pet, false);
     }
   }
   $('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
@@ -2262,14 +2278,17 @@
 
   // ============ 結果 ============
   var resultModal = $('resultModal');
-  function showResult(success, minutes, reason, pet) {
+  function showResult(success, minutes, reason, pet, gifted) {
     var svg = fillPet($('resultPetSlot'), pet.type, pet.key, success ? 1 : 0, true);
     var label = petLabel(pet.type, pet.key);
     if (success) {
-      $('resultTitle').textContent = 'なつきました';
+      $('resultTitle').textContent = gifted ? 'はじめてのなかま' : 'なつきました';
+      var gift = gifted
+        ? 'はじめてのなかまなので、' + ((HOUSE_TYPES[pet.type] || {}).name || 'ハウス') + 'を1つ贈りました。リビングに置いてあります。'
+        : '';
       $('resultBody').textContent = reason === 'savefail'
         ? label + 'と' + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : label + 'と' + minutes + '分、一緒にいられました。おうちに加わりました。';
+        : label + 'と' + minutes + '分、一緒にいられました。おうちに加わりました。' + gift;
     } else {
       sadPet(svg);
       $('resultTitle').textContent = '眠ってしまいました';
@@ -2342,7 +2361,8 @@
   $('resetBtn').addEventListener('click', function () {
     if (session && session.active) return;
     if (!confirm('なかま・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
-    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses'].every(function (k) { return lsRemove(k); });
+    // pf:gift も戻す。消したあとは1匹目からやり直しになるので、贈り物も同じようにやり直す
+    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:gift'].every(function (k) { return lsRemove(k); });
     if (!ok) { alert('消せませんでした。もう一度お試しください。'); return; }
     closeModal(settingsModal);
     RENDERERS[currentView]();
