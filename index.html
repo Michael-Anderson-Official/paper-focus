@@ -9,140 +9,509 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#2b251f">
+<meta name="theme-color" content="#fbf6ea">
 <style>
   @import url('fonts/fonts.css');
   @font-face { font-family: 'system-fallback'; src: local(''); }
 
   :root {
-    --paper: #fdf8ea;
-    --paper-back-1: #f4eeda;
-    --paper-back-2: #faf4e6;
-    --ink-strong: #454a58;
-    --ink-text: #4a4e5c;
-    --ink-soft: #8a8d99;
-    --placeholder: rgba(122, 126, 140, 0.4);
-    --rule-strong: rgba(122, 158, 196, 0.55);
-    --today-ring: rgba(200, 80, 70, 0.75);
-    --stitch: rgba(120, 100, 70, 0.4);
+    /* 紙 */
+    --paper:    #fbf6ea;
+    --paper-2:  #f5eddb;
+    --paper-3:  #ede2ca;
+    --edge:     rgba(122, 102, 62, 0.16);
+    --edge-2:   rgba(122, 102, 62, 0.30);
+    /* 墨 */
+    --ink:      #3d4250;
+    --ink-2:    #575c6b;
+    --ink-3:    #8d919e;
+    --ink-4:    rgba(122, 126, 140, 0.45);
+    /* 色 */
+    --accent:   #5d7f5f;
+    --accent-d: #4a6a4c;
+    --accent-l: #86a878;
+    --gold:     #a8822f;
+    --warm:     #bd6f5f;
+    /* 文字寸 */
+    --t-xs: 11px; --t-sm: 12px; --t-md: 13px; --t-base: 15px;
+    --t-lg: 17px; --t-xl: 21px; --t-num: 44px;
+    /* 余白 */
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 22px; --s6: 30px; --s7: 40px;
+    /* 角 */
+    --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-full: 999px;
+    /* 影 */
+    --sh-1: 0 1px 2px rgba(80, 62, 30, 0.06);
+    --sh-2: 0 3px 10px rgba(80, 62, 30, 0.10);
+    --sh-3: 0 10px 30px rgba(60, 46, 20, 0.20);
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; }
   body {
     margin: 0;
     font-family: 'Klee One', 'system-fallback', sans-serif;
-    background: var(--paper-back-1);
-    color: var(--ink-text);
+    background: var(--paper-3);
+    color: var(--ink-2);
     display: flex;
     align-items: center;
     justify-content: center;
     -webkit-user-select: none;
     user-select: none;
+    line-height: 1.6;
   }
+  button { font-family: inherit; line-height: inherit; }
 
-  .book {
-    position: relative;
-    width: min(94vw, 460px);
-    height: min(92vh, 780px);
-  }
+  /* ============ 本体の枠（紙） ============ */
+  .book { position: relative; width: min(100vw, 460px); height: min(100vh, 860px); }
   .paper {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background-color: var(--paper);
     background-image:
-      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.38 0 0 0 0 0.32 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-    border-radius: 6px;
-    box-shadow: inset 12px 0 22px -14px rgba(90, 70, 40, 0.5), 0 10px 30px rgba(0, 0, 0, 0.25);
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.38 0 0 0 0 0.32 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    box-shadow: inset 10px 0 20px -16px rgba(90, 70, 40, 0.45), var(--sh-3);
     overflow: hidden;
     display: flex;
     flex-direction: column;
   }
+  @media (min-width: 480px) { .paper { border-radius: 8px; } }
 
-  /* ---- ヘッダー ---- */
-  .head {
-    padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 10px;
-    text-align: center;
+  /* ============ 上部バー ============ */
+  .app-head {
     flex: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) var(--s4) 6px;
   }
-  .head h1 { margin: 0; font-size: 20px; font-weight: 600; color: var(--ink-strong); }
-  .head p { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); }
-  .total-time { margin-top: 8px; font-size: 13px; color: var(--ink-strong); }
-  .total-time b { font-size: 17px; color: var(--today-ring); }
-
-  .settings-btn {
-    position: absolute;
-    top: calc(14px + env(safe-area-inset-top, 0px));
-    right: 14px;
-    z-index: 5;
-    width: 34px; height: 34px;
-    font-size: 16px;
-    color: var(--ink-soft);
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(120, 100, 60, 0.2);
-    border-radius: 50%;
+  .app-head .brand { font-size: var(--t-md); color: var(--ink-3); letter-spacing: 0.06em; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    font-size: var(--t-lg);
+    color: var(--ink-3);
+    background: transparent;
+    border: none;
+    border-radius: var(--r-full);
     cursor: pointer;
+    transition: background 0.15s var(--ease), color 0.15s var(--ease);
   }
-  .settings-btn:active { transform: translateY(1px); }
-  .settings-text { font-family: inherit; font-size: 13px; line-height: 1.9; color: var(--ink-text); margin: 0 0 16px; }
-  .settings-row { margin-bottom: 10px; }
-  .settings-link, .settings-danger {
-    width: 100%;
-    padding: 11px;
-    font-family: inherit;
-    font-size: 14px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(120, 100, 60, 0.25);
-    border-radius: 10px;
-    cursor: pointer;
-    color: var(--ink-strong);
+  .icon-btn:active { background: var(--paper-3); color: var(--ink-2); }
+
+  /* ============ ビュー切替 ============ */
+  .views { flex: 1; position: relative; min-height: 0; }
+  .view {
+    position: absolute; inset: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 var(--s4) var(--s7);   /* 最後の要素が下タブに隠れないだけの余白 */
+    display: none;
   }
-  .settings-danger { color: #a86a5c; }
+  .view.on { display: block; }
+  .view.center { display: none; }
+  .view.center.on { display: flex; flex-direction: column; }
 
-  /* ---- おうち（部屋） ---- */
-  .garden-scroll { flex: 1; overflow-y: auto; padding: 0 0 100px; -webkit-overflow-scrolling: touch; }
+  .view-title { margin: var(--s2) 0 var(--s4); font-size: var(--t-xl); color: var(--ink); font-weight: 600; }
+  .view-sub { margin: -12px 0 var(--s4); font-size: var(--t-sm); color: var(--ink-3); }
 
-  /* ---- 部屋タブ（玄関／リビング／キッチン／寝室） ---- */
-  .room-tab-bar { display: flex; gap: 4px; padding: 0 10px; margin-bottom: 8px; flex: none; }
-  .room-tab-btn {
+  /* ============ 下部タブ ============ */
+  .tabbar {
+    flex: none;
+    display: flex;
+    border-top: 1px solid var(--edge);
+    background: linear-gradient(to top, var(--paper) 70%, rgba(251, 246, 234, 0.86));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    backdrop-filter: blur(6px);
+  }
+  .tab {
     flex: 1;
-    min-width: 0;
-    padding: 7px 2px;
-    font-family: inherit;
-    font-size: 11px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--ink-soft);
-    background: rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(120, 100, 60, 0.18);
-    border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 2px 6px;
+    min-height: 52px;
+    font-size: var(--t-xs);
+    color: var(--ink-3);
+    background: none; border: none;
+    cursor: pointer;
+    transition: color 0.18s var(--ease);
+  }
+  .tab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.22s var(--ease); }
+  .tab.on { color: var(--accent); font-weight: 600; }
+  .tab.on svg { transform: translateY(-1px) scale(1.06); }
+  .tab:active svg { transform: scale(0.9); }
+
+  /* ============ ホーム ============ */
+  .home-hero {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: var(--s6);
+    /* 画面が高いときに上下へ間延びしすぎないよう、余白の上限を決めておく */
+    padding: clamp(var(--s4), 6vh, 56px) 0;
+    min-height: 0;
+  }
+  .dial-pet svg { animation: petBob 3.4s ease-in-out infinite; }
+  .dial { position: relative; width: min(70vw, 262px); aspect-ratio: 1; flex: none; }
+  .dial svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+  .dial .track { fill: none; stroke: var(--paper-3); stroke-width: 13; }
+  .dial .fill {
+    fill: none; stroke: url(#dialGrad); stroke-width: 13; stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s var(--ease);
+  }
+  .dial-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .dial-pet { width: 62px; height: 76px; }
+  .dial-pet svg { width: 100%; height: 100%; transform: none; filter: drop-shadow(0 3px 4px rgba(60, 45, 25, 0.18)); }
+  .dial-pet.empty {
+    display: grid; place-items: center;
+    font-size: 30px; color: var(--ink-4);
+  }
+  .dial-num { font-size: 32px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .dial-num small { font-size: var(--t-md); font-weight: 400; color: var(--ink-3); margin-left: 2px; }
+  .dial-cap { font-size: var(--t-xs); color: var(--ink-3); letter-spacing: 0.08em; }
+
+  .week { display: flex; gap: 6px; width: 100%; max-width: 300px; flex: none; }
+  .week-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .week-day .wd-label { font-size: 10px; color: var(--ink-3); }
+  .week-day .wd-dot {
+    width: 100%; max-width: 30px; aspect-ratio: 1;
+    border-radius: var(--r-full);
+    background: var(--paper-3);
+    border: 1px solid var(--edge);
+    display: grid; place-items: center;
+    font-size: 9px; color: transparent;
+    transition: background 0.3s var(--ease);
+  }
+  .week-day.done .wd-dot { background: var(--accent-l); border-color: var(--accent); }
+  .week-day.full .wd-dot { background: var(--accent); border-color: var(--accent-d); }
+  .week-day.today .wd-label { color: var(--ink); font-weight: 700; }
+  .week-day.today .wd-dot { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--edge-2); }
+
+  .streak { font-size: var(--t-md); color: var(--ink-2); text-align: center; flex: none; min-height: 1.6em; }
+  .streak b { color: var(--gold); font-size: var(--t-lg); }
+
+  .home-foot { flex: none; padding-top: var(--s2); }
+
+  /* ============ ボタン ============ */
+  .btn-primary {
+    display: block; width: 100%;
+    padding: 15px;
+    font-size: var(--t-lg); font-weight: 600;
+    color: #fff;
+    background: linear-gradient(180deg, #6d9070, var(--accent));
+    border: none; border-radius: var(--r-md);
+    box-shadow: 0 4px 14px rgba(80, 110, 80, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    cursor: pointer;
+    transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+  }
+  .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 6px rgba(80, 110, 80, 0.3); }
+  .btn-quiet {
+    padding: 11px var(--s4);
+    font-size: var(--t-base);
+    color: var(--ink-2);
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background 0.15s var(--ease);
+  }
+  .btn-quiet:active { background: var(--paper-3); }
+  .btn-danger { color: var(--warm); }
+
+  /* ============ シート（下から出るモーダル） ============ */
+  .modal {
+    position: absolute; inset: 0; z-index: 30;
+    display: flex; align-items: flex-end;
+    background: rgba(34, 27, 15, 0);
+    visibility: hidden;
+    transition: background 0.26s var(--ease), visibility 0s linear 0.26s;
+  }
+  .modal.show { visibility: visible; background: rgba(34, 27, 15, 0.42); transition-delay: 0s; }
+  .sheet {
+    width: 100%; max-height: 86%;
+    overflow-y: auto;
+    background: var(--paper);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    padding: var(--s5) var(--s4) calc(var(--s5) + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -12px 34px rgba(30, 22, 10, 0.32);
+    transform: translateY(102%);
+    transition: transform 0.3s var(--ease);
+  }
+  .modal.show .sheet { transform: translateY(0); }
+  .sheet::before {
+    content: ''; display: block; width: 38px; height: 4px; margin: -8px auto var(--s4);
+    background: var(--edge-2); border-radius: var(--r-full);
+  }
+  .sheet h2 { margin: 0 0 var(--s1); font-size: var(--t-xl); color: var(--ink); font-weight: 600; }
+  .sheet .sub { margin: 0 0 var(--s4); font-size: var(--t-sm); color: var(--ink-3); line-height: 1.7; }
+  .sheet-btns { display: flex; gap: var(--s2); align-items: center; margin-top: var(--s5); }
+  .sheet-btns .spacer { flex: 1; }
+  .sheet-btns .primary {
+    background: var(--accent); border-color: var(--accent-d); color: #fff; font-weight: 600;
+  }
+
+  /* 中央に出るカード型モーダル */
+  .modal.mid { align-items: center; justify-content: center; padding: var(--s4); }
+  .modal.mid .sheet {
+    width: min(88%, 330px); max-height: 84%;
+    border-radius: var(--r-lg);
+    text-align: center;
+    transform: scale(0.9); opacity: 0;
+    transition: transform 0.28s var(--ease), opacity 0.2s var(--ease);
+  }
+  .modal.mid.show .sheet { transform: scale(1); opacity: 1; }
+  .modal.mid .sheet::before { display: none; }
+
+  /* ============ チップ群 ============ */
+  .chips { display: flex; gap: var(--s2); flex-wrap: wrap; }
+  .chips button {
+    flex: 1 1 auto; min-width: 66px;
+    padding: 13px 6px;
+    font-size: var(--t-base);
+    color: var(--ink-2);
+    background: var(--paper-2);
+    border: 1.5px solid var(--edge);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all 0.16s var(--ease);
+  }
+  .chips button.active {
+    background: var(--accent); border-color: var(--accent-d); color: #fff; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(80, 110, 80, 0.28);
+  }
+  .chips.grid2 { display: grid; grid-template-columns: 1fr 1fr; }
+  .field-row { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s3); }
+  .field-row input {
+    width: 84px; padding: 11px;
+    font-family: inherit; font-size: var(--t-lg); text-align: center;
+    color: var(--ink-2);
+    background: var(--paper-2);
+    border: 1.5px solid var(--edge); border-radius: var(--r-sm);
+  }
+  .field-row input::placeholder { color: var(--ink-4); font-size: var(--t-md); }
+  .field-row span { font-size: var(--t-md); color: var(--ink-3); }
+  .text-input {
+    width: 100%; padding: 13px;
+    font-family: inherit; font-size: var(--t-lg);
+    color: var(--ink-2);
+    background: var(--paper-2);
+    border: 1.5px solid var(--edge); border-radius: var(--r-sm);
+  }
+  .label { font-size: var(--t-sm); color: var(--ink-3); margin: var(--s4) 0 var(--s2); }
+
+  /* ============ 知らせ ============ */
+  .toast {
+    position: fixed; left: 50%; z-index: 90;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    padding: 9px 18px;
+    font-size: var(--t-md);
+    color: var(--paper);
+    background: rgba(56, 46, 28, 0.92);
+    border-radius: var(--r-full);
+    box-shadow: var(--sh-2);
+    opacity: 0; pointer-events: none;
+    transform: translate(-50%, -12px);
+    transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .empty-state {
+    padding: var(--s7) var(--s5);
+    text-align: center;
+    font-size: var(--t-md);
+    line-height: 2.1;
+    color: var(--ink-3);
+  }
+  .empty-state .es-icon { font-size: 34px; opacity: 0.4; display: block; margin-bottom: var(--s3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+  }
+  /* ============ 集中中の全画面 ============ */
+  .session {
+    position: fixed; inset: 0; z-index: 50;
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: calc(env(safe-area-inset-top, 0px) + var(--s5)) var(--s5) calc(env(safe-area-inset-bottom, 0px) + var(--s5));
+    background: var(--sess-bg, linear-gradient(180deg, #2f3b46, #46505a));
+    transition: background 2.4s linear;
+    color: #fff;
+  }
+  .session.show { display: flex; }
+  .sess-ring { position: relative; width: min(74vw, 290px); aspect-ratio: 1; }
+  .sess-ring svg.ring { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+  .sess-ring .track { fill: none; stroke: rgba(255, 255, 255, 0.16); stroke-width: 6; }
+  .sess-ring .fill {
+    fill: none; stroke: rgba(255, 255, 255, 0.9); stroke-width: 6; stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .sess-pet {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+  }
+  .sess-pet svg { width: 48%; height: 48%; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3)); }
+  .sess-time {
+    margin-top: var(--s5);
+    font-size: var(--t-num); font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  .sess-label { font-size: var(--t-md); opacity: 0.72; margin-top: -2px; }
+  .sess-note {
+    margin-top: var(--s6);
+    font-size: var(--t-sm); opacity: 0.6;
+    text-align: center; line-height: 1.9; max-width: 250px;
+  }
+  .sess-give-up {
+    margin-top: var(--s5);
+    padding: 12px 26px;
+    font-size: var(--t-md);
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--r-full);
     cursor: pointer;
   }
-  .room-tab-btn.active { background: #8a7248; border-color: #6e5a38; color: #fff; font-weight: 600; }
+  .sess-give-up:active { background: rgba(255, 255, 255, 0.18); }
+  .sess-warn {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    padding: 9px 18px;
+    font-size: var(--t-md);
+    color: #fff;
+    background: rgba(189, 111, 95, 0.94);
+    border-radius: var(--r-full);
+    opacity: 0; transition: opacity 0.3s var(--ease);
+    pointer-events: none;
+  }
+  .sess-warn.show { opacity: 1; }
 
-  /* ---- 置いた家具（ハウス）の棚 ---- */
-  .room-houses { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 10px; }
+  /* ============ きろく ============ */
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+  .stat {
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-md);
+    padding: var(--s3) var(--s2);
+    text-align: center;
+  }
+  .stat .st-label { font-size: 10px; color: var(--ink-3); letter-spacing: 0.06em; }
+  .stat .st-value { font-size: var(--t-xl); font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.3; }
+  .stat .st-value small { font-size: var(--t-sm); font-weight: 400; color: var(--ink-3); }
+
+  .card {
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-md);
+    padding: var(--s4);
+    margin-top: var(--s3);
+  }
+  .card h3 { margin: 0 0 var(--s3); font-size: var(--t-md); color: var(--ink-3); font-weight: 400; letter-spacing: 0.06em; }
+
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 116px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 5px; }
+  .bar-col .bc-min { font-size: 9px; color: var(--ink-3); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+  .bar-col .bc-bar {
+    width: 100%; max-width: 26px;
+    border-radius: 5px 5px 2px 2px;
+    background: linear-gradient(180deg, var(--accent-l), var(--accent));
+    min-height: 3px;
+    transition: height 0.6s var(--ease);
+  }
+  .bar-col .bc-bar.zero { background: var(--paper-3); border: 1px solid var(--edge); }
+  .bar-col .bc-day { font-size: 10px; color: var(--ink-3); }
+  .bar-col.today .bc-day { color: var(--ink); font-weight: 700; }
+
+  .log-list { display: flex; flex-direction: column; gap: 2px; }
+  .log-row {
+    display: flex; align-items: center; gap: var(--s3);
+    padding: 8px 2px;
+    border-bottom: 1px solid var(--edge);
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row .lr-pet { width: 30px; height: 34px; flex: none; }
+  .log-row .lr-pet svg { width: 100%; height: 100%; }
+  .log-row .lr-main { flex: 1; min-width: 0; }
+  .log-row .lr-name { font-size: var(--t-md); color: var(--ink); font-weight: 600; }
+  .log-row .lr-meta { font-size: var(--t-xs); color: var(--ink-3); }
+  .log-row .lr-min { font-size: var(--t-sm); color: var(--gold); font-variant-numeric: tabular-nums; flex: none; }
+
+  /* ============ 図鑑・家具のカード ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: var(--s2);
+  }
+  .g-card {
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-md);
+    padding: var(--s3) var(--s1) var(--s2);
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .g-card svg { width: 54px; height: 60px; }
+  .g-card.locked svg { filter: grayscale(1) brightness(0.86); opacity: 0.42; }
+  .g-card .gc-name { font-size: 10px; color: var(--ink-3); line-height: 1.35; min-height: 2.4em; padding: 0 2px; }
+  .g-card.owned .gc-name { color: var(--ink); font-weight: 600; }
+  .g-card .gc-mark { font-size: 10px; color: var(--accent); margin-top: auto; padding-top: 4px; }
+  .g-card .gc-buy {
+    width: calc(100% - 8px); margin-top: auto;
+    padding: 7px 2px;
+    font-size: 10px; color: #fff;
+    background: var(--gold);
+    border: none; border-radius: var(--r-sm);
+    cursor: pointer;
+  }
+  .g-card .gc-buy:disabled { background: var(--paper-3); color: var(--ink-4); border: 1px solid var(--edge); }
+
+  /* 貯まった時間の帯 */
+  .wallet {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px var(--s3);
+    margin-bottom: var(--s3);
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-sm);
+    font-size: var(--t-sm); color: var(--ink-3);
+  }
+  .wallet b { font-size: var(--t-lg); color: var(--gold); }
+
+  /* ============ おうち（部屋） ============ */
+  .room-tabs { display: flex; gap: var(--s1); margin-bottom: var(--s3); }
+  .room-tabs button {
+    flex: 1; min-width: 0;
+    padding: 9px 2px;
+    font-size: var(--t-sm);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--ink-3);
+    background: transparent;
+    border: none; border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
+  }
+  .room-tabs button.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+
+  .room-houses { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
   .room-house {
     display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 6px 8px 7px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(120, 100, 60, 0.25);
-    border-radius: 10px;
+    padding: 7px 9px 8px;
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-sm);
     cursor: pointer;
   }
   .room-house:active { transform: translateY(1px); }
-  .room-house .rh-icon { width: 34px; height: 34px; display: block; }
+  .room-house .rh-icon { width: 34px; height: 34px; }
   .room-house .rh-icon svg { width: 100%; height: 100%; display: block; }
-  .room-house .rh-name { font-size: 9px; color: var(--ink-strong); font-weight: 600; }
+  .room-house .rh-name { font-size: 9px; color: var(--ink); font-weight: 600; }
   .room-house .rh-slots { display: flex; gap: 2px; }
-  .room-house .rh-slot { width: 18px; height: 18px; display: block; }
-  .room-house .rh-slot.empty { border: 1px dashed rgba(120, 100, 60, 0.4); border-radius: 50%; box-sizing: border-box; }
+  .room-house .rh-slot { width: 18px; height: 18px; }
+  .room-house .rh-slot svg { width: 100%; height: 100%; display: block; }
+  .room-house .rh-slot.empty { border: 1px dashed var(--edge-2); border-radius: 50%; }
 
-  .room-scene { position: relative; overflow: hidden; }
-  .room-wall {
-    position: absolute; top: 0; left: 0; right: 0; height: 190px;
-    background: linear-gradient(180deg, #e9e0c8, #ddd0ae);
-  }
+  .room-scene { position: relative; overflow: hidden; border-radius: var(--r-md); box-shadow: var(--sh-1); }
+  .room-wall { position: absolute; top: 0; left: 0; right: 0; height: 190px; background: linear-gradient(180deg, #e9e0c8, #ddd0ae); }
   .room-floor-bg {
     position: absolute; top: 190px; left: 0; right: 0; bottom: 0;
     background: repeating-linear-gradient(90deg, #c9a877 0, #c9a877 38px, #bd9a68 38px, #bd9a68 40px);
@@ -172,155 +541,96 @@
   .room-scene.room-genkan .room-umbrella-stand,
   .room-scene.room-genkan .room-doormat { display: block; }
 
-  /* リビング：窓・ソファ・観葉植物 */
   .room-window {
     position: absolute; top: 22px; right: 24px; width: 74px; height: 92px;
     background: linear-gradient(180deg, #bcd9ea, #dcecd8);
-    border: 4px solid #f3ece0;
-    border-radius: 6px;
+    border: 4px solid #f3ece0; border-radius: 6px;
     box-shadow: 0 2px 8px rgba(60, 45, 25, 0.18);
     overflow: hidden;
   }
-  .room-window::before, .room-window::after {
-    content: ''; position: absolute; background: rgba(243, 236, 224, 0.9);
-  }
+  .room-window::before, .room-window::after { content: ''; position: absolute; background: rgba(243, 236, 224, 0.9); }
   .room-window::before { left: 50%; top: 0; bottom: 0; width: 3px; transform: translateX(-50%); }
   .room-window::after { top: 50%; left: 0; right: 0; height: 3px; transform: translateY(-50%); }
-  .room-window-leaf {
-    position: absolute; bottom: 6px; left: 10px; width: 20px; height: 26px;
-    background: #7fae6f; border-radius: 0 100% 0 100%;
-  }
+  .room-window-leaf { position: absolute; bottom: 6px; left: 10px; width: 20px; height: 26px; background: #7fae6f; border-radius: 0 100% 0 100%; }
   .room-window-leaf.l2 { left: 24px; bottom: 4px; width: 16px; height: 20px; background: #6ea45f; }
+  /* ソファ。座面より背もたれを一段濃くし、肘掛けを両端に立てて家具らしく見せる */
   .room-sofa {
-    position: absolute; left: 14px; top: 136px; width: 104px; height: 50px;
-    background: #8fa8c9; border-radius: 10px 10px 4px 4px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    position: absolute; left: 14px; top: 128px; width: 108px; height: 58px;
+    background: #8fa8c9;
+    border-radius: 6px 6px 5px 5px;
+    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.22), inset 0 -8px 0 -4px rgba(60, 45, 25, 0.08);
   }
-  .room-sofa::before, .room-sofa::after {
-    content: ''; position: absolute; top: -14px; width: 36px; height: 20px;
-    background: #8fa8c9; border-radius: 8px 8px 0 0;
+  /* 背もたれ */
+  .room-sofa::before {
+    content: ''; position: absolute; left: 0; right: 0; top: -16px; height: 24px;
+    background: #7e97ba; border-radius: 8px 8px 0 0;
   }
-  .room-sofa::before { left: 6px; }
-  .room-sofa::after { right: 6px; }
-  .room-plant {
-    position: absolute; left: 132px; top: 118px; width: 34px; height: 72px;
+  /* 肘掛け（左右に1つずつ。box-shadowで右側を複製している） */
+  .room-sofa::after {
+    content: ''; position: absolute; left: -4px; top: -10px; width: 14px; height: 46px;
+    background: #9db4d2; border-radius: 7px;
+    box-shadow: 102px 0 0 #9db4d2, 0 2px 4px rgba(60, 45, 25, 0.18);
   }
+  /* 観葉植物。葉と鉢がはなれて見えないよう、葉を鉢の口までおろして重ねる */
+  .room-plant { position: absolute; left: 132px; top: 130px; width: 34px; height: 60px; }
   .room-plant::before {
     content: ''; position: absolute; bottom: 0; left: 5px; width: 24px; height: 22px;
     background: #b98a5f; border-radius: 2px 2px 8px 8px; box-shadow: 0 2px 3px rgba(60, 45, 25, 0.2);
   }
   .room-plant::after {
-    content: ''; position: absolute; top: 0; left: 2px; width: 26px; height: 30px;
-    background: #6ea45f; border-radius: 50% 50% 50% 10%;
-    box-shadow: 10px 10px 0 -4px #7fae6f, -6px 14px 0 -6px #5f9450;
+    content: ''; position: absolute; bottom: 16px; left: 2px; width: 26px; height: 32px;
+    background: #6ea45f; border-radius: 50% 50% 40% 12%;
+    box-shadow: 9px -6px 0 -5px #7fae6f, -5px -4px 0 -7px #5f9450;
   }
-
-  /* キッチン：カウンター・吊り棚・冷蔵庫 */
   .room-counter {
     position: absolute; top: 60px; right: 20px; width: 90px; height: 56px;
     background: linear-gradient(180deg, #f3ece0, #d9cdb4);
-    border: 1.5px solid #b6935f;
-    border-radius: 6px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    border: 1.5px solid #b6935f; border-radius: 6px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
   .room-counter::before {
     content: ''; position: absolute; top: 8px; left: 10px; width: 20px; height: 20px;
     border-radius: 50%; background: #a3a89c; box-shadow: 28px 0 0 #a3a89c;
   }
-  .room-shelf {
-    position: absolute; left: 16px; top: 24px; width: 80px; height: 8px;
-    background: #a87a50; border-radius: 2px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.25);
-  }
-  .room-shelf::before {
-    content: ''; position: absolute; top: 8px; left: 6px; width: 14px; height: 16px;
-    background: #c9564a; border-radius: 0 0 4px 4px;
-  }
-  .room-shelf::after {
-    content: ''; position: absolute; top: 8px; left: 30px; width: 12px; height: 12px;
-    border: 2px solid #7fae6f; border-radius: 50%; background: transparent;
-  }
+  .room-shelf { position: absolute; left: 16px; top: 24px; width: 80px; height: 8px; background: #a87a50; border-radius: 2px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.25); }
+  .room-shelf::before { content: ''; position: absolute; top: 8px; left: 6px; width: 14px; height: 16px; background: #c9564a; border-radius: 0 0 4px 4px; }
+  .room-shelf::after { content: ''; position: absolute; top: 8px; left: 30px; width: 12px; height: 12px; border: 2px solid #7fae6f; border-radius: 50%; }
   .room-fridge {
     position: absolute; left: 16px; top: 100px; width: 40px; height: 88px;
     background: linear-gradient(180deg, #f3ece0, #dccbb0);
-    border: 1.5px solid #b6935f; border-radius: 4px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    border: 1.5px solid #b6935f; border-radius: 4px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
-  .room-fridge::before, .room-fridge::after {
-    content: ''; position: absolute; right: 6px; width: 3px; height: 14px;
-    background: #8a6a48; border-radius: 2px;
-  }
+  .room-fridge::before, .room-fridge::after { content: ''; position: absolute; right: 6px; width: 3px; height: 14px; background: #8a6a48; border-radius: 2px; }
   .room-fridge::before { top: 10px; }
   .room-fridge::after { top: 44px; }
-
-  /* 寝室：ベッド・サイドテーブル＋ランプ・クローゼット */
-  .room-bed {
-    position: absolute; top: 50px; right: 30px; width: 84px; height: 66px;
-    background: #d98a97; border-radius: 10px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
-  }
-  .room-bed::before {
-    content: ''; position: absolute; top: 8px; left: 8px; width: 26px; height: 22px;
-    background: #f8f3e6; border-radius: 6px;
-  }
-  .room-bed::after {
-    content: ''; position: absolute; left: 10px; right: 10px; bottom: 10px; height: 20px;
-    background: #e6dce8; border-radius: 4px;
-  }
-  .room-nightstand {
-    position: absolute; right: 10px; top: 128px; width: 26px; height: 24px;
-    background: #c9a876; border: 1px solid #a3805a; border-radius: 3px;
-    box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2);
-  }
+  .room-bed { position: absolute; top: 50px; right: 30px; width: 84px; height: 66px; background: #d98a97; border-radius: 10px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2); }
+  .room-bed::before { content: ''; position: absolute; top: 8px; left: 8px; width: 26px; height: 22px; background: #f8f3e6; border-radius: 6px; }
+  .room-bed::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 10px; height: 20px; background: #e6dce8; border-radius: 4px; }
+  .room-nightstand { position: absolute; right: 10px; top: 128px; width: 26px; height: 24px; background: #c9a876; border: 1px solid #a3805a; border-radius: 3px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2); }
   .room-lamp { position: absolute; right: 14px; top: 106px; width: 18px; height: 22px; }
-  .room-lamp::before {
-    content: ''; position: absolute; bottom: 0; left: 7px; width: 3px; height: 12px; background: #8a6a48;
-  }
-  .room-lamp::after {
-    content: ''; position: absolute; top: 0; left: 0; width: 18px; height: 12px;
-    background: #f6cd57; border-radius: 4px 4px 8px 8px; opacity: 0.9;
-  }
+  .room-lamp::before { content: ''; position: absolute; bottom: 0; left: 7px; width: 3px; height: 12px; background: #8a6a48; }
+  .room-lamp::after { content: ''; position: absolute; top: 0; left: 0; width: 18px; height: 12px; background: #f6cd57; border-radius: 4px 4px 8px 8px; opacity: 0.9; }
   .room-wardrobe {
     position: absolute; left: 14px; top: 20px; width: 46px; height: 110px;
     background: linear-gradient(180deg, #e6dce8, #d0bcd6);
-    border: 1.5px solid #b394ba; border-radius: 4px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    border: 1.5px solid #b394ba; border-radius: 4px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
-  .room-wardrobe::before {
-    content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
-    background: rgba(120, 90, 120, 0.4); transform: translateX(-50%);
-  }
-
-  /* 玄関：下駄箱・傘立て・ドアマット */
+  .room-wardrobe::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: rgba(120, 90, 120, 0.4); transform: translateX(-50%); }
   .room-shoebox {
     position: absolute; right: 20px; top: 30px; width: 64px; height: 70px;
     background: linear-gradient(180deg, #c9a876, #a8825a);
-    border: 1.5px solid #8a6a48; border-radius: 4px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    border: 1.5px solid #8a6a48; border-radius: 4px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
   }
-  .room-shoebox::before, .room-shoebox::after {
-    content: ''; position: absolute; left: 6px; right: 6px; height: 2px; background: rgba(90, 65, 35, 0.4);
-  }
+  .room-shoebox::before, .room-shoebox::after { content: ''; position: absolute; left: 6px; right: 6px; height: 2px; background: rgba(90, 65, 35, 0.4); }
   .room-shoebox::before { top: 24px; }
   .room-shoebox::after { top: 46px; }
-  .room-umbrella-stand {
-    position: absolute; left: 24px; top: 110px; width: 20px; height: 36px;
-    background: #7a8a94; border-radius: 4px 4px 8px 8px;
-    box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2);
-  }
-  .room-umbrella-stand::before {
-    content: ''; position: absolute; bottom: 30px; left: 2px; width: 3px; height: 40px;
-    background: #5a4a30; transform: rotate(-8deg);
-  }
-  .room-umbrella-stand::after {
-    content: ''; position: absolute; bottom: 60px; left: -4px; width: 16px; height: 10px;
-    background: #c9564a; border-radius: 50% 50% 0 0; transform: rotate(-8deg);
-  }
+  .room-umbrella-stand { position: absolute; left: 24px; top: 110px; width: 20px; height: 36px; background: #7a8a94; border-radius: 4px 4px 8px 8px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2); }
+  .room-umbrella-stand::before { content: ''; position: absolute; bottom: 30px; left: 2px; width: 3px; height: 40px; background: #5a4a30; transform: rotate(-8deg); }
+  .room-umbrella-stand::after { content: ''; position: absolute; bottom: 60px; left: -4px; width: 16px; height: 10px; background: #c9564a; border-radius: 50% 50% 0 0; transform: rotate(-8deg); }
   .room-doormat {
     position: absolute; left: 50%; top: 152px; transform: translateX(-50%);
     width: 76px; height: 26px; background: #a3a89c; border-radius: 6px;
     box-shadow: inset 0 0 0 3px #8a8f7f, 0 2px 4px rgba(60, 45, 25, 0.18);
   }
-
   .room-rug {
     position: absolute; left: 50%; top: 214px; transform: translateX(-50%);
     width: 92%; border-radius: 50%;
@@ -334,7 +644,7 @@
   .room-pets { position: absolute; inset: 0; }
   .room-pet {
     position: absolute; text-align: center; cursor: pointer; width: 58px;
-    transition: left 1.1s ease-in-out, top 1.1s ease-in-out;   /* たまに歩いて移動するときの動き */
+    transition: left 1.1s ease-in-out, top 1.1s ease-in-out;
     animation: petBob 2.3s ease-in-out infinite;
     animation-delay: var(--pet-delay, 0s);
   }
@@ -349,284 +659,98 @@
     animation-delay: var(--pet-delay, 0s);
   }
   @keyframes tailSway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(7deg); } }
+  .room-empty {
+    position: absolute; top: 218px; left: 0; right: 0;
+    margin: 0; padding: 0 var(--s5);
+    text-align: center; font-size: var(--t-md); line-height: 2; color: #6b5a3a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  /* ペットSVGの内部パーツ */
+  .pet-body { transform-box: fill-box; transform-origin: bottom center; transition: transform 0.5s ease; }
+  .pet-eyes, .pet-zzz, .pet-heart, .pet-sleep { transition: opacity 0.5s ease; }
+
   @media (prefers-reduced-motion: reduce) {
     .room-pet, .tail { animation: none; }
-    .room-pet { transition: none; }
   }
-
-  .empty-note.room-empty {
-    position: absolute;
-    top: 226px; left: 0; right: 0;
-    margin: 0; padding: 0 24px;
-    text-align: center;
-  }
-
-  /* ---- 貯まった時間 ---- */
-  .mileage-stat { margin-top: 4px; font-size: 12px; color: var(--ink-soft); }
-  .mileage-stat b { color: #b98a2e; }
-
-  /* ---- タブ（おうち／図鑑） ---- */
-  .tab-bar { display: flex; gap: 6px; padding: 0 14px; margin-bottom: 6px; flex: none; }
-  .tab-btn {
-    flex: 1;
-    padding: 9px;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--ink-soft);
-    background: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(120, 100, 60, 0.2);
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .tab-btn.active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
-
-  /* ---- 図鑑 ---- */
-  .roster-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-    gap: 10px;
-  }
-  .roster-card {
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(120, 100, 60, 0.2);
-    border-radius: 10px;
-    padding: 8px 4px 6px;
-    text-align: center;
-  }
-  .roster-card svg { width: 52px; height: 52px; }
-  .roster-card.locked svg { filter: grayscale(1) brightness(0.7); opacity: 0.6; }
-  .roster-card .rc-name { font-size: 9px; color: var(--ink-soft); margin-top: 2px; line-height: 1.3; min-height: 2.2em; }
-  .roster-card.owned .rc-name { color: var(--ink-strong); font-weight: 600; }
-  .roster-card .rc-buy {
-    width: 100%;
-    margin-top: 4px;
-    padding: 5px 2px;
-    font-family: inherit;
-    font-size: 10px;
-    color: #fff;
-    background: #b98a2e;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .roster-card .rc-buy:disabled { background: rgba(120, 100, 60, 0.25); color: var(--ink-soft); cursor: default; }
-  .roster-card .rc-owned-mark { font-size: 10px; color: #5a7d5a; margin-top: 4px; }
-
-  /* ---- 名前をつける ---- */
-  .name-input {
-    width: 100%;
-    padding: 11px;
-    font-family: inherit;
-    font-size: 15px;
-    border: 1px solid var(--rule-strong);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.6);
-    color: var(--ink-text);
-  }
-
-  .save-note {
-    position: fixed;
-    top: calc(14px + env(safe-area-inset-top, 0px));
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 8px 16px;
-    font-family: inherit;
-    font-size: 12px;
-    color: #fff;
-    background: rgba(60, 50, 30, 0.85);
-    border-radius: 20px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-    z-index: 90;
-  }
-  .save-note.show { opacity: 1; }
-
-  .empty-note {
-    margin-top: 40px;
-    text-align: center;
-    font-size: 14px;
-    line-height: 2;
-    color: var(--ink-soft);
-    padding: 0 20px;
-  }
-
-  /* ---- 下部：はじめるボタン ---- */
-  .start-bar {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
-    background: linear-gradient(to top, var(--paper) 55%, transparent);
-  }
-  .start-btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-    background: linear-gradient(180deg, #6a8f6a, #5a7d5a);
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 14px rgba(80, 110, 80, 0.4);
-    cursor: pointer;
-  }
-  .start-btn:active { transform: translateY(1px); }
-
-  /* ---- 時間を決めるモーダル ---- */
-  .modal { position: absolute; inset: 0; z-index: 30; display: none; align-items: flex-end; background: rgba(30, 24, 14, 0.45); }
-  .modal.show { display: flex; }
-  .sheet {
-    width: 100%;
-    max-height: 82vh;
-    overflow-y: auto;
-    background: #f8f3e6;
-    border-radius: 18px 18px 0 0;
-    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -10px 30px rgba(30, 22, 10, 0.4);
-  }
-  .sheet h2 { margin: 0 0 4px; font-size: 18px; color: var(--ink-strong); }
-  .sheet .sub { margin: 0 0 16px; font-size: 12px; color: var(--ink-soft); }
-  .duration-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-  .duration-chips button {
-    flex: 1 1 auto;
-    min-width: 64px;
-    padding: 12px 6px;
-    font-family: inherit;
-    font-size: 15px;
-    color: var(--ink-strong);
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(120, 100, 60, 0.3);
-    border-radius: 10px;
-    cursor: pointer;
-  }
-  .duration-chips button.active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
-  .room-pick-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .room-pick-chips button {
-    padding: 12px 6px;
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--ink-strong);
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(120, 100, 60, 0.3);
-    border-radius: 10px;
-    cursor: pointer;
-  }
-  .room-pick-chips button:active { background: #5a7d5a; border-color: #4d6b4d; color: #fff; }
-  .custom-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-  .custom-row input {
-    width: 70px;
-    font-family: inherit;
-    font-size: 16px;
-    padding: 10px;
-    text-align: center;
-    border: 1px solid var(--rule-strong);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.6);
-    color: var(--ink-text);
-  }
-  .custom-row span { font-size: 13px; color: var(--ink-soft); }
-  .sheet-btns { display: flex; gap: 8px; margin-top: 18px; }
-  .sheet-btns button {
-    flex: none;
-    font-family: inherit;
-    font-size: 14px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(120, 100, 60, 0.35);
-    background: linear-gradient(180deg, #f3ecd9, #e7dfc8);
-    color: #4a4030;
-    cursor: pointer;
-  }
-  .sheet-btns .spacer { flex: 1; }
-  .sheet-btns .primary { background: #5a7d5a; border-color: #4d6b4d; color: #fff; font-weight: 600; }
-
-  /* ---- 集中中の全画面 ---- */
-  .session-screen {
-    position: fixed; inset: 0; z-index: 50;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(180deg, #eef2e4, #e2ead6);
-    padding: env(safe-area-inset-top, 0px) 20px env(safe-area-inset-bottom, 0px);
-  }
-  .session-screen.show { display: flex; }
-  .session-plant { width: min(60vw, 260px); height: min(60vw, 260px); }
-  .session-time { margin-top: 10px; font-size: 40px; font-weight: 700; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
-  .session-label { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
-  .session-note { margin-top: 24px; font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.8; max-width: 260px; }
-  .give-up-btn {
-    margin-top: 30px;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--ink-soft);
-    background: none;
-    border: none;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 10px;
-  }
-
-  /* ---- 終わった直後の結果 ---- */
-  .result-modal { position: absolute; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(30, 24, 14, 0.5); }
-  .result-modal.show { display: flex; }
-  .result-card {
-    width: min(84vw, 320px);
-    background: #f8f3e6;
-    border-radius: 16px;
-    padding: 26px 22px 20px;
-    text-align: center;
-    box-shadow: 0 12px 32px rgba(30, 22, 10, 0.5);
-  }
-  .result-card svg { width: 90px; height: 90px; }
-  .result-card h3 { margin: 8px 0 4px; font-size: 18px; color: var(--ink-strong); }
-  .result-card p { margin: 0 0 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
-  .result-card button {
-    width: 100%;
-    padding: 12px;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 600;
-    color: #fff;
-    background: #5a7d5a;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-  .result-card.fail button { background: #a86a5c; }
-
-  /* 鉢のパーツ共通 */
-  .pet-body { transform-box: fill-box; transform-origin: bottom center; transition: transform 0.5s ease; }
-  .pet-eyes, .pet-zzz, .pet-heart { transition: opacity 0.5s ease; }
 </style>
 </head>
 <body>
-
-<div class="save-note" id="saveNote"></div>
+<div class="toast" id="toast"></div>
 
 <div class="book">
   <div class="paper">
-    <button type="button" class="settings-btn" id="settingsBtn" aria-label="設定">⚙</button>
-    <div class="head">
-      <h1>手ざわり集中</h1>
-      <p>時間を決めて、離れずに一緒にいる。離れると寂しがります。</p>
-      <div class="total-time" id="totalTime"></div>
-      <div class="mileage-stat" id="mileageStat"></div>
+
+    <div class="app-head">
+      <span class="brand">手ざわり集中</span>
+      <button type="button" class="icon-btn" id="settingsBtn" aria-label="設定">⚙</button>
     </div>
-    <div class="tab-bar">
-      <button type="button" class="tab-btn active" id="tabHomeBtn">おうち</button>
-      <button type="button" class="tab-btn" id="tabRosterBtn">図鑑</button>
-      <button type="button" class="tab-btn" id="tabHouseBtn">家具</button>
-    </div>
-    <div class="garden-scroll">
-      <div id="homeView">
-        <div class="room-tab-bar" id="roomTabBar">
-          <button type="button" class="room-tab-btn" data-room="genkan">玄関</button>
-          <button type="button" class="room-tab-btn active" data-room="living">リビング</button>
-          <button type="button" class="room-tab-btn" data-room="kitchen">キッチン</button>
-          <button type="button" class="room-tab-btn" data-room="bedroom">寝室</button>
+
+    <div class="views">
+
+      <!-- ============ ホーム ============ -->
+      <div class="view center on" id="viewHome">
+        <div class="home-hero">
+          <div class="dial">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <defs>
+                <linearGradient id="dialGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#86a878"/>
+                  <stop offset="100%" stop-color="#5d7f5f"/>
+                </linearGradient>
+              </defs>
+              <circle class="track" cx="100" cy="100" r="86"/>
+              <circle class="fill" id="dialFill" cx="100" cy="100" r="86"/>
+            </svg>
+            <div class="dial-inner">
+              <div class="dial-pet" id="dialPet"></div>
+              <div class="dial-num" id="dialNum">0<small>分</small></div>
+              <div class="dial-cap" id="dialCap">きょうの集中</div>
+            </div>
+          </div>
+
+          <div class="week" id="weekStrip"></div>
+          <div class="streak" id="streakLine"></div>
+        </div>
+        <div class="home-foot">
+          <button type="button" class="btn-primary" id="startBtn">集中をはじめる</button>
+        </div>
+      </div>
+
+      <!-- ============ きろく ============ -->
+      <div class="view" id="viewRecord">
+        <h2 class="view-title">きろく</h2>
+        <div class="stat-row">
+          <div class="stat"><div class="st-label">きょう</div><div class="st-value" id="statToday">-</div></div>
+          <div class="stat"><div class="st-label">この7日</div><div class="st-value" id="statWeek">-</div></div>
+          <div class="stat"><div class="st-label">つづけて</div><div class="st-value" id="statStreak">-</div></div>
+        </div>
+        <div class="card">
+          <h3>この7日間</h3>
+          <div class="bars" id="barChart"></div>
+        </div>
+        <div class="card">
+          <h3>ぜんぶで</h3>
+          <div class="stat-row">
+            <div class="stat" style="background:transparent;border:none;padding:0"><div class="st-label">集中した時間</div><div class="st-value" id="statTotal">-</div></div>
+            <div class="stat" style="background:transparent;border:none;padding:0"><div class="st-label">なかま</div><div class="st-value" id="statPets">-</div></div>
+            <div class="stat" style="background:transparent;border:none;padding:0"><div class="st-label">いちばん長く</div><div class="st-value" id="statBest">-</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>さいきん なかまになった子</h3>
+          <div class="log-list" id="logList"></div>
+        </div>
+      </div>
+
+      <!-- ============ おうち ============ -->
+      <div class="view" id="viewHouse">
+        <h2 class="view-title">おうち</h2>
+        <div class="room-tabs" id="roomTabs">
+          <button type="button" data-room="genkan">玄関</button>
+          <button type="button" class="active" data-room="living">リビング</button>
+          <button type="button" data-room="kitchen">キッチン</button>
+          <button type="button" data-room="bedroom">寝室</button>
         </div>
         <div class="room-houses" id="roomHouses"></div>
         <div class="room-scene room-living" id="roomScene">
@@ -647,181 +771,258 @@
           <div class="room-floor-bg"></div>
           <div class="room-rug" id="roomRug"></div>
           <div class="room-pets" id="roomPets"></div>
-          <div class="empty-note room-empty" id="emptyNote" style="display:none;">
-            まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。
-          </div>
+          <div class="room-empty" id="roomEmpty" style="display:none;"></div>
+        </div>
+        <button type="button" class="btn-quiet" id="openShopBtn" style="width:100%;margin-top:var(--s3)">＋ ハウスを置く</button>
+      </div>
+
+      <!-- ============ 図鑑 ============ -->
+      <div class="view" id="viewRoster">
+        <h2 class="view-title">図鑑</h2>
+        <div class="wallet">貯まった時間<b id="walletRoster">-</b></div>
+        <div class="grid" id="rosterGrid"></div>
+      </div>
+
+    </div>
+
+    <nav class="tabbar" id="tabbar">
+      <button type="button" class="tab on" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M12 3l8 7v10a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1V10z"/></svg>
+        <span>ホーム</span>
+      </button>
+      <button type="button" class="tab" data-view="record">
+        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        <span>きろく</span>
+      </button>
+      <button type="button" class="tab" data-view="house">
+        <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-5h4v5"/></svg>
+        <span>おうち</span>
+      </button>
+      <button type="button" class="tab" data-view="roster">
+        <svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM18 7h2v13H7"/></svg>
+        <span>図鑑</span>
+      </button>
+    </nav>
+
+    <!-- ============ 時間を決める ============ -->
+    <div class="modal" id="pickerModal">
+      <div class="sheet">
+        <h2>何分、集中しますか？</h2>
+        <p class="sub">はじめたら、この画面のままでいてください。ほかのアプリに移ったり画面をロックすると、その回はおしまいです（すぐ戻れば続けられます）。</p>
+        <div class="chips" id="durationChips">
+          <button type="button" data-min="15">15分</button>
+          <button type="button" data-min="25">25分</button>
+          <button type="button" data-min="45">45分</button>
+          <button type="button" data-min="60">60分</button>
+        </div>
+        <div class="field-row">
+          <input type="number" id="customMinutes" min="1" max="180" inputmode="numeric" placeholder="じゆう">
+          <span>分（1〜180）</span>
+        </div>
+        <div class="sheet-btns">
+          <button type="button" class="btn-quiet" id="pickerCancel">とじる</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet primary" id="pickerStart">はじめる</button>
         </div>
       </div>
-      <div class="roster-grid" id="rosterGrid" style="display:none;"></div>
-      <div class="roster-grid" id="houseGrid" style="display:none;"></div>
     </div>
-    <div class="start-bar">
-      <button type="button" class="start-btn" id="openPickerBtn">＋ 集中をはじめる</button>
-    </div>
-  </div>
 
-  <!-- 時間を決めるシート -->
-  <div class="modal" id="pickerModal">
-    <div class="sheet">
-      <h2>何分、集中しますか？</h2>
-      <p class="sub">はじめたら、アプリを離れたり画面をロックしたりすると、その回は失敗になります。</p>
-      <div class="duration-chips" id="durationChips">
-        <button type="button" data-min="15">15分</button>
-        <button type="button" data-min="25">25分</button>
-        <button type="button" data-min="45">45分</button>
-        <button type="button" data-min="60">60分</button>
-      </div>
-      <div class="custom-row">
-        <input type="number" id="customMinutes" min="1" max="180" placeholder="じゆうに">
-        <span>分</span>
-      </div>
-      <div class="sheet-btns">
-        <button type="button" id="pickerCancel">とじる</button>
-        <span class="spacer"></span>
-        <button type="button" class="primary" id="pickerStart">はじめる</button>
+    <!-- ============ 結果 ============ -->
+    <div class="modal mid" id="resultModal">
+      <div class="sheet" id="resultCard">
+        <div id="resultPetSlot" style="height:96px"></div>
+        <h2 id="resultTitle" style="margin-bottom:6px"></h2>
+        <p class="sub" id="resultBody" style="margin-bottom:0"></p>
+        <div class="sheet-btns" style="flex-direction:column;gap:var(--s2)">
+          <button type="button" class="btn-quiet primary" id="resultAgain" style="width:100%">もう一回</button>
+          <button type="button" class="btn-quiet" id="resultClose" style="width:100%">とじる</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 結果 -->
-  <div class="result-modal" id="resultModal">
-    <div class="result-card" id="resultCard">
-      <div id="resultPlantSlot"></div>
-      <h3 id="resultTitle"></h3>
-      <p id="resultBody"></p>
-      <button type="button" id="resultClose">とじる</button>
+    <!-- ============ ハウスを置く ============ -->
+    <div class="modal" id="shopModal">
+      <div class="sheet">
+        <h2>ハウスを置く</h2>
+        <p class="sub">集中して貯まった時間で、なかま用のハウスを置けます。1つのハウスには4匹まで入ります。</p>
+        <div class="wallet">貯まった時間<b id="walletShop">-</b></div>
+        <div class="grid" id="houseGrid"></div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet" id="shopClose">とじる</button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- 設定 -->
-  <div class="modal" id="settingsModal">
-    <div class="sheet">
-      <h2>設定</h2>
-      <p class="sub">手ざわり集中について</p>
-      <p class="settings-text">時間を決めて集中をはじめると、なかまが1匹選ばれます。時間のあいだ画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。途中でアプリを離れたり画面をロックしたりすると、その回はおうちに加わりません。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を貯まった時間で迎えることもできます。「家具」タブでは、玄関・リビング・キッチン・寝室になかま用のハウスを置けます。ハウスには入れる匹数の上限があり、あふれた子やハウスの無い子はリビングの床にいます。おうちの子は名前をつけたり変えたりできます。</p>
-      <div class="settings-row">
-        <button type="button" class="settings-link" id="privacyLinkBtn">プライバシーポリシー</button>
-      </div>
-      <div class="settings-row">
-        <button type="button" class="settings-danger" id="resetDataBtn">記録をぜんぶ消す</button>
-      </div>
-      <div class="sheet-btns">
-        <span class="spacer"></span>
-        <button type="button" class="primary" id="settingsClose">とじる</button>
+    <!-- ============ 設定 ============ -->
+    <div class="modal" id="settingsModal">
+      <div class="sheet">
+        <h2>設定</h2>
+        <p class="sub">手ざわり集中のこと</p>
+        <div class="label">1日の目あて</div>
+        <div class="chips" id="goalChips">
+          <button type="button" data-goal="30">30分</button>
+          <button type="button" data-goal="60">60分</button>
+          <button type="button" data-goal="90">90分</button>
+          <button type="button" data-goal="120">120分</button>
+        </div>
+        <div class="label">あそびかた</div>
+        <p class="sub" style="margin-bottom:var(--s4)">時間を決めて集中をはじめると、なかまが1匹あらわれます。その時間ずっとこの画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を迎えたり、「おうち」でハウスを置いたりできます。</p>
+        <div style="display:flex;flex-direction:column;gap:var(--s2)">
+          <button type="button" class="btn-quiet" id="howtoBtn">はじめの説明をもう一度みる</button>
+          <button type="button" class="btn-quiet" id="privacyBtn">プライバシーポリシー</button>
+          <button type="button" class="btn-quiet btn-danger" id="resetBtn">なかまと記録をぜんぶ消す</button>
+        </div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet primary" id="settingsClose">とじる</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 名前をつける -->
-  <div class="modal" id="nameModal">
-    <div class="sheet">
-      <h2>名前をつける</h2>
-      <p class="sub" id="nameModalSub"></p>
-      <input type="text" id="nameInput" class="name-input" maxlength="12" placeholder="なまえ（空でもOK）">
-      <div class="sheet-btns">
-        <button type="button" id="nameCancel">とじる</button>
-        <span class="spacer"></span>
-        <button type="button" class="primary" id="nameSave">きめる</button>
+    <!-- ============ 名前をつける ============ -->
+    <div class="modal" id="nameModal">
+      <div class="sheet">
+        <h2>名前をつける</h2>
+        <p class="sub" id="nameModalSub"></p>
+        <input type="text" id="nameInput" class="text-input" maxlength="12" placeholder="なまえ（空でもOK）">
+        <div class="sheet-btns">
+          <button type="button" class="btn-quiet" id="nameCancel">とじる</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet primary" id="nameSave">きめる</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- どの部屋に置く／移すか選ぶ -->
-  <div class="modal" id="roomPickModal">
-    <div class="sheet">
-      <h2 id="roomPickTitle">どの部屋に置きますか？</h2>
-      <div class="room-pick-chips" id="roomPickChips">
-        <button type="button" data-room="genkan">玄関</button>
-        <button type="button" data-room="living">リビング</button>
-        <button type="button" data-room="kitchen">キッチン</button>
-        <button type="button" data-room="bedroom">寝室</button>
-      </div>
-      <div class="sheet-btns">
-        <button type="button" id="roomPickCancel">とじる</button>
-        <span class="spacer"></span>
+    <!-- ============ 部屋を選ぶ ============ -->
+    <div class="modal" id="roomPickModal">
+      <div class="sheet">
+        <h2 id="roomPickTitle">どの部屋に置きますか？</h2>
+        <div class="chips grid2" id="roomPickChips">
+          <button type="button" data-room="genkan">玄関</button>
+          <button type="button" data-room="living">リビング</button>
+          <button type="button" data-room="kitchen">キッチン</button>
+          <button type="button" data-room="bedroom">寝室</button>
+        </div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet" id="roomPickCancel">とじる</button>
+        </div>
       </div>
     </div>
+
+    <!-- ============ はじめの説明 ============ -->
+    <div class="modal mid" id="introModal">
+      <div class="sheet">
+        <div style="font-size:40px;line-height:1.4">🐾</div>
+        <h2 style="margin-bottom:var(--s4)">ようこそ</h2>
+        <div style="text-align:left;font-size:var(--t-md);line-height:2.1;color:var(--ink-2)">
+          <p style="margin:0 0 10px">① 集中したい時間を決めます。</p>
+          <p style="margin:0 0 10px">② なかまが1匹あらわれ、眠ったまま待っています。</p>
+          <p style="margin:0 0 10px">③ その時間ずっと画面から離れずにいると、目を覚まして懐き、おうちに加わります。</p>
+          <p style="margin:0;color:var(--ink-3);font-size:var(--t-sm)">ほかのアプリに移ったり画面をロックすると、その回はおしまいです。ただし、うっかり離れてもすぐ（10秒以内に）戻れば続けられます。離れていたぶんの時間は数えません。これまでの記録が消えることはありません。</p>
+        </div>
+        <div class="sheet-btns">
+          <button type="button" class="btn-quiet primary" id="introClose" style="width:100%">はじめる</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- 集中中の全画面 -->
-<div class="session-screen" id="sessionScreen">
-  <div class="session-plant" id="sessionPlantSlot"></div>
-  <div class="session-time" id="sessionTime">00:00</div>
-  <div class="session-label" id="sessionLabel"></div>
-  <div class="session-note">この画面を離れたり、他のアプリに切り替えたり、<br>画面をロックすると、このなかまは眠ってしまいます。</div>
-  <button type="button" class="give-up-btn" id="giveUpBtn">やめる</button>
+<!-- ============ 集中中の全画面 ============ -->
+<div class="session" id="sessionScreen">
+  <div class="sess-warn" id="sessWarn">あぶなかった。もどってこられました</div>
+  <div class="sess-ring">
+    <svg class="ring" viewBox="0 0 240 240" aria-hidden="true">
+      <circle class="track" cx="120" cy="120" r="110"/>
+      <circle class="fill" id="sessFill" cx="120" cy="120" r="110"/>
+    </svg>
+    <div class="sess-pet" id="sessPetSlot"></div>
+  </div>
+  <div class="sess-time" id="sessTime">00:00</div>
+  <div class="sess-label" id="sessLabel"></div>
+  <div class="sess-note">この画面のまま、そばにいてあげて。</div>
+  <button type="button" class="sess-give-up" id="giveUpBtn">やめる</button>
 </div>
 
 <script>
 (function () {
   'use strict';
 
-  // ---- 保存の合図 ----
-  var saveNoteTimer = 0;
-  function flashSaved(msg) {
-    var el = document.getElementById('saveNote');
-    el.textContent = msg || '保存しました';
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- 知らせ ----
+  var toastTimer = 0;
+  function toast(msg) {
+    var el = $('toast');
+    el.textContent = msg;
     el.classList.add('show');
-    clearTimeout(saveNoteTimer);
-    saveNoteTimer = setTimeout(function () { el.classList.remove('show'); }, 1200);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1400);
   }
 
-  // ---- ペットSVG。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
+  // ---- localStorage の入口をここに集約する ----
+  // iOS のプライベートモードやストレージ制限では getItem すら SecurityError を投げることがある。
+  // 直に触ると起動処理の途中で落ちてタブ初期化も Service Worker 登録も走らなくなるため、
+  // 読み書きは必ずこの3つを通し、失敗時は既定値で動き続けられるようにする
+  function lsGet(key, fallback) {
+    try {
+      var v = localStorage.getItem(key);
+      return (v === null || v === undefined) ? fallback : v;
+    } catch (e) { return fallback; }
+  }
+  function lsSet(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch (e) { return false; }
+  }
+  function lsRemove(key) {
+    try { localStorage.removeItem(key); return true; }
+    catch (e) { return false; }
+  }
+
+  // ---- ペット。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
   var PET_TYPES = ['cat', 'dog', 'rabbit', 'bird', 'hamster', 'turtle'];
-  // 種類ごとの品種一覧。keyは保存用の固定ID、nameは画面表示（無ければ表示しない）、
-  // colorは地の色、patternは模様（petBody/catPatternで解釈。'solid'は無地）
   var PET_VARIANTS = {
     cat: [
       { key: 'american-shorthair', name: 'アメリカンショートヘア', color: '#b8b0a0', pattern: 'tabby' },
-      { key: 'russian-blue',       name: 'ロシアンブルー',         color: '#8a97a0', pattern: 'solid' },
+      { key: 'russian-blue',       name: 'ロシアンブルー',           color: '#8a97a0', pattern: 'solid' },
       { key: 'scottish-fold',      name: 'スコティッシュフォールド', color: '#c9bfae', pattern: 'fold' },
-      { key: 'maine-coon',         name: 'メインクーン',           color: '#a37a4e', pattern: 'tufted-tabby' },
-      { key: 'persian',            name: 'ペルシャ',               color: '#f3ece0', pattern: 'fluffy' },
-      { key: 'siamese',            name: 'シャム',                 color: '#f0e6d2', pattern: 'points' },
-      { key: 'bengal',             name: 'ベンガル',               color: '#e0a952', pattern: 'spots' },
-      { key: 'abyssinian',         name: 'アビシニアン',           color: '#b06a3f', pattern: 'solid' },
+      { key: 'maine-coon',         name: 'メインクーン',             color: '#a37a4e', pattern: 'tufted-tabby' },
+      { key: 'persian',            name: 'ペルシャ',                 color: '#f3ece0', pattern: 'fluffy' },
+      { key: 'siamese',            name: 'シャム',                   color: '#f0e6d2', pattern: 'points' },
+      { key: 'bengal',             name: 'ベンガル',                 color: '#e0a952', pattern: 'spots' },
+      { key: 'abyssinian',         name: 'アビシニアン',             color: '#b06a3f', pattern: 'solid' },
       { key: 'british-shorthair',  name: 'ブリティッシュショートヘア', color: '#a3a89c', pattern: 'round' },
-      { key: 'calico',             name: '三毛猫',                 color: '#f3ece0', pattern: 'calico' }
+      { key: 'calico',             name: '三毛猫',                   color: '#f3ece0', pattern: 'calico' }
     ],
-    dog: [
-      { key: 'brown', name: null, color: '#c98a52', pattern: 'solid' },
-      { key: 'dark',  name: null, color: '#8a6a48', pattern: 'solid' },
-      { key: 'cream', name: null, color: '#e8ddc2', pattern: 'solid' }
-    ],
-    rabbit: [
-      { key: 'pink',  name: null, color: '#f0c9d6', pattern: 'solid' },
-      { key: 'ivory', name: null, color: '#e6ddc9', pattern: 'solid' },
-      { key: 'beige', name: null, color: '#c9b8a0', pattern: 'solid' }
-    ],
-    bird: [
-      { key: 'blue',  name: null, color: '#8fb6d9', pattern: 'solid' },
-      { key: 'gold',  name: null, color: '#e0a952', pattern: 'solid' },
-      { key: 'green', name: null, color: '#7fb08a', pattern: 'solid' }
-    ],
-    hamster: [
-      { key: 'gold',  name: null, color: '#e0b96e', pattern: 'solid' },
-      { key: 'brown', name: null, color: '#c98a52', pattern: 'solid' },
-      { key: 'cream', name: null, color: '#f3ece0', pattern: 'solid' }
-    ],
-    turtle: [
-      { key: 'green', name: null, color: '#7fb08a', pattern: 'solid' },
-      { key: 'olive', name: null, color: '#8fa87f', pattern: 'solid' },
-      { key: 'tan',   name: null, color: '#b0a870', pattern: 'solid' }
-    ]
+    // name は「固有の品種名」。これがある子は値段が上がる（petPrice）。
+    // tone は毛色の呼び名で、図鑑で同じ種類が同じ名前に見えてしまうのを防ぐためだけのもの
+    dog:     [{ key: 'brown', name: null, tone: 'ちゃいろ', color: '#c98a52', pattern: 'solid' }, { key: 'dark', name: null, tone: 'こげちゃ', color: '#8a6a48', pattern: 'solid' }, { key: 'cream', name: null, tone: 'クリーム', color: '#e8ddc2', pattern: 'solid' }],
+    rabbit:  [{ key: 'pink',  name: null, tone: 'さくら',   color: '#f0c9d6', pattern: 'solid' }, { key: 'ivory', name: null, tone: 'アイボリー', color: '#e6ddc9', pattern: 'solid' }, { key: 'beige', name: null, tone: 'ベージュ', color: '#c9b8a0', pattern: 'solid' }],
+    bird:    [{ key: 'blue',  name: null, tone: 'あお',     color: '#8fb6d9', pattern: 'solid' }, { key: 'gold', name: null, tone: 'きいろ',  color: '#e0a952', pattern: 'solid' }, { key: 'green', name: null, tone: 'みどり',  color: '#7fb08a', pattern: 'solid' }],
+    hamster: [{ key: 'gold',  name: null, tone: 'きんいろ', color: '#e0b96e', pattern: 'solid' }, { key: 'brown', name: null, tone: 'ちゃいろ', color: '#c98a52', pattern: 'solid' }, { key: 'cream', name: null, tone: 'クリーム', color: '#f3ece0', pattern: 'solid' }],
+    turtle:  [{ key: 'green', name: null, tone: 'みどり',   color: '#7fb08a', pattern: 'solid' }, { key: 'olive', name: null, tone: 'オリーブ', color: '#8fa87f', pattern: 'solid' }, { key: 'tan',  name: null, tone: 'きなり',  color: '#b0a870', pattern: 'solid' }]
   };
+  var SPECIES_NAME = { cat: '猫', dog: '犬', rabbit: 'うさぎ', bird: '小鳥', hamster: 'ハムスター', turtle: 'かめ' };
+
   function petVariant(type, key) {
     var list = PET_VARIANTS[type] || [];
     for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i];
     return null;
   }
+  function petLabel(type, key) {
+    var v = petVariant(type, key);
+    if (!v) return SPECIES_NAME[type] || '';
+    if (v.name) return v.name;
+    return (SPECIES_NAME[type] || '') + (v.tone ? '・' + v.tone : '');
+  }
   function pickPet() {
     var type = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
     var variants = PET_VARIANTS[type];
-    var variant = variants[Math.floor(Math.random() * variants.length)];
-    return { type: type, key: variant.key };
+    return { type: type, key: variants[Math.floor(Math.random() * variants.length)].key };
   }
-  // 猫の品種模様。頭・体の上に重ねて描く追加パーツを返す
   function catPattern(pattern, c) {
     switch (pattern) {
       case 'tabby':
@@ -842,8 +1043,11 @@
         return '<path d="M9 40 q-4 -2 -3 -7 M8 47 q-4 1 -4 -4 M9 54 q-4 3 -6 0 M41 40 q4 -2 3 -7 M42 47 q4 1 4 -4 M41 54 q4 3 6 0" ' +
           'stroke="' + c + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
       case 'calico':
-        return '<path d="M9 42 Q12 26 22 24 L23 60 Q12 59 9 48 Z" fill="#e0a952"/>' +
-          '<path d="M41 42 Q38 28 29 25 L28 60 Q38 59 41 48 Z" fill="#3a332a"/>';
+        // 体の左右に茶と黒のぶち、頭には片側だけ黒のぶち。
+        // 顔（鼻・ひげ・目）は上に重なるので、頭のぶちは左寄りに小さく置いて潰さない
+        return '<ellipse cx="14" cy="47" rx="6" ry="9" fill="#e0a952"/>' +
+          '<ellipse cx="34" cy="50" rx="6.5" ry="8" fill="#3a332a"/>' +
+          '<path d="M16 19 Q13 26 15 31 Q20 30 21 22 Z" fill="#3a332a"/>';
       default:
         return '';
     }
@@ -851,85 +1055,115 @@
   function petBody(type, c, pattern) {
     switch (type) {
       case 'cat':
-        var earFold = pattern === 'fold';
-        var ears = earFold
+        var ears = (pattern === 'fold')
           ? '<ellipse cx="17" cy="16" rx="4.2" ry="3" fill="' + c + '"/><ellipse cx="33" cy="16" rx="4.2" ry="3" fill="' + c + '"/>'
           : '<path d="M12 24 L16 8 L23 20 Z" fill="' + c + '"/><path d="M38 24 L34 8 L27 20 Z" fill="' + c + '"/>' +
             '<path d="M15 21 L17 12 L20 18 Z" fill="#f0b8bc" opacity="0.8"/><path d="M35 21 L33 12 L30 18 Z" fill="#f0b8bc" opacity="0.8"/>';
         var bodyRx = (pattern === 'round') ? 17 : 15;
-        return (
-          // しっぽ（体の後ろから伸びて先が丸まる。tailクラスで揺れるアニメーションをかける）
-          '<path class="tail" d="M37 54 Q49 52 48 36 Q47 24 39 19" fill="none" stroke="' + c + '" stroke-width="6.5" stroke-linecap="round"/>' +
-          // 前あし
+        return '<path class="tail" d="M37 54 Q49 52 48 36 Q47 24 39 19" fill="none" stroke="' + c + '" stroke-width="6.5" stroke-linecap="round"/>' +
           '<ellipse cx="17" cy="59" rx="4.5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="59" rx="4.5" ry="4" fill="' + c + '"/>' +
-          // 体
-          '<ellipse cx="25" cy="48" rx="' + bodyRx + '" ry="13" fill="' + c + '"/>' +
-          ears +
-          // 頭
+          '<ellipse cx="25" cy="48" rx="' + bodyRx + '" ry="13" fill="' + c + '"/>' + ears +
           '<circle cx="25" cy="26" r="13" fill="' + c + '"/>' +
-          // 鼻・口もと・ひげ
           '<path d="M23 30 L27 30 L25 33 Z" fill="#c96b6b"/>' +
           '<path d="M25 33 Q22 36 19 35 M25 33 Q28 36 31 35" stroke="rgba(0,0,0,0.35)" stroke-width="1" fill="none"/>' +
           '<path d="M13 27 L4 25 M13 30 L4 31 M37 27 L46 25 M37 30 L46 31" stroke="rgba(60,50,30,0.4)" stroke-width="1" stroke-linecap="round"/>' +
-          catPattern(pattern, c)
-        );
+          catPattern(pattern, c);
+      // 以下は猫と同じ作りにそろえてある。うしろのもの（しっぽ・耳）から順に重ね、
+      // 最後に顔を描く。頭はどの子も中心 x=25 に置く（目と閉じた目の位置が共通のため）
       case 'dog':
-        return '<ellipse cx="11" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(-18 11 38)"/>' +
-          '<ellipse cx="39" cy="38" rx="6" ry="11" fill="' + c + '" transform="rotate(18 39 38)"/>' +
-          '<ellipse cx="25" cy="45" rx="18" ry="15" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="50" rx="5" ry="3.5" fill="#fbead6"/>';
+        return '<path class="tail" d="M38 51 Q48 49 46 38" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
+          '<ellipse cx="12" cy="30" rx="5.2" ry="10" fill="' + c + '" style="filter:brightness(0.88)"/>' +
+          '<ellipse cx="38" cy="30" rx="5.2" ry="10" fill="' + c + '" style="filter:brightness(0.88)"/>' +
+          '<ellipse cx="17" cy="58" rx="5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="58" rx="5" ry="4" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="47" rx="16" ry="13" fill="' + c + '"/>' +
+          '<circle cx="25" cy="26" r="12" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="31" rx="7" ry="5" fill="#fbead6"/>' +
+          '<ellipse cx="25" cy="28.5" rx="2.4" ry="1.8" fill="#4a3b2e"/>';
       case 'rabbit':
-        return '<ellipse cx="18" cy="18" rx="4.5" ry="15" fill="' + c + '" transform="rotate(-6 18 18)"/>' +
-          '<ellipse cx="32" cy="18" rx="4.5" ry="15" fill="' + c + '" transform="rotate(6 32 18)"/>' +
-          '<ellipse cx="25" cy="45" rx="17" ry="15" fill="' + c + '"/>';
+        return '<circle class="tail" cx="40" cy="52" r="4.5" fill="' + c + '" style="filter:brightness(1.12)"/>' +
+          '<ellipse cx="18" cy="15" rx="4.2" ry="13" fill="' + c + '" transform="rotate(-8 18 15)"/>' +
+          '<ellipse cx="32" cy="15" rx="4.2" ry="13" fill="' + c + '" transform="rotate(8 32 15)"/>' +
+          '<ellipse cx="18" cy="16" rx="2" ry="9" fill="#f6d9de" transform="rotate(-8 18 16)"/>' +
+          '<ellipse cx="32" cy="16" rx="2" ry="9" fill="#f6d9de" transform="rotate(8 32 16)"/>' +
+          '<ellipse cx="17" cy="58" rx="5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="58" rx="5" ry="4" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="47" rx="15" ry="13" fill="' + c + '"/>' +
+          '<circle cx="25" cy="30" r="11" fill="' + c + '"/>' +
+          '<path d="M23 33 L27 33 L25 35.5 Z" fill="#d98a97"/>';
       case 'bird':
-        return '<ellipse cx="25" cy="45" rx="17" ry="16" fill="' + c + '"/>' +
-          '<ellipse cx="33" cy="44" rx="8" ry="6" fill="rgba(0,0,0,0.12)" transform="rotate(18 33 44)"/>' +
-          '<path d="M8 43 L1 41 L8 47 Z" fill="#e0a952"/>';
+        return '<path d="M10 38 L1 34 L9 45 Z" fill="' + c + '" style="filter:brightness(0.85)"/>' +
+          '<path d="M21 55 v4 M29 55 v4 M19 59 h5 M27 59 h5" stroke="#c9903e" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
+          '<ellipse cx="25" cy="43" rx="15" ry="15" fill="' + c + '"/>' +
+          '<ellipse cx="34" cy="44" rx="7" ry="9" fill="rgba(0,0,0,0.12)" transform="rotate(14 34 44)"/>' +
+          '<circle cx="25" cy="23" r="10" fill="' + c + '"/>' +
+          '<path d="M35 23 L42 25 L35 27 Z" fill="#e0a952"/>';
       case 'hamster':
-        return '<ellipse cx="14" cy="32" rx="4" ry="4.5" fill="' + c + '"/><ellipse cx="36" cy="32" rx="4" ry="4.5" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="46" rx="20" ry="15" fill="' + c + '"/>';
+        return '<ellipse cx="15" cy="18" rx="5" ry="5" fill="' + c + '"/><ellipse cx="35" cy="18" rx="5" ry="5" fill="' + c + '"/>' +
+          '<ellipse cx="15" cy="18" rx="2.6" ry="2.6" fill="#e8b8b8"/><ellipse cx="35" cy="18" rx="2.6" ry="2.6" fill="#e8b8b8"/>' +
+          '<ellipse cx="18" cy="57" rx="4.5" ry="3.5" fill="' + c + '"/><ellipse cx="32" cy="57" rx="4.5" ry="3.5" fill="' + c + '"/>' +
+          '<ellipse cx="25" cy="46" rx="17" ry="13" fill="' + c + '"/>' +
+          '<circle cx="25" cy="27" r="12" fill="' + c + '"/>' +
+          '<ellipse cx="14" cy="31" rx="4.5" ry="4" fill="' + c + '" style="filter:brightness(1.08)"/>' +
+          '<ellipse cx="36" cy="31" rx="4.5" ry="4" fill="' + c + '" style="filter:brightness(1.08)"/>' +
+          '<ellipse cx="25" cy="31" rx="2" ry="1.5" fill="#4a3b2e"/>';
       case 'turtle':
-        return '<ellipse cx="25" cy="46" rx="19" ry="14" fill="' + c + '"/>' +
-          '<path d="M10 46 Q25 34 40 46 Q25 41 10 46 Z" fill="rgba(0,0,0,0.14)"/>' +
-          '<ellipse cx="8" cy="48" rx="5" ry="4" fill="' + c + '"/>';
+        return '<ellipse cx="13" cy="56" rx="5.5" ry="3.5" fill="' + c + '" style="filter:brightness(1.12)"/>' +
+          '<ellipse cx="37" cy="56" rx="5.5" ry="3.5" fill="' + c + '" style="filter:brightness(1.12)"/>' +
+          '<ellipse cx="25" cy="45" rx="19" ry="14" fill="' + c + '" style="filter:brightness(0.8)"/>' +
+          '<path d="M25 31 Q11 37 8 46 M25 31 Q39 37 42 46 M7 45 h36" stroke="rgba(0,0,0,0.18)" stroke-width="1.5" fill="none"/>' +
+          '<circle cx="25" cy="25" r="10" fill="' + c + '"/>';
     }
     return '';
   }
-  // 顔の中心（目・Zzzの基準）。猫は頭が体と別に上へ分かれているぶん高い位置になる
-  var FACE_Y = { cat: 25 };
-  function petSVG(id, type, key) {
+  // 顔（目・閉じた目）の高さ。種類ごとに頭の位置が違うので個別に持つ
+  var FACE_Y = { cat: 25, dog: 24, rabbit: 28, bird: 21, hamster: 26, turtle: 24 };
+  function petSVG(type, key) {
     var v = petVariant(type, key) || { color: '#c9b8a0', pattern: 'solid' };
-    var fy = FACE_Y[type] || 43;
-    return '<svg id="' + id + '" viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
+    var fy = FACE_Y[type] || 26;
+    return '<svg viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
       '<text class="pet-zzz" x="31" y="' + (fy - 16) + '" font-size="10" fill="#8a8d99">Zzz</text>' +
       '<g class="pet-body">' + petBody(type, v.color, v.pattern) + '</g>' +
+      // 眠っているあいだの閉じた目。のっぺらぼうに見えないよう、起きた目と入れ替える
+      '<g class="pet-sleep"><path d="M17 ' + fy + ' q3 2.6 6 0 M27 ' + fy + ' q3 2.6 6 0" ' +
+        'stroke="#3a332a" stroke-width="1.4" fill="none" stroke-linecap="round"/></g>' +
       '<g class="pet-eyes" opacity="0"><circle cx="20" cy="' + fy + '" r="1.5" fill="#3a332a"/><circle cx="30" cy="' + fy + '" r="1.5" fill="#3a332a"/></g>' +
       '<g class="pet-heart" opacity="0" transform="translate(25,8) scale(0.4)"><path d="M0 4 C -6 -3, -14 2, 0 12 C 14 2, 6 -3, 0 4 Z" fill="#e0788a"/></g>' +
     '</svg>';
   }
-  // progress(0〜1): 0.3未満=眠っている(Zzz)、それ以上=目を開けて起きる、0.95以上=懐いてハート
-  function paintPet(svgEl, progress) {
+  // 中身を petSVG に差し替え、progress の見た目まで当てて <svg> を返す
+  function fillPet(host, type, key, progress, withHeart) {
+    host.innerHTML = petSVG(type, key);
+    var svg = host.querySelector('svg');
+    paintPet(svg, progress, withHeart);
+    return svg;
+  }
+  // progress(0〜1): 0.3未満=眠っている(Zzz・閉じた目)、それ以上=目を開けて起きる、0.95以上=懐いてハート。
+  // ハートは「いま懐いた」瞬間の合図なので、集中中と結果のときだけ出す。
+  // おうちや図鑑に並ぶ子は落ち着いた状態なので、withHeart を渡さず出さない
+  function paintPet(svgEl, progress, withHeart) {
+    if (!svgEl) return;
     var t = Math.max(0, Math.min(1, progress));
+    var asleep = t < 0.3;
     var body = svgEl.querySelector('.pet-body');
-    body.style.transform = 'scaleY(' + (0.85 + 0.15 * Math.min(1, t / 0.4)).toFixed(3) + ')';
-    svgEl.querySelector('.pet-zzz').style.opacity = t < 0.3 ? 1 : 0;
-    svgEl.querySelector('.pet-eyes').style.opacity = t >= 0.3 ? 1 : 0;
-    svgEl.querySelector('.pet-heart').style.opacity = t >= 0.95 ? 1 : 0;
+    if (body) body.style.transform = 'scaleY(' + (0.85 + 0.15 * Math.min(1, t / 0.4)).toFixed(3) + ')';
+    var zzz = svgEl.querySelector('.pet-zzz'), sleep = svgEl.querySelector('.pet-sleep'),
+        eyes = svgEl.querySelector('.pet-eyes'), heart = svgEl.querySelector('.pet-heart');
+    if (zzz) zzz.style.opacity = asleep ? 1 : 0;
+    if (sleep) sleep.style.opacity = asleep ? 1 : 0;
+    if (eyes) eyes.style.opacity = asleep ? 0 : 1;
+    if (heart) heart.style.opacity = (withHeart && t >= 0.95) ? 1 : 0;
   }
   function sadPet(svgEl) {
-    svgEl.querySelector('.pet-zzz').style.opacity = 1;
-    svgEl.querySelector('.pet-eyes').style.opacity = 0;
-    svgEl.querySelector('.pet-heart').style.opacity = 0;
+    if (!svgEl) return;
+    paintPet(svgEl, 0);
     svgEl.querySelectorAll('.pet-body').forEach(function (el) {
       el.style.transition = 'filter 0.8s ease';
-      el.style.filter = 'grayscale(1) brightness(0.8)';
+      el.style.filter = 'grayscale(1) brightness(0.82)';
     });
   }
 
-  // ---- ストレージ ----
-  // pf:garden = [{id, minutes, completedAt, type, key, name, source}]（懐いた／迎えたなかまだけ記録。失敗は残さない）
-  // source: 'session'=集中して懐いた（minutesはその回の分数） / 'shop'=貯まった時間で迎えた（minutesは0）
+  // ---- 保存 ----
+  // pf:garden = [{id, minutes, completedAt, type, key, name, source}]
+  // source: 'session'=集中して懐いた / 'shop'=貯まった時間で迎えた（minutesは0）
   function coreValid(g) {
     return g && typeof g === 'object' &&
       typeof g.id === 'string' && g.id &&
@@ -937,15 +1171,13 @@
       Number.isFinite(g.completedAt);
   }
   function petFieldsValid(g) {
-    return PET_TYPES.indexOf(g.type) !== -1 && !!petVariant(g.type, g.key);   // keyがその種類の既知の品種の1つであること
+    return PET_TYPES.indexOf(g.type) !== -1 && !!petVariant(g.type, g.key);
   }
-  // 文字列から決定的な数値を作る（乱数は使わない＝再読み込みでも同じ結果になる）
   function hashStr(s) {
     var h = 0;
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return h;
   }
-  // idから決定的に種類・品種を割り当てる（品種情報が無い・壊れた記録の救済用）
   function deriveLegacyPet(id) {
     var h = hashStr(id);
     var type = PET_TYPES[h % PET_TYPES.length];
@@ -954,33 +1186,38 @@
   }
   function readGarden() {
     try {
-      var raw = JSON.parse(localStorage.getItem('pf:garden') || '[]');
+      var raw = JSON.parse(lsGet('pf:garden', '[]'));
       if (!Array.isArray(raw)) return [];
-      var coreDropped = raw.length;
+      var dropped = raw.filter(function (g) { return !coreValid(g); });
       var filtered = raw.filter(coreValid);
-      coreDropped -= filtered.length;   // id/分数/日時が壊れていて捨てた件数
       var changed = false;
       var out = filtered.map(function (g) {
         var type = g.type, key = g.key;
         if (!petFieldsValid(g)) {
-          changed = true;   // 品種を持たない・古い色ベースの旧形式の記録。消さずに割り当てて救済する
+          changed = true;   // 品種を持たない旧形式の記録。消さずに割り当てて救済する
           var p = deriveLegacyPet(g.id);
           type = p.type; key = p.key;
         }
         var name = (typeof g.name === 'string') ? g.name.slice(0, 12) : '';
-        var source = (g.source === 'shop') ? 'shop' : 'session';   // name/sourceが無い旧形式の記録も既定値で補う
-        var minutes = (source === 'shop') ? 0 : g.minutes;   // 貯まった時間で迎えた記録は分数を持たない、という約束を必ず保つ
+        var source = (g.source === 'shop') ? 'shop' : 'session';
+        var minutes = (source === 'shop') ? 0 : g.minutes;
         if (g.type !== type || g.key !== key || g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
         return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source };
       });
-      // 壊れた記録を捨てた・古い形式を補った場合は、次回から読み飛ばしを繰り返さないよう書き戻す
-      if (changed || coreDropped > 0) writeGarden(out);
+      // 読めなかった記録を捨てて上書きすると、原因が一時的なものでも二度と戻せない。
+      // 捨てるぶんは必ず控えに退避してから、整えた側を書き戻す
+      if (dropped.length) {
+        var bak = [];
+        try { bak = JSON.parse(lsGet('pf:garden:bak', '[]')); } catch (e2) { bak = []; }
+        if (!Array.isArray(bak)) bak = [];
+        lsSet('pf:garden:bak', JSON.stringify(bak.concat(dropped).slice(-200)));
+      }
+      if (changed || dropped.length) writeGarden(out);
       return out;
     } catch (e) { return []; }
   }
   function writeGarden(arr) {
-    try { localStorage.setItem('pf:garden', JSON.stringify(arr)); return true; }
-    catch (e) { return false; }   // 容量超過等。呼び出し側で保存失敗を扱う
+    return lsSet('pf:garden', JSON.stringify(arr));
   }
   function addToGarden(minutes, pet, source) {
     var arr = readGarden();
@@ -997,61 +1234,66 @@
     var clean = (name || '').trim().slice(0, 12);
     arr.forEach(function (g) { if (g.id === id) { g.name = clean; hit = true; } });
     if (!hit) return false;
-    return writeGarden(arr);   // 書き込みそのものの成否を返す（見つかっただけで成功扱いにしない）
+    return writeGarden(arr);
   }
 
-  // ---- 貯まった時間（集中した分だけ貯まり、図鑑でなかまを迎えると使う。累計の「これまでの集中」とは別の残高）----
-  // 中身は分単位で持つが、値段は1時間単位（60分きざみ）にそろえる
+  // ---- 貯まった時間（分単位。値段は60分きざみ）----
   function petPrice(type, key) {
     var v = petVariant(type, key);
-    return (v && v.name) ? 120 : 60;   // 名前付き品種（猫）は2時間、それ以外は1時間
+    return (v && v.name) ? 120 : 60;
   }
   var MAX_MILEAGE = Number.MAX_SAFE_INTEGER;
   function readMileage() {
-    var raw = localStorage.getItem('pf:mileage') || '0';
-    if (!/^\d+$/.test(raw)) return 0;   // 数字以外が混ざった壊れた値は信用しない
+    var raw = lsGet('pf:mileage', '0');
+    if (!/^\d+$/.test(raw)) return 0;
     var v = parseInt(raw, 10);
     return (Number.isSafeInteger(v) && v >= 0 && v <= MAX_MILEAGE) ? v : 0;
   }
   function addMileage(minutes) {
-    var v = Math.min(MAX_MILEAGE, readMileage() + minutes);
-    try { localStorage.setItem('pf:mileage', String(v)); } catch (e) {}
+    return lsSet('pf:mileage', String(Math.min(MAX_MILEAGE, readMileage() + minutes)));
   }
   function spendMileage(cost) {
     var v = readMileage();
     if (v < cost) return false;
-    try { localStorage.setItem('pf:mileage', String(v - cost)); return true; }
-    catch (e) { return false; }
+    return lsSet('pf:mileage', String(v - cost));
   }
+  // 「なかまを増やす」と「時間を引く」は別々の保存になるため、片方だけ成功する事故がありうる。
+  // 先に増やして、引くのに失敗したら増やしたぶんを取り消す（残高が減らないまま品物だけ増えるのを防ぐ）
   function buyPet(type, key) {
     var price = petPrice(type, key);
     if (readMileage() < price) return false;
-    // 先になかまを迎える処理を試み、それが成功したときだけ時間を引く。
-    // 逆順だと保存失敗時に「時間だけ減ってなかまが増えない」事故になりうるため
+    var before = readGarden();
     if (!addToGarden(0, { type: type, key: key }, 'shop')) return false;
-    spendMileage(price);
+    if (!spendMileage(price)) { writeGarden(before); return false; }
     return true;
   }
 
-  // ---- 部屋・家具（ハウス） ----
-  // 部屋を選んで、なかまの種類ごとの「ハウス」を置ける。ハウスには入る匹数の上限があり、
-  // 上限を超えたぶんや、まだハウスが無い種類は、リビングの床（ラグ）にそのまま表示する
+  // ---- 1日の目あて ----
+  var GOALS = [30, 60, 90, 120];
+  function readGoal() {
+    var v = parseInt(lsGet('pf:goal', '60'), 10);
+    return GOALS.indexOf(v) !== -1 ? v : 60;
+  }
+  function writeGoal(v) {
+    if (GOALS.indexOf(v) === -1) return;
+    lsSet('pf:goal', String(v));
+  }
+
+  // ---- 部屋・ハウス ----
   var ROOMS = [
-    { key: 'genkan', name: '玄関' },
-    { key: 'living', name: 'リビング' },
-    { key: 'kitchen', name: 'キッチン' },
-    { key: 'bedroom', name: '寝室' }
+    { key: 'genkan', name: '玄関' }, { key: 'living', name: 'リビング' },
+    { key: 'kitchen', name: 'キッチン' }, { key: 'bedroom', name: '寝室' }
   ];
   var HOUSE_TYPES = {
-    cat:     { name: '猫用ハウス',     color: '#c98a52' },
-    dog:     { name: '犬小屋',         color: '#a87a50' },
-    rabbit:  { name: 'うさぎ小屋',     color: '#c9b8a0' },
-    bird:    { name: '鳥かご',         color: '#8fb6d9' },
-    hamster: { name: 'ケージ',         color: '#e0b96e' },
-    turtle:  { name: '水槽',           color: '#7fb08a' }
+    cat:     { name: '猫用ハウス', color: '#c98a52' },
+    dog:     { name: '犬小屋',     color: '#a87a50' },
+    rabbit:  { name: 'うさぎ小屋', color: '#c9b8a0' },
+    bird:    { name: '鳥かご',     color: '#8fb6d9' },
+    hamster: { name: 'ケージ',     color: '#e0b96e' },
+    turtle:  { name: '水槽',       color: '#7fb08a' }
   };
   var HOUSE_CAPACITY = 4;
-  var HOUSE_PRICE = 60;   // 1時間
+  var HOUSE_PRICE = 60;
   function isRoomKey(k) { return ROOMS.some(function (r) { return r.key === k; }); }
   function coreHouseValid(h) {
     return h && typeof h === 'object' && typeof h.id === 'string' && h.id &&
@@ -1059,23 +1301,20 @@
   }
   function readHouses() {
     try {
-      var raw = JSON.parse(localStorage.getItem('pf:houses') || '[]');
-      if (!Array.isArray(raw)) return [];
-      return raw.filter(coreHouseValid);
+      var raw = JSON.parse(lsGet('pf:houses', '[]'));
+      return Array.isArray(raw) ? raw.filter(coreHouseValid) : [];
     } catch (e) { return []; }
   }
   function writeHouses(arr) {
-    try { localStorage.setItem('pf:houses', JSON.stringify(arr)); return true; }
-    catch (e) { return false; }
+    return lsSet('pf:houses', JSON.stringify(arr));
   }
   function buyHouse(species, room) {
     if (PET_TYPES.indexOf(species) === -1 || !isRoomKey(room)) return false;
     if (readMileage() < HOUSE_PRICE) return false;
-    var arr = readHouses();
-    arr.push({ id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), species: species, room: room });
-    // 先にハウスを置く処理を試み、それが成功したときだけ時間を引く（なかまの購入と同じ順序）
+    var before = readHouses();
+    var arr = before.concat([{ id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), species: species, room: room }]);
     if (!writeHouses(arr)) return false;
-    spendMileage(HOUSE_PRICE);
+    if (!spendMileage(HOUSE_PRICE)) { writeHouses(before); return false; }   // 買えなかったので置いたぶんも戻す
     return true;
   }
   function moveHouse(id, room) {
@@ -1086,8 +1325,7 @@
     if (!hit) return false;
     return writeHouses(arr);
   }
-  // なかまをハウスに割り当てる（新しい子を優先、ハウスは置いた順に埋める）。
-  // 入りきらない・対応するハウスが無いなかまは unhoused として返す
+  // 新しい子を優先、ハウスは置いた順に埋める。入りきらない子は unhoused
   function assignPetsToHouses(garden, houses) {
     var housesBySpecies = {};
     houses.forEach(function (h) { (housesBySpecies[h.species] = housesBySpecies[h.species] || []).push(h); });
@@ -1107,7 +1345,6 @@
     });
     return { occupants: occupants, unhoused: unhoused };
   }
-  // ハウスの見た目（屋根＋箱の簡易アイコン。中に入るなかまの色に合わせて塗る）
   function houseSVG(species) {
     var t = HOUSE_TYPES[species] || { color: '#c9b8a0' };
     return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
@@ -1116,39 +1353,8 @@
       '<rect x="16" y="26" width="8" height="9" rx="1.5" fill="#5a4a30" opacity="0.5"/>' +
     '</svg>';
   }
-  function buildHouseEl(house, occupants) {
-    var t = HOUSE_TYPES[house.species] || { name: house.species };
-    var el = document.createElement('div');
-    el.className = 'room-house';
-    el.innerHTML = '<div class="rh-icon">' + houseSVG(house.species) + '</div>' +
-      '<div class="rh-name">' + t.name + '（' + occupants.length + '/' + HOUSE_CAPACITY + '）</div>';
-    var slots = document.createElement('div');
-    slots.className = 'rh-slots';
-    for (var i = 0; i < HOUSE_CAPACITY; i++) {
-      if (occupants[i]) {
-        var slotEl = document.createElement('div');
-        slotEl.className = 'rh-slot';
-        slotEl.innerHTML = petSVG('', occupants[i].type, occupants[i].key);
-        paintPet(slotEl.querySelector('svg'), 1);
-        slotEl.querySelector('svg').style.width = '18px';
-        slotEl.querySelector('svg').style.height = '18px';
-        slots.appendChild(slotEl);
-      } else {
-        var empty = document.createElement('div');
-        empty.className = 'rh-slot empty';
-        slots.appendChild(empty);
-      }
-    }
-    el.appendChild(slots);
-    el.title = t.name + '・タップで部屋を移動';
-    el.addEventListener('click', function () {
-      openRoomPick('このハウスをどの部屋に移しますか？', function (room) {
-        if (moveHouse(house.id, room)) { renderGarden(); flashSaved('移しました'); }
-      });
-    });
-    return el;
-  }
 
+  // ---- 表記 ----
   function fmtDate(ms) {
     var d = new Date(ms);
     return (d.getMonth() + 1) + '/' + d.getDate();
@@ -1157,18 +1363,201 @@
     var m = Math.floor(sec / 60), s = sec % 60;
     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
   }
-  // 分数を「H時間M分」表記へ（1時間ちょうどなら「1時間」、1時間未満なら「M分」のみ）
   function fmtHours(totalMin) {
     var h = Math.floor(totalMin / 60), m = totalMin % 60;
     return h > 0 ? h + '時間' + (m ? m + '分' : '') : m + '分';
   }
+  // 大きな数字＋小さな単位。統計タイルで使う
+  function fmtStat(totalMin) {
+    var h = Math.floor(totalMin / 60), m = totalMin % 60;
+    if (h > 0) return h + '<small>時間</small>' + (m ? m + '<small>分</small>' : '');
+    return m + '<small>分</small>';
+  }
 
-  // FLOOR_LEFT+2*FLOOR_CELL_W+ジッター最大+なかまの幅が、幅320pxの狭い端末でも
-  // .room-scene（overflow:hidden）からはみ出て見切れないだけの余白を残した値
+  // ---- 日付と集計 ----
+  var WEEKDAY = ['日', '月', '火', '水', '木', '金', '土'];
+  // その日の0時を表すキー（ローカル時刻。日をまたぐ集計の基準）
+  function dayStart(ms) {
+    var d = new Date(ms);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+  // 前後の日の0時。86400000msの足し引きだと夏時間の切替日に1時間ずれて
+  // その日のキーと一致しなくなる（連続日数が途切れる・棒が抜ける）ので、必ず暦日で動かす
+  function addDays(dayMs, n) {
+    var d = new Date(dayMs);
+    d.setDate(d.getDate() + n);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+  // 集中して得た記録だけを日ごとの合計分に畳む（shopで迎えた子は集中ではないので除く）。
+  // 23:50に始めて日をまたいだ回は、またいだ境目で分けて両日に振り分ける
+  // （開始時刻は保存していないので、終了時刻と長さから逆算する）
+  function minutesByDay(garden) {
+    var map = {};
+    garden.forEach(function (g) {
+      if (g.source === 'shop' || !g.minutes) return;
+      var endMs = g.completedAt;
+      var startMs = endMs - g.minutes * 60000;
+      var cursor = dayStart(startMs);
+      while (cursor < endMs) {
+        var next = addDays(cursor, 1);
+        var overlapMs = Math.min(endMs, next) - Math.max(startMs, cursor);
+        if (overlapMs > 0) map[cursor] = (map[cursor] || 0) + overlapMs / 60000;
+        cursor = next;
+      }
+    });
+    // 分は表示のたびに丸めるのではなく、ここで一度だけ整数にそろえる
+    Object.keys(map).forEach(function (k) { map[k] = Math.round(map[k]); });
+    return map;
+  }
+  // 今日から数えて何日続いているか。今日がまだ0分でも、昨日まで続いていればその数を見せる
+  function calcStreak(map) {
+    var today = dayStart(Date.now());
+    var cursor = map[today] > 0 ? today : addDays(today, -1);
+    var n = 0;
+    while (map[cursor] > 0) { n++; cursor = addDays(cursor, -1); }
+    return n;
+  }
+  // 直近7日（古い→新しい、末尾が今日）
+  function last7Days(map) {
+    var today = dayStart(Date.now());
+    var out = [];
+    for (var i = 6; i >= 0; i--) {
+      var t = addDays(today, -i);
+      out.push({ t: t, minutes: map[t] || 0, label: WEEKDAY[new Date(t).getDay()], isToday: i === 0 });
+    }
+    return out;
+  }
+
+  // ============ ホーム ============
+  var DIAL_CIRC = 2 * Math.PI * 86;
+  function renderHome() {
+    var garden = readGarden();
+    var map = minutesByDay(garden);
+    var today = map[dayStart(Date.now())] || 0;
+    var goal = readGoal();
+
+    var fill = $('dialFill');
+    fill.style.strokeDasharray = DIAL_CIRC;
+    fill.style.strokeDashoffset = DIAL_CIRC * (1 - Math.min(1, today / goal));
+
+    $('dialNum').innerHTML = today + '<small>分</small>';
+    $('dialCap').textContent = today >= goal ? '目あて達成！' : 'きょうの集中 / ' + goal + '分';
+
+    // 中央には最後になかまになった子。まだ誰もいなければ足あとだけ置く
+    var host = $('dialPet');
+    if (garden.length) {
+      var last = garden[garden.length - 1];
+      host.className = 'dial-pet';
+      fillPet(host, last.type, last.key, 1);
+    } else {
+      host.className = 'dial-pet empty';
+      host.textContent = '🐾';
+    }
+
+    var strip = $('weekStrip');
+    strip.innerHTML = '';
+    last7Days(map).forEach(function (d) {
+      var col = document.createElement('div');
+      col.className = 'week-day' + (d.minutes > 0 ? ' done' : '') + (d.minutes >= goal ? ' full' : '') + (d.isToday ? ' today' : '');
+      var lab = document.createElement('div');
+      lab.className = 'wd-label';
+      lab.textContent = d.label;
+      var dot = document.createElement('div');
+      dot.className = 'wd-dot';
+      dot.title = d.minutes + '分';
+      col.appendChild(lab);
+      col.appendChild(dot);
+      strip.appendChild(col);
+    });
+
+    var streak = calcStreak(map);
+    $('streakLine').innerHTML = streak > 0
+      ? '<b>' + streak + '日</b> つづいています'
+      : (garden.length ? 'きょうから、また はじめよう' : 'はじめの1回を、はじめよう');
+  }
+
+  // ============ きろく ============
+  function renderRecord() {
+    var garden = readGarden();
+    var map = minutesByDay(garden);
+    var days = last7Days(map);
+    var today = map[dayStart(Date.now())] || 0;
+    var weekMin = days.reduce(function (s, d) { return s + d.minutes; }, 0);
+    var sessions = garden.filter(function (g) { return g.source !== 'shop'; });
+    var totalMin = sessions.reduce(function (s, g) { return s + g.minutes; }, 0);
+    var best = sessions.reduce(function (m, g) { return Math.max(m, g.minutes); }, 0);
+
+    $('statToday').innerHTML = fmtStat(today);
+    $('statWeek').innerHTML = fmtStat(weekMin);
+    $('statStreak').innerHTML = calcStreak(map) + '<small>日</small>';
+    $('statTotal').innerHTML = fmtStat(totalMin);
+    $('statPets').innerHTML = garden.length + '<small>匹</small>';
+    $('statBest').innerHTML = best ? fmtStat(best) : '-';
+
+    // 棒の高さは「その週の最大」か「目あて」の大きいほうを天井にする（1回だけの日が突出しないように）
+    var ceiling = Math.max(readGoal(), days.reduce(function (m, d) { return Math.max(m, d.minutes); }, 0), 1);
+    var chart = $('barChart');
+    chart.innerHTML = '';
+    days.forEach(function (d) {
+      var col = document.createElement('div');
+      col.className = 'bar-col' + (d.isToday ? ' today' : '');
+      var min = document.createElement('div');
+      min.className = 'bc-min';
+      min.textContent = d.minutes ? d.minutes : '';
+      var bar = document.createElement('div');
+      bar.className = 'bc-bar' + (d.minutes ? '' : ' zero');
+      bar.style.height = d.minutes ? Math.max(4, Math.round(d.minutes / ceiling * 78)) + 'px' : '4px';
+      var day = document.createElement('div');
+      day.className = 'bc-day';
+      day.textContent = d.label;
+      col.appendChild(min);
+      col.appendChild(bar);
+      col.appendChild(day);
+      chart.appendChild(col);
+    });
+
+    var list = $('logList');
+    list.innerHTML = '';
+    var recent = garden.slice(-12).reverse();
+    if (!recent.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:var(--s4) 0">まだ なかまがいません。</div>';
+      return;
+    }
+    recent.forEach(function (g) {
+      var row = document.createElement('div');
+      row.className = 'log-row';
+      var pet = document.createElement('div');
+      pet.className = 'lr-pet';
+      fillPet(pet, g.type, g.key, 1);
+      var main = document.createElement('div');
+      main.className = 'lr-main';
+      var nm = document.createElement('div');
+      nm.className = 'lr-name';
+      nm.textContent = g.name || petLabel(g.type, g.key);
+      var meta = document.createElement('div');
+      meta.className = 'lr-meta';
+      // 上の行が品種名そのものになっているときは、下でもう一度くり返さない
+      var sub = g.source === 'shop' ? '貯まった時間で迎えた' : (g.name ? petLabel(g.type, g.key) : '');
+      meta.textContent = fmtDate(g.completedAt) + (sub ? '・' + sub : '');
+      main.appendChild(nm);
+      main.appendChild(meta);
+      var min = document.createElement('div');
+      min.className = 'lr-min';
+      min.textContent = g.source === 'shop' ? '' : g.minutes + '分';
+      row.appendChild(pet);
+      row.appendChild(main);
+      row.appendChild(min);
+      list.appendChild(row);
+    });
+  }
+
+  // ============ おうち ============
+  // 幅320pxの狭い端末でも .room-scene（overflow:hidden）からはみ出ないだけの余白を残した値
   var FLOOR_COLS = 3, FLOOR_CELL_W = 100, FLOOR_CELL_H = 78, FLOOR_TOP = 250, FLOOR_LEFT = 18;
-  // 今どの部屋を見ているか（リロードしても保つ）
   var currentRoom = (function () {
-    var r = localStorage.getItem('pf:currentRoom');
+    var r = lsGet('pf:currentRoom', 'living');
     return isRoomKey(r) ? r : 'living';
   })();
 
@@ -1177,8 +1566,7 @@
     el.className = 'room-pet';
     el.dataset.id = g.id;
     el.style.setProperty('--pet-delay', '-' + (hashStr(g.id) % 230) / 100 + 's');   // 呼吸・しっぽ揺れをずらす
-    el.innerHTML = petSVG('', g.type, g.key);   // type/keyはreadGardenで既知の値だけに絞られている
-    paintPet(el.querySelector('svg'), 1);
+    fillPet(el, g.type, g.key, 1);
     var v = petVariant(g.type, g.key);
     if (g.name) {
       var nameEl = document.createElement('div');
@@ -1196,64 +1584,80 @@
     el.addEventListener('click', function () { openNameModal(g.id, g.name); });
     return el;
   }
+  function buildHouseEl(house, occupants) {
+    var t = HOUSE_TYPES[house.species] || { name: house.species };
+    var el = document.createElement('div');
+    el.className = 'room-house';
+    el.innerHTML = '<div class="rh-icon">' + houseSVG(house.species) + '</div>' +
+      '<div class="rh-name">' + t.name + '（' + occupants.length + '/' + HOUSE_CAPACITY + '）</div>';
+    var slots = document.createElement('div');
+    slots.className = 'rh-slots';
+    for (var i = 0; i < HOUSE_CAPACITY; i++) {
+      var slotEl = document.createElement('div');
+      if (occupants[i]) {
+        slotEl.className = 'rh-slot';
+        fillPet(slotEl, occupants[i].type, occupants[i].key, 1);
+      } else {
+        slotEl.className = 'rh-slot empty';
+      }
+      slots.appendChild(slotEl);
+    }
+    el.appendChild(slots);
+    el.title = t.name + '・タップで部屋を移動';
+    el.addEventListener('click', function () {
+      openRoomPick('このハウスをどの部屋に移しますか？', function (room) {
+        if (moveHouse(house.id, room)) { renderHouse(); toast('移しました'); }
+        else toast('移せませんでした');
+      });
+    });
+    return el;
+  }
 
-  function renderGarden() {
+  function renderHouse() {
     var garden = readGarden();
     var houses = readHouses();
     var assign = assignPetsToHouses(garden, houses);
-    var scene = document.getElementById('roomScene');
-    var petsLayer = document.getElementById('roomPets');
-    var housesLayer = document.getElementById('roomHouses');
-    var empty = document.getElementById('emptyNote');
+    var scene = $('roomScene');
+    var petsLayer = $('roomPets');
+    var housesLayer = $('roomHouses');
+    var empty = $('roomEmpty');
     petsLayer.innerHTML = '';
     housesLayer.innerHTML = '';
     scene.className = 'room-scene room-' + currentRoom;
 
-    // このハウスはリビング／キッチン／寝室のうち今見ている部屋に置かれたものだけ棚に並べる
-    var roomHouses = houses.filter(function (h) { return h.room === currentRoom; });
-    roomHouses.forEach(function (h) {
+    houses.filter(function (h) { return h.room === currentRoom; }).forEach(function (h) {
       housesLayer.appendChild(buildHouseEl(h, assign.occupants[h.id] || []));
     });
+    var roomHouseCount = housesLayer.childElementCount;
 
-    // ハウスに入りきらない・対応するハウスがまだ無いなかまは、リビングの床（ラグ）にそのまま表示する
+    // ハウスに入りきらない・対応するハウスがまだ無いなかまは、リビングの床にそのまま出す
     var floorEntries = (currentRoom === 'living') ? assign.unhoused : [];
     var floorRows = Math.max(1, Math.ceil(floorEntries.length / FLOOR_COLS));
     floorEntries.forEach(function (g, i) {
       var col = i % FLOOR_COLS, row = Math.floor(i / FLOOR_COLS);
       var h = hashStr(g.id);
-      var jx = (h % 22) - 11, jy = ((h >>> 5) % 16) - 8;   // 符号なしシフト（>>だと符号拡張されジッターが想定範囲外に出ることがあった）
+      var jx = (h % 22) - 11, jy = ((h >>> 5) % 16) - 8;   // 符号なしシフト（>>だとジッターが想定範囲外に出る）
       var baseX = FLOOR_LEFT + col * FLOOR_CELL_W + jx, baseY = FLOOR_TOP + row * FLOOR_CELL_H + jy;
       var el = buildRoomPet(g);
-      el.dataset.baseX = baseX;   // うろうろ移動の基準位置（この近くだけを行き来する）
+      el.dataset.baseX = baseX;   // うろうろ移動の基準位置
       el.dataset.baseY = baseY;
       el.style.left = baseX + 'px';
       el.style.top = baseY + 'px';
       petsLayer.appendChild(el);
     });
 
-    // 部屋全体・ラグの高さを、床に置いた匹数ぶん確保する
-    var rugHeight = Math.max(170, floorRows * FLOOR_CELL_H + 70);
-    var rug = document.getElementById('roomRug');
-    rug.style.height = rugHeight + 'px';
+    var rugHeight = Math.max(150, floorRows * FLOOR_CELL_H + 44);
+    $('roomRug').style.height = rugHeight + 'px';
     scene.style.height = (FLOOR_TOP - 36 + rugHeight + 30) + 'px';
 
-    empty.style.display = (roomHouses.length === 0 && floorEntries.length === 0) ? 'block' : 'none';
+    var isEmpty = (roomHouseCount === 0 && floorEntries.length === 0);
+    empty.style.display = isEmpty ? 'block' : 'none';
     empty.innerHTML = garden.length === 0
-      ? 'まだ何もいません。<br>下の「集中をはじめる」から、<br>1匹目のなかまを迎えよう。'
-      : 'この部屋にはまだ何もありません。<br>「家具」タブでハウスを置いてみよう。';
-
-    var totalMin = garden.reduce(function (s, g) { return s + (g.source === 'shop' ? 0 : g.minutes); }, 0);
-    var totalEl = document.getElementById('totalTime');
-    if (totalMin > 0) {
-      totalEl.innerHTML = 'これまでの集中: <b>' + fmtHours(totalMin) + '</b>（なかま' + garden.length + '匹）';
-    } else {
-      totalEl.textContent = garden.length ? 'なかま' + garden.length + '匹' : '';
-    }
-    var mileageEl = document.getElementById('mileageStat');
-    mileageEl.innerHTML = '貯まった時間: <b>' + fmtHours(readMileage()) + '</b>';
+      ? 'まだ なかまがいません。<br>ホームの「集中をはじめる」から。'
+      : 'この部屋にはまだ何もありません。<br>下の「＋ ハウスを置く」から。';
   }
 
-  // ---- ラグの上のなかまが、たまに少し歩く（基準位置の近くだけを行き来） ----
+  // ラグの上のなかまが、たまに基準位置の近くを少し歩く
   var wanderTimer = 0;
   function scheduleWander() {
     clearTimeout(wanderTimer);
@@ -1269,209 +1673,149 @@
     el.style.top = (baseY + Math.random() * 18 - 9) + 'px';
   }
 
-  // ---- 時間を決めるシート ----
-  var pickerModal = document.getElementById('pickerModal');
-  var chosenMinutes = 25;
-  function selectChip(min) {
-    chosenMinutes = min;
-    document.querySelectorAll('.duration-chips button').forEach(function (b) {
-      b.classList.toggle('active', parseInt(b.dataset.min, 10) === min);
+  // ============ 図鑑 ============
+  function renderRoster() {
+    var garden = readGarden();
+    var owned = {};
+    garden.forEach(function (g) { owned[g.type + ':' + g.key] = true; });
+    var mileage = readMileage();
+    $('walletRoster').textContent = fmtHours(mileage);
+    var grid = $('rosterGrid');
+    grid.innerHTML = '';
+    PET_TYPES.forEach(function (type) {
+      PET_VARIANTS[type].forEach(function (v) {
+        var isOwned = !!owned[type + ':' + v.key];
+        var price = petPrice(type, v.key);
+        var card = document.createElement('div');
+        card.className = 'g-card' + (isOwned ? ' owned' : ' locked');
+        var petHost = document.createElement('div');
+        fillPet(petHost, type, v.key, 1);
+        card.appendChild(petHost.firstChild);
+        var nameEl = document.createElement('div');
+        nameEl.className = 'gc-name';
+        nameEl.textContent = petLabel(type, v.key);
+        card.appendChild(nameEl);
+        if (isOwned) {
+          var mark = document.createElement('div');
+          mark.className = 'gc-mark';
+          mark.textContent = 'なかま';
+          card.appendChild(mark);
+        } else {
+          var buyBtn = document.createElement('button');
+          buyBtn.type = 'button';
+          buyBtn.className = 'gc-buy';
+          buyBtn.textContent = fmtHours(price) + 'で迎える';
+          buyBtn.disabled = mileage < price;
+          buyBtn.addEventListener('click', function () {
+            if (!buyPet(type, v.key)) { toast('迎えられませんでした'); return; }
+            renderRoster();
+            renderHome();
+            toast('迎えました');
+          });
+          card.appendChild(buyBtn);
+        }
+        grid.appendChild(card);
+      });
     });
-    document.getElementById('customMinutes').value = '';
-  }
-  document.querySelectorAll('.duration-chips button').forEach(function (b) {
-    b.addEventListener('click', function () { selectChip(parseInt(b.dataset.min, 10)); });
-  });
-  document.getElementById('customMinutes').addEventListener('input', function (e) {
-    var v = parseInt(e.target.value, 10);
-    if (v > 0) {
-      chosenMinutes = Math.min(180, v);
-      document.querySelectorAll('.duration-chips button').forEach(function (b) { b.classList.remove('active'); });
-    }
-  });
-  document.getElementById('openPickerBtn').addEventListener('click', function () {
-    selectChip(chosenMinutes || 25);
-    pickerModal.classList.add('show');
-  });
-  document.getElementById('pickerCancel').addEventListener('click', function () { pickerModal.classList.remove('show'); });
-  pickerModal.addEventListener('click', function (e) { if (e.target === pickerModal) pickerModal.classList.remove('show'); });
-  document.getElementById('pickerStart').addEventListener('click', function () {
-    if (!chosenMinutes || chosenMinutes < 1) return;
-    localStorage.setItem('pf:lastMinutes', String(chosenMinutes));
-    pickerModal.classList.remove('show');
-    startSession(chosenMinutes);
-  });
-
-  // ---- セッション本体 ----
-  var sessionScreen = document.getElementById('sessionScreen');
-  var sessionPlantSlot = document.getElementById('sessionPlantSlot');
-  var session = null;   // { minutes, endAt, timer, wakeLock, active }
-  var wakeLock = null;
-
-  function startSession(minutes) {
-    var pet = pickPet();
-    sessionPlantSlot.innerHTML = petSVG('liveSvg', pet.type, pet.key);
-    var svg = document.getElementById('liveSvg');
-    paintPet(svg, 0);
-    document.getElementById('sessionLabel').textContent = minutes + '分に挑戦中';
-    // 経過時間はperformance.now()（単調増加）で測る。Date.now()は時計合わせ等で
-    // 前後することがあり、それだと早すぎる成功や終わらない集中になりかねない
-    session = { minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(), active: true, svg: svg, pet: pet };
-    sessionScreen.classList.add('show');
-    settingsBtnEl.style.display = 'none';   // セッション中は設定にキーボード操作等でも届かないようにする
-    tickSession();
-    // tickSession()が即座に完了扱い（session=null）にすることは通常の操作では起きない
-    // （時間は必ず1分以上）が、念のためガードしておく
-    if (session) {
-      session.timer = setInterval(tickSession, 1000);
-      requestWakeLock();
-    }
-  }
-  function tickSession() {
-    if (!session || !session.active) return;
-    if (document.hidden) { finishSession(false, 'hidden'); return; }   // visibilitychangeの取りこぼし対策
-    var remainMs = session.totalMs - (performance.now() - session.startPerf);
-    if (remainMs <= 0) { finishSession(true); return; }
-    document.getElementById('sessionTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
-    var progress = 1 - remainMs / session.totalMs;
-    paintPet(session.svg, progress);
-  }
-  function requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
-  }
-  function releaseWakeLock() {
-    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
-  }
-  function endSessionCommon() {
-    if (session && session.timer) clearInterval(session.timer);
-    releaseWakeLock();
-    sessionScreen.classList.remove('show');
-    settingsBtnEl.style.display = '';
-  }
-  function finishSession(success, reason) {
-    if (!session || !session.active) return;
-    session.active = false;
-    var minutes = session.minutes, pet = session.pet;
-    endSessionCommon();
-    if (success) {
-      var saved = addToGarden(minutes, pet, 'session');
-      if (saved) addMileage(minutes);
-      renderGarden();
-      showResult(true, minutes, saved ? null : 'savefail', pet);
-    } else {
-      showResult(false, minutes, reason, pet);
-    }
-    session = null;
-  }
-  document.getElementById('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
-
-  // アプリが見えなくなった（他アプリ・他タブ・画面ロック）＝失敗
-  document.addEventListener('visibilitychange', function () {
-    if (document.hidden && session && session.active) finishSession(false, 'hidden');
-  });
-  window.addEventListener('pagehide', function () {
-    if (session && session.active) finishSession(false, 'hidden');
-  });
-
-  // ---- 結果表示 ----
-  var resultModal = document.getElementById('resultModal');
-  function showResult(success, minutes, reason, pet) {
-    var card = document.getElementById('resultCard');
-    card.classList.toggle('fail', !success);
-    var slot = document.getElementById('resultPlantSlot');
-    slot.innerHTML = petSVG('resultSvg', pet.type, pet.key);
-    var svg = document.getElementById('resultSvg');
-    var v = petVariant(pet.type, pet.key);
-    var breedLabel = (v && v.name) ? v.name + 'が' : '';
-    if (success) {
-      paintPet(svg, 1);
-      document.getElementById('resultTitle').textContent = 'なつきました🐾';
-      document.getElementById('resultBody').textContent = reason === 'savefail'
-        ? breedLabel + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : breedLabel + minutes + '分、一緒にいられました。おうちに加わりました。';
-    } else {
-      paintPet(svg, 0.5);
-      sadPet(svg);
-      document.getElementById('resultTitle').textContent = '眠ってしまいました';
-      document.getElementById('resultBody').textContent = reason === 'giveup'
-        ? '自分でやめました。またいつでも挑戦できます。'
-        : '離れてしまったようです。またいつでも挑戦できます。';
-    }
-    resultModal.classList.add('show');
-  }
-  document.getElementById('resultClose').addEventListener('click', function () { resultModal.classList.remove('show'); });
-
-  // ---- 設定 ----
-  // 集中セッション中は設定を開けないようにする（キーボード操作等で裏の要素に届いてしまう対策。
-  // confirm()がセッション中に開いたままになる抜け道もこれで一緒にふさがれる）
-  var settingsModal = document.getElementById('settingsModal');
-  var settingsBtnEl = document.getElementById('settingsBtn');
-  document.getElementById('settingsBtn').addEventListener('click', function () {
-    if (session && session.active) return;
-    settingsModal.classList.add('show');
-  });
-  document.getElementById('settingsClose').addEventListener('click', function () { settingsModal.classList.remove('show'); });
-  settingsModal.addEventListener('click', function (e) { if (e.target === settingsModal) settingsModal.classList.remove('show'); });
-  document.getElementById('privacyLinkBtn').addEventListener('click', function () { location.href = 'privacy.html'; });
-  document.getElementById('resetDataBtn').addEventListener('click', function () {
-    if (session && session.active) return;
-    if (!confirm('これまでの記録をぜんぶ消します。よろしいですか？')) return;
-    try {
-      localStorage.removeItem('pf:garden');
-      localStorage.removeItem('pf:mileage');
-      localStorage.removeItem('pf:houses');
-    }
-    catch (e) { alert('消せませんでした。もう一度お試しください。'); return; }
-    renderGarden();
-    renderRoster();
-    renderHouseGrid();
-    settingsModal.classList.remove('show');
-  });
-
-  // ---- タブ（おうち／図鑑／家具） ----
-  var homeViewEl = document.getElementById('homeView');
-  var rosterGridEl = document.getElementById('rosterGrid');
-  var houseGridEl = document.getElementById('houseGrid');
-  document.getElementById('tabHomeBtn').addEventListener('click', function () { switchTab('home'); });
-  document.getElementById('tabRosterBtn').addEventListener('click', function () { switchTab('roster'); });
-  document.getElementById('tabHouseBtn').addEventListener('click', function () { switchTab('house'); });
-  function switchTab(tab) {
-    document.getElementById('tabHomeBtn').classList.toggle('active', tab === 'home');
-    document.getElementById('tabRosterBtn').classList.toggle('active', tab === 'roster');
-    document.getElementById('tabHouseBtn').classList.toggle('active', tab === 'house');
-    homeViewEl.style.display = tab === 'home' ? '' : 'none';
-    rosterGridEl.style.display = tab === 'roster' ? '' : 'none';
-    houseGridEl.style.display = tab === 'house' ? '' : 'none';
-    if (tab === 'home') renderGarden();
-    if (tab === 'roster') renderRoster();
-    if (tab === 'house') renderHouseGrid();
   }
 
-  // ---- 部屋タブ（リビング／キッチン／寝室） ----
-  document.querySelectorAll('#roomTabBar .room-tab-btn').forEach(function (b) {
-    b.addEventListener('click', function () { switchRoom(b.dataset.room); });
-  });
-  function switchRoom(room) {
-    if (!isRoomKey(room)) return;
-    currentRoom = room;
-    try { localStorage.setItem('pf:currentRoom', room); } catch (e) {}
-    document.querySelectorAll('#roomTabBar .room-tab-btn').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.room === room);
+  // ============ ハウスを置く（お店） ============
+  function renderShop() {
+    var houses = readHouses();
+    var counts = {};
+    houses.forEach(function (h) { counts[h.species] = (counts[h.species] || 0) + 1; });
+    var mileage = readMileage();
+    $('walletShop').textContent = fmtHours(mileage);
+    var grid = $('houseGrid');
+    grid.innerHTML = '';
+    PET_TYPES.forEach(function (species) {
+      var t = HOUSE_TYPES[species];
+      var card = document.createElement('div');
+      card.className = 'g-card' + (counts[species] ? ' owned' : '');
+      card.innerHTML = houseSVG(species);
+      var nameEl = document.createElement('div');
+      nameEl.className = 'gc-name';
+      nameEl.textContent = t.name + (counts[species] ? '（' + counts[species] + '）' : '');
+      card.appendChild(nameEl);
+      var buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'gc-buy';
+      buyBtn.textContent = fmtHours(HOUSE_PRICE) + 'で置く';
+      buyBtn.disabled = mileage < HOUSE_PRICE;
+      buyBtn.addEventListener('click', function () {
+        openRoomPick('どの部屋に置きますか？', function (room) {
+          if (!buyHouse(species, room)) { toast('置けませんでした'); return; }
+          renderShop();
+          renderHouse();
+          toast('置きました');
+        });
+      });
+      card.appendChild(buyBtn);
+      grid.appendChild(card);
     });
-    renderGarden();
   }
 
-  // ---- どの部屋に置く／移すか選ぶモーダル ----
-  var roomPickModal = document.getElementById('roomPickModal');
+  // ============ モーダルの開閉 ============
+  // 開いているシートを覚えておき、集中をはじめるときに全部閉じる
+  function openModal(el) { el.classList.add('show'); }
+  function closeModal(el) { el.classList.remove('show'); }
+  function closeAllModals() {
+    document.querySelectorAll('.modal.show').forEach(function (m) { m.classList.remove('show'); });
+  }
+  // 背景（シート外）を押したら閉じる
+  function dismissOnBackdrop(el, onClose) {
+    el.addEventListener('click', function (e) {
+      if (e.target !== el) return;
+      closeModal(el);
+      if (onClose) onClose();
+    });
+  }
+
+  // ============ タブ切替 ============
+  var VIEWS = { home: 'viewHome', record: 'viewRecord', house: 'viewHouse', roster: 'viewRoster' };
+  var RENDERERS = { home: renderHome, record: renderRecord, house: renderHouse, roster: renderRoster };
+  var currentView = 'home';
+  function switchView(name) {
+    if (!VIEWS[name]) return;
+    currentView = name;
+    Object.keys(VIEWS).forEach(function (k) {
+      $(VIEWS[k]).classList.toggle('on', k === name);
+    });
+    document.querySelectorAll('#tabbar .tab').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.view === name);
+    });
+    RENDERERS[name]();
+    var v = $(VIEWS[name]);
+    if (v) v.scrollTop = 0;
+  }
+  document.querySelectorAll('#tabbar .tab').forEach(function (b) {
+    b.addEventListener('click', function () { switchView(b.dataset.view); });
+  });
+
+  // ============ 部屋タブ ============
+  document.querySelectorAll('#roomTabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var room = b.dataset.room;
+      if (!isRoomKey(room)) return;
+      currentRoom = room;
+      lsSet('pf:currentRoom', room);
+      document.querySelectorAll('#roomTabs button').forEach(function (x) {
+        x.classList.toggle('active', x.dataset.room === room);
+      });
+      renderHouse();
+    });
+  });
+
+  // ============ 部屋を選ぶ ============
+  var roomPickModal = $('roomPickModal');
   var roomPickCallback = null;
   function openRoomPick(title, callback) {
-    document.getElementById('roomPickTitle').textContent = title;
+    $('roomPickTitle').textContent = title;
     roomPickCallback = callback;
-    roomPickModal.classList.add('show');
+    openModal(roomPickModal);
   }
   function closeRoomPick() {
-    roomPickModal.classList.remove('show');
+    closeModal(roomPickModal);
     roomPickCallback = null;
   }
   document.querySelectorAll('#roomPickChips button').forEach(function (b) {
@@ -1482,120 +1826,302 @@
       if (cb) cb(room);
     });
   });
-  document.getElementById('roomPickCancel').addEventListener('click', closeRoomPick);
-  roomPickModal.addEventListener('click', function (e) { if (e.target === roomPickModal) closeRoomPick(); });
+  $('roomPickCancel').addEventListener('click', closeRoomPick);
+  dismissOnBackdrop(roomPickModal, function () { roomPickCallback = null; });
 
-  // ---- 家具（すべての種類のハウス。貯まった時間で置け、いくつでも買い足せる） ----
-  function renderHouseGrid() {
-    var houses = readHouses();
-    var counts = {};
-    houses.forEach(function (h) { counts[h.species] = (counts[h.species] || 0) + 1; });
-    var mileage = readMileage();
-    houseGridEl.innerHTML = '';
-    PET_TYPES.forEach(function (species) {
-      var t = HOUSE_TYPES[species];
-      var card = document.createElement('div');
-      card.className = 'roster-card' + (counts[species] ? ' owned' : ' locked');
-      card.innerHTML = houseSVG(species);
-      var nameEl = document.createElement('div');
-      nameEl.className = 'rc-name';
-      nameEl.textContent = t.name;
-      card.appendChild(nameEl);
-      if (counts[species]) {
-        var mark = document.createElement('div');
-        mark.className = 'rc-owned-mark';
-        mark.textContent = '所有: ' + counts[species] + '個（計' + (counts[species] * HOUSE_CAPACITY) + '匹まで）';
-        card.appendChild(mark);
-      }
-      var buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'rc-buy';
-      buyBtn.textContent = fmtHours(HOUSE_PRICE) + 'で置く';
-      buyBtn.disabled = mileage < HOUSE_PRICE;
-      buyBtn.addEventListener('click', function () {
-        openRoomPick('どの部屋に置きますか？', function (room) {
-          if (!buyHouse(species, room)) return;
-          renderHouseGrid();
-          renderGarden();
-          flashSaved('置きました');
-        });
-      });
-      card.appendChild(buyBtn);
-      houseGridEl.appendChild(card);
+  // ============ ハウスのお店 ============
+  var shopModal = $('shopModal');
+  $('openShopBtn').addEventListener('click', function () { renderShop(); openModal(shopModal); });
+  $('shopClose').addEventListener('click', function () { closeModal(shopModal); });
+  dismissOnBackdrop(shopModal);
+
+  // ============ 時間を決める ============
+  var pickerModal = $('pickerModal');
+  var chosenMinutes = 25;
+  function selectChip(min) {
+    chosenMinutes = min;
+    document.querySelectorAll('#durationChips button').forEach(function (b) {
+      b.classList.toggle('active', parseInt(b.dataset.min, 10) === min);
     });
+    $('customMinutes').value = '';
+  }
+  document.querySelectorAll('#durationChips button').forEach(function (b) {
+    b.addEventListener('click', function () { selectChip(parseInt(b.dataset.min, 10)); });
+  });
+  $('customMinutes').addEventListener('input', function (e) {
+    var v = parseInt(e.target.value, 10);
+    if (v > 0) {
+      chosenMinutes = Math.min(180, v);
+      document.querySelectorAll('#durationChips button').forEach(function (b) { b.classList.remove('active'); });
+    }
+  });
+  $('startBtn').addEventListener('click', function () {
+    selectChip(chosenMinutes || 25);
+    openModal(pickerModal);
+  });
+  $('pickerCancel').addEventListener('click', function () { closeModal(pickerModal); });
+  dismissOnBackdrop(pickerModal);
+  $('pickerStart').addEventListener('click', function () {
+    if (!chosenMinutes || chosenMinutes < 1) return;
+    lsSet('pf:lastMinutes', String(chosenMinutes));
+    closeAllModals();
+    startSession(chosenMinutes);
+  });
+
+  // ============ 集中セッション ============
+  // 経過時間は performance.now()（単調増加）で測る。Date.now() は時計合わせ等で
+  // 前後することがあり、それだと早すぎる成功や終わらない集中になりかねない。
+  // 一方「どれだけ離れていたか」は、裏に回っている間もタイマーが動かないため
+  // 復帰時に Date.now() の差で見る（用途が違うので使い分ける）
+  var GRACE_MS = 10000;        // 1回の離脱で許す長さ。うっかり通知を踏んだ程度なら戻ってこられる
+  var GRACE_TOTAL_MS = 30000;  // 1セッションで許す離脱の合計。短い離脱を繰り返す抜け道をふさぐ
+  var GRACE_COUNT = 3;         // 1セッションで許す離脱の回数
+  var SESS_CIRC = 2 * Math.PI * 110;
+  var sessionScreen = $('sessionScreen');
+  var session = null;   // { minutes, totalMs, startPerf, active, svg, pet, hiddenPerf, hiddenWall, awayMs, awayCount, warned }
+  var wakeLock = null;
+
+  function setSessionBg(progress) {
+    // 夜（はじまり）から朝（おわり）へゆっくり明ける
+    var stops = [
+      [0.00, '#2f3b46', '#46505a'],
+      [0.45, '#4a4f63', '#6b6473'],
+      [0.75, '#7d6f74', '#b08d78'],
+      [1.00, '#8fa9b8', '#e0c090']
+    ];
+    var t = Math.max(0, Math.min(1, progress));
+    var a = stops[0], b = stops[stops.length - 1];
+    for (var i = 0; i < stops.length - 1; i++) {
+      if (t >= stops[i][0] && t <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; break; }
+    }
+    var span = b[0] - a[0];
+    var f = span > 0 ? (t - a[0]) / span : 0;
+    sessionScreen.style.setProperty('--sess-bg',
+      'linear-gradient(180deg, ' + mixHex(a[1], b[1], f) + ', ' + mixHex(a[2], b[2], f) + ')');
+  }
+  function mixHex(h1, h2, f) {
+    var c1 = parseInt(h1.slice(1), 16), c2 = parseInt(h2.slice(1), 16);
+    var r = Math.round(((c1 >> 16) & 255) + (((c2 >> 16) & 255) - ((c1 >> 16) & 255)) * f);
+    var g = Math.round(((c1 >> 8) & 255) + (((c2 >> 8) & 255) - ((c1 >> 8) & 255)) * f);
+    var b = Math.round((c1 & 255) + ((c2 & 255) - (c1 & 255)) * f);
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
 
-  // ---- 図鑑（すべての種類×品種。持っていない子は貯まった時間で迎えられる） ----
-  function renderRoster() {
-    var garden = readGarden();
-    var owned = {};
-    garden.forEach(function (g) { owned[g.type + ':' + g.key] = true; });
-    var mileage = readMileage();
-    rosterGridEl.innerHTML = '';
-    PET_TYPES.forEach(function (type) {
-      PET_VARIANTS[type].forEach(function (v) {
-        var isOwned = !!owned[type + ':' + v.key];
-        var price = petPrice(type, v.key);
-        var card = document.createElement('div');
-        card.className = 'roster-card' + (isOwned ? ' owned' : ' locked');
-        card.innerHTML = petSVG('', type, v.key);
-        paintPet(card.querySelector('svg'), 1);
-        var nameEl = document.createElement('div');
-        nameEl.className = 'rc-name';
-        nameEl.textContent = v.name || '';
-        card.appendChild(nameEl);
-        if (isOwned) {
-          var mark = document.createElement('div');
-          mark.className = 'rc-owned-mark';
-          mark.textContent = '仲間だよ';
-          card.appendChild(mark);
-        }
-        var buyBtn = document.createElement('button');
-        buyBtn.type = 'button';
-        buyBtn.className = 'rc-buy';
-        buyBtn.textContent = fmtHours(price) + 'で迎える';
-        buyBtn.disabled = mileage < price;
-        buyBtn.addEventListener('click', function () {
-          if (!buyPet(type, v.key)) return;
-          renderGarden();
-          renderRoster();
-          flashSaved('迎えました');
-        });
-        card.appendChild(buyBtn);
-        rosterGridEl.appendChild(card);
-      });
-    });
+  function startSession(minutes) {
+    var pet = pickPet();
+    var svg = fillPet($('sessPetSlot'), pet.type, pet.key, 0, true);
+    $('sessLabel').textContent = minutes + '分に挑戦中';
+    $('sessTime').textContent = fmtClock(minutes * 60);
+    var fill = $('sessFill');
+    fill.style.strokeDasharray = SESS_CIRC;
+    fill.style.strokeDashoffset = SESS_CIRC;
+    $('sessWarn').classList.remove('show');
+    setSessionBg(0);
+    session = {
+      minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(),
+      active: true, svg: svg, pet: pet,
+      hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayCount: 0, warned: false
+    };
+    sessionScreen.classList.add('show');
+    $('settingsBtn').style.display = 'none';   // セッション中は設定にキーボード操作等でも届かないようにする
+    tickSession();
+    // tickSession() が即座に完了扱い（session=null）にすることは通常の操作では起きない
+    // （時間は必ず1分以上）が、念のためガードしておく
+    if (session) {
+      session.timer = setInterval(tickSession, 1000);
+      requestWakeLock();
+    }
+  }
+  function tickSession() {
+    if (!session || !session.active) return;
+    if (document.hidden) return;   // 裏に回っている間は進捗を描かない。判定は復帰時に行う
+    // 離れていたあいだは集中していない。その分は経過から差し引くので、
+    // 裏に回して時間だけ稼ぐことはできない
+    var remainMs = session.totalMs - (performance.now() - session.startPerf - session.awayMs);
+    if (remainMs <= 0) { finishSession(true); return; }
+    $('sessTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
+    var progress = 1 - remainMs / session.totalMs;
+    paintPet(session.svg, progress, true);
+    $('sessFill').style.strokeDashoffset = SESS_CIRC * (1 - progress);
+    setSessionBg(progress);
+  }
+  function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
+  }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+  function finishSession(success, reason) {
+    if (!session || !session.active) return;
+    session.active = false;
+    var minutes = session.minutes, pet = session.pet;
+    if (session.timer) clearInterval(session.timer);
+    releaseWakeLock();
+    sessionScreen.classList.remove('show');
+    $('settingsBtn').style.display = '';
+    session = null;
+    if (success) {
+      var saved = addToGarden(minutes, pet, 'session');
+      if (saved) addMileage(minutes);
+      RENDERERS[currentView]();
+      showResult(true, minutes, saved ? null : 'savefail', pet);
+    } else {
+      showResult(false, minutes, reason, pet);
+    }
+  }
+  $('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
+
+  // 離れた時刻を控える。すでに控えてあるなら上書きしない
+  // （pagehide と visibilitychange の両方が発火しても、離脱1回として数えるため）
+  function markAway() {
+    if (!session || !session.active || session.hiddenPerf) return;
+    session.hiddenPerf = performance.now();
+    session.hiddenWall = Date.now();
+  }
+  // 戻ってきた。離れていた長さで続行か失敗かを決める。
+  // 長さは performance.now()（単調増加。端末の時計をいじっても動かない）で測るが、
+  // 裏に回ると止まる環境があるため、壁時計の差のほうが長ければそちらを採る。
+  // 壁時計が巻き戻っていた（差が負）ときは、時計をいじって猶予を抜けようとした形になるので失敗にする
+  function resumeFromAway() {
+    if (!session || !session.active || !session.hiddenPerf) return;
+    var byPerf = performance.now() - session.hiddenPerf;
+    var byWall = Date.now() - session.hiddenWall;
+    session.hiddenPerf = 0;
+    session.hiddenWall = 0;
+    if (byWall < 0) { finishSession(false, 'hidden'); return; }
+    var away = Math.max(0, byPerf, byWall);
+    session.awayMs += away;
+    session.awayCount++;
+    if (away > GRACE_MS || session.awayMs > GRACE_TOTAL_MS || session.awayCount > GRACE_COUNT) {
+      finishSession(false, 'hidden');
+      return;
+    }
+    if (!session.warned) {
+      session.warned = true;   // 1回だけ知らせる（毎回出すと逃げ道を教えることになる）
+      var warn = $('sessWarn');
+      warn.classList.add('show');
+      setTimeout(function () { warn.classList.remove('show'); }, 2600);
+    }
+    tickSession();
   }
 
-  // ---- 名前をつける ----
-  var nameModal = document.getElementById('nameModal');
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) markAway();
+    else resumeFromAway();
+  });
+  // ページが捨てられるかもしれない。戻ってきたときに判定できるよう時刻だけ控える
+  window.addEventListener('pagehide', markAway);
+  // bfcache から戻ったときは visibilitychange が来ないことがある。ここでも必ず離脱を精算する
+  window.addEventListener('pageshow', function () {
+    if (!document.hidden) resumeFromAway();
+  });
+
+  // ============ 結果 ============
+  var resultModal = $('resultModal');
+  function showResult(success, minutes, reason, pet) {
+    var svg = fillPet($('resultPetSlot'), pet.type, pet.key, success ? 1 : 0, true);
+    var label = petLabel(pet.type, pet.key);
+    if (success) {
+      $('resultTitle').textContent = 'なつきました';
+      $('resultBody').textContent = reason === 'savefail'
+        ? label + 'と' + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
+        : label + 'と' + minutes + '分、一緒にいられました。おうちに加わりました。';
+    } else {
+      sadPet(svg);
+      $('resultTitle').textContent = '眠ってしまいました';
+      $('resultBody').textContent = reason === 'giveup'
+        ? 'じぶんで やめました。これまでの記録は消えていません。'
+        : '離れているあいだに眠ってしまいました。これまでの記録は消えていません。';
+    }
+    $('resultAgain').textContent = success ? 'もう一回' : 'もう一度やってみる';
+    openModal(resultModal);
+  }
+  $('resultClose').addEventListener('click', function () { closeModal(resultModal); });
+  $('resultAgain').addEventListener('click', function () {
+    closeModal(resultModal);
+    selectChip(chosenMinutes || 25);
+    openModal(pickerModal);
+  });
+  dismissOnBackdrop(resultModal);
+
+  // ============ 名前をつける ============
+  var nameModal = $('nameModal');
   var namingId = null;
   function openNameModal(id, currentName) {
     namingId = id;
-    document.getElementById('nameModalSub').textContent = currentName ? '今の名前: ' + currentName : 'まだ名前がありません';
-    document.getElementById('nameInput').value = currentName || '';
-    nameModal.classList.add('show');
-    setTimeout(function () { document.getElementById('nameInput').focus(); }, 50);
+    $('nameModalSub').textContent = currentName ? '今の名前: ' + currentName : 'まだ名前がありません';
+    $('nameInput').value = currentName || '';
+    openModal(nameModal);
+    setTimeout(function () { $('nameInput').focus(); }, 260);
   }
-  document.getElementById('nameCancel').addEventListener('click', function () { nameModal.classList.remove('show'); namingId = null; });
-  nameModal.addEventListener('click', function (e) { if (e.target === nameModal) { nameModal.classList.remove('show'); namingId = null; } });
-  document.getElementById('nameSave').addEventListener('click', function () {
+  function closeName() { closeModal(nameModal); namingId = null; }
+  $('nameCancel').addEventListener('click', closeName);
+  dismissOnBackdrop(nameModal, function () { namingId = null; });
+  $('nameSave').addEventListener('click', function () {
     if (!namingId) return;
-    var ok = renameGardenEntry(namingId, document.getElementById('nameInput').value);
-    nameModal.classList.remove('show');
-    namingId = null;
-    renderGarden();
-    flashSaved(ok ? '名前をきめました' : '保存できませんでした');
+    var ok = renameGardenEntry(namingId, $('nameInput').value);
+    closeName();
+    renderHouse();
+    renderHome();
+    toast(ok ? '名前をきめました' : '保存できませんでした');
   });
 
-  // ---- 初期化 ----
-  var lastMin = parseInt(localStorage.getItem('pf:lastMinutes') || '25', 10);
+  // ============ 設定 ============
+  var settingsModal = $('settingsModal');
+  function paintGoalChips() {
+    var goal = readGoal();
+    document.querySelectorAll('#goalChips button').forEach(function (b) {
+      b.classList.toggle('active', parseInt(b.dataset.goal, 10) === goal);
+    });
+  }
+  $('settingsBtn').addEventListener('click', function () {
+    if (session && session.active) return;   // 集中中は設定を開けない
+    paintGoalChips();
+    openModal(settingsModal);
+  });
+  $('settingsClose').addEventListener('click', function () { closeModal(settingsModal); });
+  dismissOnBackdrop(settingsModal);
+  document.querySelectorAll('#goalChips button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      writeGoal(parseInt(b.dataset.goal, 10));
+      paintGoalChips();
+      renderHome();
+      RENDERERS[currentView]();   // きろくの棒グラフも目あてを基準にしているので、今見ている画面も直す
+      toast('目あてをかえました');
+    });
+  });
+  $('privacyBtn').addEventListener('click', function () { location.href = 'privacy.html'; });
+  $('howtoBtn').addEventListener('click', function () {
+    closeModal(settingsModal);
+    setTimeout(function () { openModal($('introModal')); }, 280);
+  });
+  $('resetBtn').addEventListener('click', function () {
+    if (session && session.active) return;
+    if (!confirm('なかま・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
+    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses'].every(function (k) { return lsRemove(k); });
+    if (!ok) { alert('消せませんでした。もう一度お試しください。'); return; }
+    closeModal(settingsModal);
+    RENDERERS[currentView]();
+    toast('消しました');
+  });
+
+  // ============ はじめの説明 ============
+  var introModal = $('introModal');
+  $('introClose').addEventListener('click', function () {
+    closeModal(introModal);
+    lsSet('pf:seen', '1');
+  });
+
+  // ============ 起動 ============
+  var lastMin = parseInt(lsGet('pf:lastMinutes', '25'), 10);
   chosenMinutes = (lastMin > 0 && lastMin <= 180) ? lastMin : 25;
-  document.querySelectorAll('#roomTabBar .room-tab-btn').forEach(function (b) {
+  document.querySelectorAll('#roomTabs button').forEach(function (b) {
     b.classList.toggle('active', b.dataset.room === currentRoom);
   });
-  renderGarden();
+  switchView('home');
   scheduleWander();
+  if (!lsGet('pf:seen', '')) openModal(introModal);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
