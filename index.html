@@ -32,6 +32,8 @@
     --accent-l: #86a878;
     --gold:     #a8822f;
     --warm:     #bd6f5f;
+    /* 家具の輪郭。太い濃い線でかたちを立たせる */
+    --line:     #3f342c;
     /* 文字寸 */
     --t-xs: 11px; --t-sm: 12px; --t-md: 13px; --t-base: 15px;
     --t-lg: 17px; --t-xl: 21px; --t-num: 44px;
@@ -711,78 +713,170 @@
     content: ''; position: absolute; left: 16px; right: 16px; top: 86px; bottom: 16px;
     border: 2px solid rgba(90, 66, 38, 0.5); border-radius: 3px;
   }
-  /* ソファ。座面より背もたれを一段濃くし、肘掛けを両端に立てて家具らしく見せる */
+  /* ソファ。座面（明るい上面）・前板（暗い側面）・背もたれ・肘掛けを
+     別々の面として重ね、輪郭で囲って厚みを出す */
   .room-sofa {
-    position: absolute; left: 14px; top: 128px; width: 108px; height: 58px;
-    background: #8fa8c9;
-    border-radius: 6px 6px 5px 5px;
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.22), inset 0 -8px 0 -4px rgba(60, 45, 25, 0.08);
+    position: absolute; left: 14px; top: 132px; width: 110px; height: 54px;
+    background: linear-gradient(180deg, #a3bad9 0 52%, #7e97ba 52%);
+    border: 2px solid var(--line);
+    border-radius: 7px 7px 6px 6px;
+    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 10px rgba(60, 45, 25, 0.22);
   }
   /* 背もたれ */
   .room-sofa::before {
-    content: ''; position: absolute; left: 0; right: 0; top: -16px; height: 24px;
-    background: #7e97ba; border-radius: 8px 8px 0 0;
+    content: ''; position: absolute; left: -2px; right: -2px; top: -24px; height: 28px;
+    background: linear-gradient(180deg, #b3c6de, #8fa8c9);
+    border: 2px solid var(--line);
+    border-radius: 9px 9px 3px 3px;
   }
-  /* 肘掛け（左右に1つずつ。box-shadowで右側を複製している） */
+  /* 肘掛け（右側は box-shadow で複製） */
   .room-sofa::after {
-    content: ''; position: absolute; left: -4px; top: -10px; width: 14px; height: 46px;
-    background: #9db4d2; border-radius: 7px;
-    box-shadow: 102px 0 0 #9db4d2, 0 2px 4px rgba(60, 45, 25, 0.18);
+    content: ''; position: absolute; left: -7px; top: -16px; width: 17px; height: 48px;
+    background: linear-gradient(180deg, #b8cae0, #93aacb);
+    border: 2px solid var(--line); border-radius: 8px;
+    box-shadow: 105px 0 0 0 #a5bbd7, 105px 0 0 2px var(--line);
   }
   /* 観葉植物。葉と鉢がはなれて見えないよう、葉を鉢の口までおろして重ねる */
-  .room-plant { position: absolute; left: 132px; top: 130px; width: 34px; height: 60px; }
+  .room-plant { position: absolute; left: 144px; top: 130px; width: 34px; height: 60px; }
   .room-plant::before {
-    content: ''; position: absolute; bottom: 0; left: 5px; width: 24px; height: 22px;
-    background: #b98a5f; border-radius: 2px 2px 8px 8px; box-shadow: 0 2px 3px rgba(60, 45, 25, 0.2);
+    content: ''; position: absolute; bottom: 0; left: 3px; width: 27px; height: 23px;
+    background: linear-gradient(100deg, #cb9c6c 0 56%, #a8794c 56%);
+    border: 2px solid var(--line); border-radius: 3px 3px 9px 9px;
+    box-shadow: 0 3px 0 -1px rgba(63, 52, 44, 0.22);
   }
   .room-plant::after {
-    content: ''; position: absolute; bottom: 16px; left: 2px; width: 26px; height: 32px;
-    background: #6ea45f; border-radius: 50% 50% 40% 12%;
-    box-shadow: 9px -6px 0 -5px #7fae6f, -5px -4px 0 -7px #5f9450;
+    content: ''; position: absolute; bottom: 17px; left: 1px; width: 28px; height: 33px;
+    background: linear-gradient(100deg, #83b872 0 55%, #61985a 55%);
+    border: 2px solid var(--line);
+    border-radius: 50% 50% 42% 14%;
   }
-  /* 窓を真ん中の上に置いたので、カウンターは下へずらしてぶつからないようにする */
+  /* 窓を真ん中の上に置いたので、カウンターは下へずらしてぶつからないようにする。
+     天板を明るく、前板を暗くして厚みを見せる */
   .room-counter {
-    position: absolute; top: 118px; right: 18px; width: 90px; height: 56px;
-    background: linear-gradient(180deg, #f3ece0, #d9cdb4);
-    border: 1.5px solid #b6935f; border-radius: 6px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    position: absolute; top: 118px; right: 18px; width: 92px; height: 58px;
+    background: linear-gradient(180deg, #f6f0e4 0 34%, #d9cdb4 34%);
+    border: 2px solid var(--line); border-radius: 5px;
+    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
   }
+  /* コンロ。天板の上に置く */
   .room-counter::before {
-    content: ''; position: absolute; top: 8px; left: 10px; width: 20px; height: 20px;
-    border-radius: 50%; background: #a3a89c; box-shadow: 28px 0 0 #a3a89c;
+    content: ''; position: absolute; top: 4px; left: 12px; width: 15px; height: 8px;
+    border-radius: 50%; background: #8f9489;
+    border: 1.5px solid var(--line);
+    box-shadow: 30px 0 0 #8f9489, 30px 0 0 1.5px var(--line);
   }
-  .room-shelf { position: absolute; left: 16px; top: 24px; width: 80px; height: 8px; background: #a87a50; border-radius: 2px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.25); }
-  .room-shelf::before { content: ''; position: absolute; top: 8px; left: 6px; width: 14px; height: 16px; background: #c9564a; border-radius: 0 0 4px 4px; }
-  .room-shelf::after { content: ''; position: absolute; top: 8px; left: 30px; width: 12px; height: 12px; border: 2px solid #7fae6f; border-radius: 50%; }
+  /* 引き出しの合わせ目 */
+  .room-counter::after {
+    content: ''; position: absolute; left: 8px; right: 8px; top: 38px; height: 2px;
+    background: rgba(63, 52, 44, 0.35); border-radius: 2px;
+  }
+  .room-shelf {
+    position: absolute; left: 16px; top: 34px; width: 82px; height: 9px;
+    background: #b98a5f; border: 2px solid var(--line); border-radius: 3px;
+    box-shadow: 0 3px 5px rgba(60, 45, 25, 0.22);
+  }
+  /* 棚に置いたびん */
+  .room-shelf::before {
+    content: ''; position: absolute; top: -20px; left: 8px; width: 15px; height: 20px;
+    background: linear-gradient(100deg, #d96a5e 0 58%, #b8544a 58%);
+    border: 2px solid var(--line); border-radius: 3px 3px 2px 2px;
+  }
+  /* 棚に置いた鉢 */
+  .room-shelf::after {
+    content: ''; position: absolute; top: -17px; left: 36px; width: 15px; height: 17px;
+    background: linear-gradient(100deg, #8fbf7a 0 58%, #6ea45f 58%);
+    border: 2px solid var(--line); border-radius: 50% 50% 4px 4px;
+  }
   .room-fridge {
-    position: absolute; left: 16px; top: 100px; width: 40px; height: 88px;
-    background: linear-gradient(180deg, #f3ece0, #dccbb0);
-    border: 1.5px solid #b6935f; border-radius: 4px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    position: absolute; left: 16px; top: 100px; width: 44px; height: 88px;
+    background: linear-gradient(100deg, #f6f0e4 0 58%, #dccbb0 58%);
+    border: 2px solid var(--line); border-radius: 5px;
+    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
   }
-  .room-fridge::before, .room-fridge::after { content: ''; position: absolute; right: 6px; width: 3px; height: 14px; background: #8a6a48; border-radius: 2px; }
-  .room-fridge::before { top: 10px; }
-  .room-fridge::after { top: 44px; }
-  .room-bed { position: absolute; top: 50px; right: 30px; width: 84px; height: 66px; background: #d98a97; border-radius: 10px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2); }
-  .room-bed::before { content: ''; position: absolute; top: 8px; left: 8px; width: 26px; height: 22px; background: #f8f3e6; border-radius: 6px; }
-  .room-bed::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 10px; height: 20px; background: #e6dce8; border-radius: 4px; }
-  .room-nightstand { position: absolute; right: 10px; top: 128px; width: 26px; height: 24px; background: #c9a876; border: 1px solid #a3805a; border-radius: 3px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2); }
-  .room-lamp { position: absolute; right: 14px; top: 106px; width: 18px; height: 22px; }
-  .room-lamp::before { content: ''; position: absolute; bottom: 0; left: 7px; width: 3px; height: 12px; background: #8a6a48; }
-  .room-lamp::after { content: ''; position: absolute; top: 0; left: 0; width: 18px; height: 12px; background: #f6cd57; border-radius: 4px 4px 8px 8px; opacity: 0.9; }
+  /* 扉の合わせ目 */
+  .room-fridge::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 32px; height: 2px;
+    background: rgba(63, 52, 44, 0.42);
+  }
+  /* 取っ手（上下2つ） */
+  .room-fridge::after {
+    content: ''; position: absolute; right: 6px; top: 16px; width: 4px; height: 12px;
+    background: #8f7a5c; border: 1.5px solid var(--line); border-radius: 3px;
+    box-shadow: 0 30px 0 #8f7a5c, 0 30px 0 1.5px var(--line);
+  }
+  /* ベッド。掛けぶとんの上面を明るく、側面を暗くする。
+     窓は真ん中に置いてあり、その幅は端末によって変わる。左右で避けようとすると
+     狭い端末で必ずぶつかるので、ベッドとサイドテーブルは窓より下の帯に置く */
+  .room-bed {
+    position: absolute; top: 116px; left: 14px; width: 88px; height: 70px;
+    background: linear-gradient(180deg, #e59fab 0 62%, #c97b8a 62%);
+    border: 2px solid var(--line); border-radius: 9px;
+    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
+  }
+  /* まくら */
+  .room-bed::before {
+    content: ''; position: absolute; top: 7px; left: 7px; width: 28px; height: 22px;
+    background: #fbf6ea; border: 2px solid var(--line); border-radius: 7px;
+  }
+  /* めくった掛けぶとんの折り返し */
+  .room-bed::after {
+    content: ''; position: absolute; left: 6px; right: 6px; top: 36px; height: 18px;
+    background: #eee2f0; border: 2px solid var(--line); border-radius: 5px;
+  }
+  .room-nightstand {
+    position: absolute; left: 108px; top: 144px; width: 30px; height: 28px;
+    background: linear-gradient(180deg, #dcc094 0 30%, #c9a876 30%);
+    border: 2px solid var(--line); border-radius: 4px;
+    box-shadow: 0 3px 0 -1px rgba(63, 52, 44, 0.25);
+  }
+  .room-nightstand::after {
+    content: ''; position: absolute; left: 50%; margin-left: -3px; top: 15px;
+    width: 6px; height: 3px; border-radius: 2px; background: var(--line); opacity: 0.55;
+  }
+  .room-lamp { position: absolute; left: 113px; top: 118px; width: 20px; height: 26px; }
+  .room-lamp::before {
+    content: ''; position: absolute; bottom: 0; left: 7px; width: 4px; height: 13px;
+    background: #a3805a; border: 1.5px solid var(--line); border-radius: 2px;
+  }
+  .room-lamp::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 14px;
+    background: linear-gradient(180deg, #ffe08a, #f6c94a);
+    border: 2px solid var(--line); border-radius: 4px 4px 9px 9px;
+  }
   .room-wardrobe {
-    position: absolute; left: 14px; top: 20px; width: 46px; height: 110px;
-    background: linear-gradient(180deg, #e6dce8, #d0bcd6);
-    border: 1.5px solid #b394ba; border-radius: 4px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    position: absolute; right: 16px; top: 20px; width: 50px; height: 112px;
+    background: linear-gradient(100deg, #ece2ee 0 55%, #d0bcd6 55%);
+    border: 2px solid var(--line); border-radius: 5px;
+    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
   }
-  .room-wardrobe::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: rgba(120, 90, 120, 0.4); transform: translateX(-50%); }
+  .room-wardrobe::before {
+    content: ''; position: absolute; top: 2px; bottom: 2px; left: 50%; width: 2px;
+    background: rgba(63, 52, 44, 0.45); transform: translateX(-50%);
+  }
+  /* 取っ手 */
+  .room-wardrobe::after {
+    content: ''; position: absolute; left: 50%; margin-left: -8px; top: 52px;
+    width: 4px; height: 10px; border-radius: 2px; background: #9a7a9e;
+    border: 1.5px solid var(--line);
+    box-shadow: 12px 0 0 #9a7a9e, 12px 0 0 1.5px var(--line);
+  }
   .room-shoebox {
-    position: absolute; right: 20px; top: 30px; width: 64px; height: 70px;
-    background: linear-gradient(180deg, #c9a876, #a8825a);
-    border: 1.5px solid #8a6a48; border-radius: 4px; box-shadow: 0 3px 6px rgba(60, 45, 25, 0.2);
+    position: absolute; right: 18px; top: 28px; width: 68px; height: 74px;
+    background: linear-gradient(180deg, #d9b884 0 16%, #c9a876 16%);
+    border: 2px solid var(--line); border-radius: 4px;
+    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
   }
-  .room-shoebox::before, .room-shoebox::after { content: ''; position: absolute; left: 6px; right: 6px; height: 2px; background: rgba(90, 65, 35, 0.4); }
-  .room-shoebox::before { top: 24px; }
-  .room-shoebox::after { top: 46px; }
-  .room-umbrella-stand { position: absolute; left: 24px; top: 110px; width: 20px; height: 36px; background: #7a8a94; border-radius: 4px 4px 8px 8px; box-shadow: 0 2px 4px rgba(60, 45, 25, 0.2); }
+  .room-shoebox::before, .room-shoebox::after {
+    content: ''; position: absolute; left: 5px; right: 5px; height: 2px; background: rgba(63, 52, 44, 0.42);
+  }
+  .room-shoebox::before { top: 28px; }
+  .room-shoebox::after { top: 51px; }
+  .room-umbrella-stand {
+    position: absolute; left: 22px; top: 108px; width: 24px; height: 40px;
+    background: linear-gradient(100deg, #8b9aa4 0 58%, #6f8089 58%);
+    border: 2px solid var(--line); border-radius: 4px 4px 9px 9px;
+    box-shadow: 0 3px 0 -1px rgba(63, 52, 44, 0.25);
+  }
   .room-umbrella-stand::before { content: ''; position: absolute; bottom: 30px; left: 2px; width: 3px; height: 40px; background: #5a4a30; transform: rotate(-8deg); }
   .room-umbrella-stand::after { content: ''; position: absolute; bottom: 60px; left: -4px; width: 16px; height: 10px; background: #c9564a; border-radius: 50% 50% 0 0; transform: rotate(-8deg); }
   /* ドアの真下、床の上に敷く */
@@ -1295,6 +1389,7 @@
     // tone は毛色の呼び名で、品種名を持たない子を図鑑で見分けるためのもの
   };
   var SPECIES_NAME = { cat: '猫' };
+  var LINE = '#3f342c';   // 絵の輪郭。太めの濃い線でかたちを立たせる
 
   function petVariant(type, key) {
     var list = PET_VARIANTS[type] || [];
@@ -1345,18 +1440,38 @@
     switch (type) {
       case 'cat':
         var ears = (pattern === 'fold')
-          ? '<ellipse cx="17" cy="16" rx="4.2" ry="3" fill="' + c + '"/><ellipse cx="33" cy="16" rx="4.2" ry="3" fill="' + c + '"/>'
-          : '<path d="M12 24 L16 8 L23 20 Z" fill="' + c + '"/><path d="M38 24 L34 8 L27 20 Z" fill="' + c + '"/>' +
-            '<path d="M15 21 L17 12 L20 18 Z" fill="#f0b8bc" opacity="0.8"/><path d="M35 21 L33 12 L30 18 Z" fill="#f0b8bc" opacity="0.8"/>';
-        var bodyRx = (pattern === 'round') ? 17 : 15;
-        return '<path class="tail" d="M37 54 Q49 52 48 36 Q47 24 39 19" fill="none" stroke="' + c + '" stroke-width="6.5" stroke-linecap="round"/>' +
-          '<ellipse cx="17" cy="59" rx="4.5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="59" rx="4.5" ry="4" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="48" rx="' + bodyRx + '" ry="13" fill="' + c + '"/>' + ears +
-          '<circle cx="25" cy="26" r="13" fill="' + c + '"/>' +
-          '<path d="M23 30 L27 30 L25 33 Z" fill="#c96b6b"/>' +
-          '<path d="M25 33 Q22 36 19 35 M25 33 Q28 36 31 35" stroke="rgba(0,0,0,0.35)" stroke-width="1" fill="none"/>' +
-          '<path d="M13 27 L4 25 M13 30 L4 31 M37 27 L46 25 M37 30 L46 31" stroke="rgba(60,50,30,0.4)" stroke-width="1" stroke-linecap="round"/>' +
-          catPattern(pattern, c);
+          ? '<ellipse cx="16" cy="17" rx="5" ry="3.6" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
+            '<ellipse cx="34" cy="17" rx="5" ry="3.6" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>'
+          : '<path d="M12 25 L15.5 7 L24 20 Z" fill="' + c + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
+            '<path d="M38 25 L34.5 7 L26 20 Z" fill="' + c + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
+            '<path d="M15.8 21 L17.2 12.5 L20.6 18.5 Z" fill="#f2b6bd"/>' +
+            '<path d="M34.2 21 L32.8 12.5 L29.4 18.5 Z" fill="#f2b6bd"/>';
+        var bodyRx = (pattern === 'round') ? 17 : 15.5;
+        return (
+          // しっぽ。太い線で輪郭を引き、その上に色をのせて縁取りにする
+          '<path class="tail" d="M34 55 Q48 54 47.5 42 Q47 33 40.5 30.5" fill="none" stroke="' + LINE + '" stroke-width="9.5" stroke-linecap="round"/>' +
+          '<path class="tail" d="M34 55 Q48 54 47.5 42 Q47 33 40.5 30.5" fill="none" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>' +
+          // 前あし
+          '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
+          '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="' + c + '" stroke="' + LINE + '" stroke-width="1.8"/>' +
+          // 体。下を暗く、胸もとを明るくして丸みを出す
+          '<ellipse cx="25" cy="47" rx="' + bodyRx + '" ry="13.5" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
+          '<ellipse cx="25" cy="55.5" rx="' + (bodyRx - 3) + '" ry="4.5" fill="#000" opacity="0.09"/>' +
+          '<ellipse cx="25" cy="48" rx="8.5" ry="7" fill="#fff" opacity="0.2"/>' +
+          ears +
+          // 頭
+          '<circle cx="25" cy="26" r="13" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
+          // 模様は体と頭の両方にかかる（額の縞・シャムの面など）ので、必ず頭を描いたあとに重ねる
+          catPattern(pattern, c) +
+          '<ellipse cx="19.5" cy="19.5" rx="4.6" ry="3" fill="#fff" opacity="0.22"/>' +
+          '<ellipse cx="25" cy="31.5" rx="7" ry="4.6" fill="#fff" opacity="0.26"/>' +
+          // 鼻・口もと・ひげ・ほお
+          '<path d="M22.6 29.4 L27.4 29.4 L25 32.3 Z" fill="#d4747a" stroke="' + LINE + '" stroke-width="0.8" stroke-linejoin="round"/>' +
+          '<path d="M25 32.3 q-2.6 3 -5 1.5 M25 32.3 q2.6 3 5 1.5" stroke="' + LINE + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M13 27 L3.5 25 M13 30 L3.5 31.5 M37 27 L46.5 25 M37 30 L46.5 31.5" stroke="' + LINE + '" stroke-width="1" opacity="0.5" stroke-linecap="round"/>' +
+          '<ellipse cx="15.6" cy="30.6" rx="3.2" ry="2" fill="#f4a3ae" opacity="0.72"/>' +
+          '<ellipse cx="34.4" cy="30.6" rx="3.2" ry="2" fill="#f4a3ae" opacity="0.72"/>'
+        );
     }
     return '';
   }
@@ -1369,9 +1484,15 @@
       '<text class="pet-zzz" x="31" y="' + (fy - 16) + '" font-size="10" fill="#8a8d99">Zzz</text>' +
       '<g class="pet-body">' + petBody(type, v.color, v.pattern) + '</g>' +
       // 眠っているあいだの閉じた目。のっぺらぼうに見えないよう、起きた目と入れ替える
-      '<g class="pet-sleep"><path d="M17 ' + fy + ' q3 2.6 6 0 M27 ' + fy + ' q3 2.6 6 0" ' +
-        'stroke="#3a332a" stroke-width="1.4" fill="none" stroke-linecap="round"/></g>' +
-      '<g class="pet-eyes" opacity="0"><circle cx="20" cy="' + fy + '" r="1.5" fill="#3a332a"/><circle cx="30" cy="' + fy + '" r="1.5" fill="#3a332a"/></g>' +
+      '<g class="pet-sleep"><path d="M16.8 ' + fy + ' q3.2 3.2 6.4 0 M26.8 ' + fy + ' q3.2 3.2 6.4 0" ' +
+        'stroke="' + LINE + '" stroke-width="1.7" fill="none" stroke-linecap="round"/></g>' +
+      // 起きているときの目。つやを一点いれると生きて見える
+      '<g class="pet-eyes" opacity="0">' +
+        '<ellipse cx="20" cy="' + fy + '" rx="2.4" ry="2.9" fill="' + LINE + '"/>' +
+        '<ellipse cx="30" cy="' + fy + '" rx="2.4" ry="2.9" fill="' + LINE + '"/>' +
+        '<circle cx="20.9" cy="' + (fy - 1) + '" r="0.9" fill="#fff"/>' +
+        '<circle cx="30.9" cy="' + (fy - 1) + '" r="0.9" fill="#fff"/>' +
+      '</g>' +
       '<g class="pet-heart" opacity="0" transform="translate(25,8) scale(0.4)"><path d="M0 4 C -6 -3, -14 2, 0 12 C 14 2, 6 -3, 0 4 Z" fill="#e0788a"/></g>' +
     '</svg>';
   }
@@ -1626,9 +1747,13 @@
   function houseSVG(species) {
     var t = HOUSE_TYPES[species] || { color: '#c9b8a0' };
     return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M6 20 L20 8 L34 20 Z" fill="' + t.color + '" style="filter:brightness(0.85)"/>' +
-      '<rect x="9" y="20" width="22" height="15" rx="2" fill="' + t.color + '"/>' +
-      '<rect x="16" y="26" width="8" height="9" rx="1.5" fill="#5a4a30" opacity="0.5"/>' +
+      // 本体（左を明るく、右を暗くして角の立体感を出す）
+      '<path d="M8.5 19 h23 v15 a2 2 0 0 1 -2 2 h-19 a2 2 0 0 1 -2 -2 Z" fill="' + t.color + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M20 19 h11.5 v15 a2 2 0 0 1 -2 2 H20 Z" fill="#000" opacity="0.12"/>' +
+      // 屋根
+      '<path d="M4.5 20 L20 6.5 L35.5 20 Z" fill="' + t.color + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round" style="filter:brightness(0.88)"/>' +
+      // 入口
+      '<path d="M15 36 v-7 a5 5 0 0 1 10 0 v7 Z" fill="#41352b" stroke="' + LINE + '" stroke-width="1.6" stroke-linejoin="round"/>' +
     '</svg>';
   }
 
