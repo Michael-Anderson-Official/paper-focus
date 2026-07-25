@@ -430,7 +430,7 @@
   }
   .log-row:last-child { border-bottom: none; }
   .log-row .lr-pet { width: 30px; height: 34px; flex: none; }
-  .log-row .lr-pet svg { width: 100%; height: 100%; }
+  .log-row .lr-pet svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.3)); }
   .log-row .lr-main { flex: 1; min-width: 0; }
   .log-row .lr-name { font-size: var(--t-md); color: var(--ink); font-weight: 600; }
   .log-row .lr-meta { font-size: var(--t-xs); color: var(--ink-3); }
@@ -450,7 +450,8 @@
     text-align: center;
     display: flex; flex-direction: column; align-items: center; gap: 2px;
   }
-  .g-card svg { width: 54px; height: 60px; }
+  /* 白っぽい毛色（三毛猫・ペルシャなど）は紙の地に溶けてしまうので、うすい影で輪郭を出す */
+  .g-card svg { width: 54px; height: 60px; filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.34)); }
   .g-card.locked svg { filter: grayscale(1) brightness(0.86); opacity: 0.42; }
   .g-card .gc-name { font-size: 10px; color: var(--ink-3); line-height: 1.35; min-height: 2.4em; padding: 0 2px; }
   .g-card.owned .gc-name { color: var(--ink); font-weight: 600; }
@@ -507,7 +508,7 @@
   .room-house .rh-name { font-size: 9px; color: var(--ink); font-weight: 600; }
   .room-house .rh-slots { display: flex; gap: 2px; }
   .room-house .rh-slot { width: 18px; height: 18px; }
-  .room-house .rh-slot svg { width: 100%; height: 100%; display: block; }
+  .room-house .rh-slot svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(60, 45, 25, 0.3)); }
   .room-house .rh-slot.empty { border: 1px dashed var(--edge-2); border-radius: 50%; }
 
   .room-scene { position: relative; overflow: hidden; border-radius: var(--r-md); box-shadow: var(--sh-1); }
@@ -1112,7 +1113,7 @@
   }
 
   // ---- ペット。種類・品種はセッションごとにランダム。progress(0〜1)で「眠り→目覚め→懐く」を表す ----
-  var PET_TYPES = ['cat', 'dog', 'rabbit', 'bird', 'hamster', 'turtle'];
+  var PET_TYPES = ['cat'];
   var PET_VARIANTS = {
     cat: [
       { key: 'american-shorthair', name: 'アメリカンショートヘア', color: '#b8b0a0', pattern: 'tabby' },
@@ -1127,14 +1128,9 @@
       { key: 'calico',             name: '三毛猫',                   color: '#f3ece0', pattern: 'calico' }
     ],
     // name は「固有の品種名」。これがある子は値段が上がる（petPrice）。
-    // tone は毛色の呼び名で、図鑑で同じ種類が同じ名前に見えてしまうのを防ぐためだけのもの
-    dog:     [{ key: 'brown', name: null, tone: 'ちゃいろ', color: '#c98a52', pattern: 'solid' }, { key: 'dark', name: null, tone: 'こげちゃ', color: '#8a6a48', pattern: 'solid' }, { key: 'cream', name: null, tone: 'クリーム', color: '#e8ddc2', pattern: 'solid' }],
-    rabbit:  [{ key: 'pink',  name: null, tone: 'さくら',   color: '#f0c9d6', pattern: 'solid' }, { key: 'ivory', name: null, tone: 'アイボリー', color: '#e6ddc9', pattern: 'solid' }, { key: 'beige', name: null, tone: 'ベージュ', color: '#c9b8a0', pattern: 'solid' }],
-    bird:    [{ key: 'blue',  name: null, tone: 'あお',     color: '#8fb6d9', pattern: 'solid' }, { key: 'gold', name: null, tone: 'きいろ',  color: '#e0a952', pattern: 'solid' }, { key: 'green', name: null, tone: 'みどり',  color: '#7fb08a', pattern: 'solid' }],
-    hamster: [{ key: 'gold',  name: null, tone: 'きんいろ', color: '#e0b96e', pattern: 'solid' }, { key: 'brown', name: null, tone: 'ちゃいろ', color: '#c98a52', pattern: 'solid' }, { key: 'cream', name: null, tone: 'クリーム', color: '#f3ece0', pattern: 'solid' }],
-    turtle:  [{ key: 'green', name: null, tone: 'みどり',   color: '#7fb08a', pattern: 'solid' }, { key: 'olive', name: null, tone: 'オリーブ', color: '#8fa87f', pattern: 'solid' }, { key: 'tan',  name: null, tone: 'きなり',  color: '#b0a870', pattern: 'solid' }]
+    // tone は毛色の呼び名で、品種名を持たない子を図鑑で見分けるためのもの
   };
-  var SPECIES_NAME = { cat: '猫', dog: '犬', rabbit: 'うさぎ', bird: '小鳥', hamster: 'ハムスター', turtle: 'かめ' };
+  var SPECIES_NAME = { cat: '猫' };
 
   function petVariant(type, key) {
     var list = PET_VARIANTS[type] || [];
@@ -1197,54 +1193,11 @@
           '<path d="M25 33 Q22 36 19 35 M25 33 Q28 36 31 35" stroke="rgba(0,0,0,0.35)" stroke-width="1" fill="none"/>' +
           '<path d="M13 27 L4 25 M13 30 L4 31 M37 27 L46 25 M37 30 L46 31" stroke="rgba(60,50,30,0.4)" stroke-width="1" stroke-linecap="round"/>' +
           catPattern(pattern, c);
-      // 以下は猫と同じ作りにそろえてある。うしろのもの（しっぽ・耳）から順に重ね、
-      // 最後に顔を描く。頭はどの子も中心 x=25 に置く（目と閉じた目の位置が共通のため）
-      case 'dog':
-        return '<path class="tail" d="M38 51 Q48 49 46 38" fill="none" stroke="' + c + '" stroke-width="5" stroke-linecap="round"/>' +
-          '<ellipse cx="12" cy="30" rx="5.2" ry="10" fill="' + c + '" style="filter:brightness(0.88)"/>' +
-          '<ellipse cx="38" cy="30" rx="5.2" ry="10" fill="' + c + '" style="filter:brightness(0.88)"/>' +
-          '<ellipse cx="17" cy="58" rx="5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="58" rx="5" ry="4" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="47" rx="16" ry="13" fill="' + c + '"/>' +
-          '<circle cx="25" cy="26" r="12" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="31" rx="7" ry="5" fill="#fbead6"/>' +
-          '<ellipse cx="25" cy="28.5" rx="2.4" ry="1.8" fill="#4a3b2e"/>';
-      case 'rabbit':
-        return '<circle class="tail" cx="40" cy="52" r="4.5" fill="' + c + '" style="filter:brightness(1.12)"/>' +
-          '<ellipse cx="18" cy="15" rx="4.2" ry="13" fill="' + c + '" transform="rotate(-8 18 15)"/>' +
-          '<ellipse cx="32" cy="15" rx="4.2" ry="13" fill="' + c + '" transform="rotate(8 32 15)"/>' +
-          '<ellipse cx="18" cy="16" rx="2" ry="9" fill="#f6d9de" transform="rotate(-8 18 16)"/>' +
-          '<ellipse cx="32" cy="16" rx="2" ry="9" fill="#f6d9de" transform="rotate(8 32 16)"/>' +
-          '<ellipse cx="17" cy="58" rx="5" ry="4" fill="' + c + '"/><ellipse cx="33" cy="58" rx="5" ry="4" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="47" rx="15" ry="13" fill="' + c + '"/>' +
-          '<circle cx="25" cy="30" r="11" fill="' + c + '"/>' +
-          '<path d="M23 33 L27 33 L25 35.5 Z" fill="#d98a97"/>';
-      case 'bird':
-        return '<path d="M10 38 L1 34 L9 45 Z" fill="' + c + '" style="filter:brightness(0.85)"/>' +
-          '<path d="M21 55 v4 M29 55 v4 M19 59 h5 M27 59 h5" stroke="#c9903e" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
-          '<ellipse cx="25" cy="43" rx="15" ry="15" fill="' + c + '"/>' +
-          '<ellipse cx="34" cy="44" rx="7" ry="9" fill="rgba(0,0,0,0.12)" transform="rotate(14 34 44)"/>' +
-          '<circle cx="25" cy="23" r="10" fill="' + c + '"/>' +
-          '<path d="M35 23 L42 25 L35 27 Z" fill="#e0a952"/>';
-      case 'hamster':
-        return '<ellipse cx="15" cy="18" rx="5" ry="5" fill="' + c + '"/><ellipse cx="35" cy="18" rx="5" ry="5" fill="' + c + '"/>' +
-          '<ellipse cx="15" cy="18" rx="2.6" ry="2.6" fill="#e8b8b8"/><ellipse cx="35" cy="18" rx="2.6" ry="2.6" fill="#e8b8b8"/>' +
-          '<ellipse cx="18" cy="57" rx="4.5" ry="3.5" fill="' + c + '"/><ellipse cx="32" cy="57" rx="4.5" ry="3.5" fill="' + c + '"/>' +
-          '<ellipse cx="25" cy="46" rx="17" ry="13" fill="' + c + '"/>' +
-          '<circle cx="25" cy="27" r="12" fill="' + c + '"/>' +
-          '<ellipse cx="14" cy="31" rx="4.5" ry="4" fill="' + c + '" style="filter:brightness(1.08)"/>' +
-          '<ellipse cx="36" cy="31" rx="4.5" ry="4" fill="' + c + '" style="filter:brightness(1.08)"/>' +
-          '<ellipse cx="25" cy="31" rx="2" ry="1.5" fill="#4a3b2e"/>';
-      case 'turtle':
-        return '<ellipse cx="13" cy="56" rx="5.5" ry="3.5" fill="' + c + '" style="filter:brightness(1.12)"/>' +
-          '<ellipse cx="37" cy="56" rx="5.5" ry="3.5" fill="' + c + '" style="filter:brightness(1.12)"/>' +
-          '<ellipse cx="25" cy="45" rx="19" ry="14" fill="' + c + '" style="filter:brightness(0.8)"/>' +
-          '<path d="M25 31 Q11 37 8 46 M25 31 Q39 37 42 46 M7 45 h36" stroke="rgba(0,0,0,0.18)" stroke-width="1.5" fill="none"/>' +
-          '<circle cx="25" cy="25" r="10" fill="' + c + '"/>';
     }
     return '';
   }
   // 顔（目・閉じた目）の高さ。種類ごとに頭の位置が違うので個別に持つ
-  var FACE_Y = { cat: 25, dog: 24, rabbit: 28, bird: 21, hamster: 26, turtle: 24 };
+  var FACE_Y = { cat: 25 };
   function petSVG(type, key) {
     var v = petVariant(type, key) || { color: '#c9b8a0', pattern: 'solid' };
     var fy = FACE_Y[type] || 26;
@@ -1321,17 +1274,20 @@
       var filtered = raw.filter(coreValid);
       var changed = false;
       var out = filtered.map(function (g) {
-        var type = g.type, key = g.key;
+        var type = g.type, key = g.key, origin = null;
         if (!petFieldsValid(g)) {
-          changed = true;   // 品種を持たない旧形式の記録。消さずに割り当てて救済する
+          // いま出していない種類・品種。消さずに猫として見せるが、
+          // 元の記録は origin に取っておき、保存し直すときに書き戻す。
+          // こうしておけば、種類を増やしたときにそのまま元の姿へ戻せる
           var p = deriveLegacyPet(g.id);
           type = p.type; key = p.key;
+          origin = { type: g.type, key: g.key };
         }
         var name = (typeof g.name === 'string') ? g.name.slice(0, 12) : '';
         var source = (g.source === 'shop') ? 'shop' : 'session';
         var minutes = (source === 'shop') ? 0 : g.minutes;
-        if (g.type !== type || g.key !== key || g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
-        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source };
+        if (g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
+        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source, origin: origin };
       });
       // 読めなかった記録を捨てて上書きすると、原因が一時的なものでも二度と戻せない。
       // 捨てるぶんは必ず控えに退避してから、整えた側を書き戻す
@@ -1345,8 +1301,18 @@
       return out;
     } catch (e) { return []; }
   }
+  // 保存するときは、見せかけで猫にした子を元の種類へ戻して書く。
+  // 名前をつけるなど別の理由で保存し直しても、元の記録が消えないようにするため
   function writeGarden(arr) {
-    return lsSet('pf:garden', JSON.stringify(arr));
+    var stored = arr.map(function (g) {
+      return {
+        id: g.id, minutes: g.minutes, completedAt: g.completedAt,
+        type: g.origin ? g.origin.type : g.type,
+        key: g.origin ? g.origin.key : g.key,
+        name: g.name, source: g.source
+      };
+    });
+    return lsSet('pf:garden', JSON.stringify(stored));
   }
   function addToGarden(minutes, pet, source) {
     var arr = readGarden();
@@ -1415,28 +1381,31 @@
     { key: 'garden', name: '庭' }
   ];
   var HOUSE_TYPES = {
-    cat:     { name: '猫用ハウス', color: '#c98a52' },
-    dog:     { name: '犬小屋',     color: '#a87a50' },
-    rabbit:  { name: 'うさぎ小屋', color: '#c9b8a0' },
-    bird:    { name: '鳥かご',     color: '#8fb6d9' },
-    hamster: { name: 'ケージ',     color: '#e0b96e' },
-    turtle:  { name: '水槽',       color: '#7fb08a' }
+    cat: { name: '猫用ハウス', color: '#c98a52' }
   };
   var HOUSE_CAPACITY = 3;
   var HOUSE_PRICE = 60;
   function isRoomKey(k) { return ROOMS.some(function (r) { return r.key === k; }); }
-  function coreHouseValid(h) {
+  // 形がまともかどうかだけを見る（種類が今あるかどうかは別で判断する）
+  function houseShapeValid(h) {
     return h && typeof h === 'object' && typeof h.id === 'string' && h.id &&
-      PET_TYPES.indexOf(h.species) !== -1 && isRoomKey(h.room);
+      typeof h.species === 'string' && h.species && isRoomKey(h.room);
   }
-  function readHouses() {
+  function isLivingSpecies(s) { return PET_TYPES.indexOf(s) !== -1; }
+  function readHousesRaw() {
     try {
       var raw = JSON.parse(lsGet('pf:houses', '[]'));
-      return Array.isArray(raw) ? raw.filter(coreHouseValid) : [];
+      return Array.isArray(raw) ? raw.filter(houseShapeValid) : [];
     } catch (e) { return []; }
   }
+  // 画面に出すのは、いま扱っている種類のハウスだけ
+  function readHouses() {
+    return readHousesRaw().filter(function (h) { return isLivingSpecies(h.species); });
+  }
+  // 出していない種類のハウスも保存には残す。種類を増やしたときに戻ってくるように
   function writeHouses(arr) {
-    return lsSet('pf:houses', JSON.stringify(arr));
+    var hidden = readHousesRaw().filter(function (h) { return !isLivingSpecies(h.species); });
+    return lsSet('pf:houses', JSON.stringify(hidden.concat(arr)));
   }
   function buyHouse(species, room) {
     if (PET_TYPES.indexOf(species) === -1 || !isRoomKey(room)) return false;
