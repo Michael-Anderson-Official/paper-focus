@@ -481,8 +481,8 @@
   .room-tabs { display: flex; gap: var(--s1); margin-bottom: var(--s3); }
   .room-tabs button {
     flex: 1; min-width: 0;
-    padding: 9px 2px;
-    font-size: var(--t-sm);
+    padding: 9px 1px;
+    font-size: var(--t-xs);   /* 5部屋あるので、狭い端末でも「リビング」が省略されない字寸にする */
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     color: var(--ink-3);
     background: transparent;
@@ -523,10 +523,27 @@
   .room-scene.room-genkan .room-wall { background: linear-gradient(180deg, #e2ded2, #cfc7b4); }
   .room-scene.room-genkan .room-floor-bg { background: repeating-linear-gradient(45deg, #c9c2ae 0, #c9c2ae 20px, #bab293 20px, #bab293 22px); }
 
+  /* 庭は屋外なので、壁と床ではなく空と芝生にする */
+  .room-scene.room-garden .room-wall { background: linear-gradient(180deg, #a9d6ea 0%, #cbe7ea 62%, #dfeed8 100%); }
+  .room-scene.room-garden .room-floor-bg {
+    background:
+      repeating-linear-gradient(96deg, rgba(255, 255, 255, 0.07) 0 3px, transparent 3px 9px),
+      repeating-linear-gradient(90deg, #8fbb6d 0, #8fbb6d 26px, #86b365 26px, #86b365 52px);
+  }
+
   .room-window, .room-sofa, .room-plant,
   .room-counter, .room-shelf, .room-fridge,
   .room-bed, .room-nightstand, .room-lamp, .room-wardrobe,
-  .room-shoebox, .room-umbrella-stand, .room-doormat { display: none; }
+  .room-shoebox, .room-umbrella-stand, .room-doormat,
+  .room-sun, .room-cloud, .room-hedge, .room-fence,
+  .room-tree, .room-flowerbed, .room-pond { display: none; }
+  .room-scene.room-garden .room-sun,
+  .room-scene.room-garden .room-cloud,
+  .room-scene.room-garden .room-hedge,
+  .room-scene.room-garden .room-fence,
+  .room-scene.room-garden .room-tree,
+  .room-scene.room-garden .room-flowerbed,
+  .room-scene.room-garden .room-pond { display: block; }
   .room-scene.room-living .room-window,
   .room-scene.room-living .room-sofa,
   .room-scene.room-living .room-plant { display: block; }
@@ -631,6 +648,86 @@
     width: 76px; height: 26px; background: #a3a89c; border-radius: 6px;
     box-shadow: inset 0 0 0 3px #8a8f7f, 0 2px 4px rgba(60, 45, 25, 0.18);
   }
+  /* ---- 庭 ---- */
+  .room-sun {
+    position: absolute; top: 20px; right: 26px; width: 40px; height: 40px;
+    background: #f7dd8a; border-radius: 50%;
+    box-shadow: 0 0 0 9px rgba(247, 221, 138, 0.28), 0 0 22px rgba(247, 221, 138, 0.7);
+  }
+  .room-cloud {
+    position: absolute; height: 15px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    animation: cloudDrift 46s linear infinite;
+  }
+  .room-cloud::before, .room-cloud::after {
+    content: ''; position: absolute; bottom: 2px;
+    background: rgba(255, 255, 255, 0.85); border-radius: 50%;
+  }
+  .room-cloud.c1 { top: 40px; left: 18px; width: 52px; animation-duration: 54s; }
+  .room-cloud.c1::before { left: 9px; width: 20px; height: 20px; }
+  .room-cloud.c1::after { left: 26px; width: 15px; height: 15px; }
+  .room-cloud.c2 { top: 80px; left: 96px; width: 40px; animation-duration: 72s; animation-delay: -18s; opacity: 0.75; }
+  .room-cloud.c2::before { left: 7px; width: 16px; height: 16px; }
+  .room-cloud.c2::after { left: 21px; width: 12px; height: 12px; }
+  /* 端で急に切れると雲に見えないので、出入りぎわは薄くする */
+  @keyframes cloudDrift {
+    0%   { transform: translateX(-70px); opacity: 0; }
+    12%  { opacity: 0.85; }
+    88%  { opacity: 0.85; }
+    100% { transform: translateX(300px); opacity: 0; }
+  }
+  /* 遠くの生垣。空と芝生の境目をやわらげる */
+  .room-hedge {
+    position: absolute; left: -6px; right: -6px; top: 150px; height: 42px;
+    background: radial-gradient(circle at 10px 22px, #6f9e57 0 13px, transparent 14px) repeat-x 0 0 / 26px 42px,
+      linear-gradient(180deg, #6f9e57, #5e8b49);
+    border-radius: 0 0 4px 4px;
+  }
+  /* 白い柵 */
+  .room-fence {
+    position: absolute; left: 0; right: 0; top: 178px; height: 26px;
+    background:
+      repeating-linear-gradient(90deg, #f5f0e2 0 7px, transparent 7px 22px),
+      linear-gradient(180deg, transparent 6px, #f5f0e2 6px, #f5f0e2 10px, transparent 10px),
+      linear-gradient(180deg, transparent 17px, #f5f0e2 17px, #f5f0e2 21px, transparent 21px);
+    filter: drop-shadow(0 2px 2px rgba(60, 70, 40, 0.2));
+  }
+  /* 木。幹の上に葉のかたまりを3つ重ねる */
+  .room-tree { position: absolute; right: 16px; top: 96px; width: 92px; height: 108px; }
+  .room-tree::before {
+    content: ''; position: absolute; bottom: 0; left: 41px; width: 12px; height: 46px;
+    background: linear-gradient(90deg, #8a6a48, #a3805a); border-radius: 3px;
+  }
+  .room-tree::after {
+    content: ''; position: absolute; top: 0; left: 16px; width: 62px; height: 62px;
+    background: #6ea45f; border-radius: 50%;
+    box-shadow: -14px 20px 0 -8px #7fb16c, 16px 22px 0 -6px #5f9450, 0 2px 6px rgba(50, 70, 40, 0.2);
+  }
+  /* 花壇。柵のすぐ下、なかまが歩く広場より上に置く */
+  .room-flowerbed { position: absolute; left: 10px; top: 200px; width: 96px; height: 24px; }
+  .room-flowerbed::before {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 11px;
+    background: #9a7550; border-radius: 6px; box-shadow: 0 2px 3px rgba(50, 60, 30, 0.18);
+  }
+  .room-flowerbed::after {
+    content: ''; position: absolute; bottom: 7px; left: 7px; width: 8px; height: 8px;
+    background: #e07a94; border-radius: 50%;
+    box-shadow: 18px -3px 0 #f0c05a, 36px 1px 0 #d96f8c, 54px -4px 0 #e8b6d2, 72px 0 0 #f0c05a;
+  }
+  /* 池 */
+  .room-pond {
+    position: absolute; right: 14px; top: 198px; width: 78px; height: 32px;
+    background: radial-gradient(ellipse at 40% 35%, #a8d8e6 0%, #7bbdd4 60%, #63a7c1 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #c7b48a, inset 0 3px 6px rgba(255, 255, 255, 0.45);
+  }
+  .room-pond::before, .room-pond::after {
+    content: ''; position: absolute; border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+  }
+  .room-pond::before { left: 20px; top: 8px; width: 20px; height: 8px; }
+  .room-pond::after { left: 44px; top: 18px; width: 12px; height: 6px; }
+
   .room-rug {
     position: absolute; left: 50%; top: 214px; transform: translateX(-50%);
     width: 92%; border-radius: 50%;
@@ -640,6 +737,11 @@
   .room-scene.room-kitchen .room-rug { background: radial-gradient(ellipse at center, #dbe6c9 0%, #dbe6c9 62%, #cddab3 63%, #cddab3 100%); }
   .room-scene.room-bedroom .room-rug { background: radial-gradient(ellipse at center, #ecd9df 0%, #ecd9df 62%, #ddc0c9 63%, #ddc0c9 100%); }
   .room-scene.room-genkan .room-rug { background: radial-gradient(ellipse at center, #d9d2c0 0%, #d9d2c0 62%, #c7bfa8 63%, #c7bfa8 100%); }
+  /* 庭は敷物ではなく、刈りそろえた広場。なかまが遊ぶ場所の目印になる */
+  .room-scene.room-garden .room-rug {
+    background: radial-gradient(ellipse at center, #a2cb7d 0%, #a2cb7d 64%, #94c06e 65%, #94c06e 100%);
+    box-shadow: 0 2px 5px rgba(50, 70, 40, 0.1);
+  }
 
   .room-pets { position: absolute; inset: 0; }
   /* 歩く速さは1匹ずつ違うので、移動にかかる時間は --walk-ms で個別に渡す */
@@ -683,7 +785,10 @@
   .pet-eyes, .pet-zzz, .pet-heart, .pet-sleep { transition: opacity 0.5s ease; }
 
   @media (prefers-reduced-motion: reduce) {
-    .room-pet, .tail { animation: none; }
+    /* 上の全体指定は時間を詰めるだけなので、くり返し動くものは個別に止める
+       （詰めただけだと、雲のような無限アニメーションは逆に高速でちらつく） */
+    .room-pet, .room-pet .rp-fig, .tail, .room-cloud { animation: none; }
+    .room-cloud { opacity: 0.85; }
   }
 </style>
 </head>
@@ -763,6 +868,7 @@
           <button type="button" class="active" data-room="living">リビング</button>
           <button type="button" data-room="kitchen">キッチン</button>
           <button type="button" data-room="bedroom">寝室</button>
+          <button type="button" data-room="garden">庭</button>
         </div>
         <div class="room-houses" id="roomHouses"></div>
         <div class="room-scene room-living" id="roomScene">
@@ -780,8 +886,18 @@
           <div class="room-shoebox"></div>
           <div class="room-umbrella-stand"></div>
           <div class="room-doormat"></div>
+          <div class="room-sun"></div>
+          <div class="room-cloud c1"></div>
+          <div class="room-cloud c2"></div>
           <div class="room-floor-bg"></div>
+          <!-- 生垣・木・柵は地面をまたいで立つので、床より後ろに書いて隠れないようにする -->
+          <div class="room-hedge"></div>
+          <div class="room-tree"></div>
+          <div class="room-fence"></div>
           <div class="room-rug" id="roomRug"></div>
+          <!-- 花壇と池は芝生の上に置くものなので、床と広場より後ろに書いて重ねる -->
+          <div class="room-flowerbed"></div>
+          <div class="room-pond"></div>
           <div class="room-pets" id="roomPets"></div>
           <div class="room-empty" id="roomEmpty" style="display:none;"></div>
         </div>
@@ -915,6 +1031,7 @@
           <button type="button" data-room="living">リビング</button>
           <button type="button" data-room="kitchen">キッチン</button>
           <button type="button" data-room="bedroom">寝室</button>
+          <button type="button" data-room="garden">庭</button>
         </div>
         <div class="sheet-btns">
           <span class="spacer"></span>
@@ -1294,7 +1411,8 @@
   // ---- 部屋・ハウス ----
   var ROOMS = [
     { key: 'genkan', name: '玄関' }, { key: 'living', name: 'リビング' },
-    { key: 'kitchen', name: 'キッチン' }, { key: 'bedroom', name: '寝室' }
+    { key: 'kitchen', name: 'キッチン' }, { key: 'bedroom', name: '寝室' },
+    { key: 'garden', name: '庭' }
   ];
   var HOUSE_TYPES = {
     cat:     { name: '猫用ハウス', color: '#c98a52' },
@@ -1662,11 +1780,13 @@
 
     // 歩ける範囲。部屋の幅は端末によって変わるので、描いたあとの実寸から決める
     var sceneW = scene.clientWidth || 340;
+    // 庭は柵ぎわに花壇と池があるので、その下からを歩く場所にする
+    var topEdge = FLOOR_TOP - (currentRoom === 'garden' ? 12 : 40);
     var bounds = {
       left: 10,
       right: Math.max(30, sceneW - 68),
-      top: FLOOR_TOP - 40,
-      bottom: FLOOR_TOP - 40 + Math.max(40, rugHeight - 34)
+      top: topEdge,
+      bottom: topEdge + Math.max(40, rugHeight - 34)
     };
     // 最初の居場所はidから決める（開くたびに散らばり方が変わらないように）。
     // ただし素直にidから1点だけ選ぶと重なることがあるので、候補をいくつか出して
