@@ -2151,13 +2151,22 @@
   function houseLabel(h) { return houseName(h) + h.no; }
   // 1匹ぶんふえるごとに横へ広がり、屋根もその幅なりに高くなる。
   // 絵と同じ寸法で置くので、入り口やとびらの大きさは広さによらず一定に見える
-  var HOUSE_CAP_H = 12;   // 絵の下に出す名前ぶんの高さ
-  function houseSize(cap) {
+  var HOUSE_CAP_H = 12;    // 絵の下に出す名前ぶんの高さ
+  var HOUSE_STOREY = 26;   // 1階ぶんの高さ
+  var HOUSE_ROOF = 18;     // 屋根の高さ
+  // 入り口は1階に3つまで。4匹目からは2階を足して上へ伸ばす。
+  // 横にだけ伸ばしていくと、広げるほど部屋の壁にぶつかってしまう
+  function houseFloors(cap) {
     var n = Math.max(1, Math.min(HOUSE_CAP_MAX, cap || 1));
-    var art = 42 + (n - 1) * 3;
+    var lower = Math.min(n, 3);
+    return { n: n, lower: lower, upper: Math.max(0, n - 3), floors: n > 3 ? 2 : 1 };
+  }
+  function houseSize(cap) {
+    var f = houseFloors(cap);
+    var art = 8 + f.floors * HOUSE_STOREY + HOUSE_ROOF;   // 1階=52 / 2階=78
     // h は名前もふくめた全体の高さ。ここを絵だけの高さにすると、
     // いちばん下の段に建てたとき名前が部屋の外にはみ出して切れる
-    return { w: 42 + (n - 1) * 15, art: art, h: art + HOUSE_CAP_H };
+    return { w: 42 + (f.lower - 1) * 15, art: art, h: art + HOUSE_CAP_H };
   }
   // 画面に出すのは、いま扱っている種類のハウスだけ
   function readHouses() {
@@ -2556,21 +2565,26 @@
   // 見ただけで広さが分かるようにしてある
   function houseSVG(species, cap) {
     var t = HOUSE_TYPES[species] || { color: '#c9b8a0' };
-    var n = Math.max(1, Math.min(HOUSE_CAP_MAX, cap || 1));
-    var size = houseSize(n);
+    var f = houseFloors(cap);
+    var size = houseSize(f.n);
     var W = size.w, H = size.art;
-    var eave = H * 0.42;          // 屋根の裾。幅なりに屋根も高くなる
-    var top = H * 0.40, bot = H - 4;   // 本体の上下
-    var bl = 7, br = W - 7;
-    // 入り口は なかまの大きさなので、ハウスが広がっても大きさは変えない。
+    var bot = H - 4;                                  // 本体の下端
+    var top = bot - f.floors * HOUSE_STOREY;          // 本体の上端（＝屋根の裾）
+    var bl = 4, br = W - 4;
+    // 入り口は なかまの大きさなので、階が増えても広さが変わっても大きさは変えない。
     // 数がそのまま「何匹入れるか」になる
-    var doors = '';
-    var dl = 13, dr = W - 13;
-    for (var i = 0; i < n; i++) {
-      var cx = (n === 1) ? W / 2 : dl + (dr - dl) * (i / (n - 1));
-      doors += '<path d="M' + (cx - 5) + ' ' + bot + ' v-7 a5 5 0 0 1 10 0 v7 Z" fill="#41352b" ' +
-        'stroke="' + LINE + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    function row(count, baseY) {
+      var out = '';
+      var dl = 12, dr = W - 12;
+      for (var i = 0; i < count; i++) {
+        var cx = (count === 1) ? W / 2 : dl + (dr - dl) * (i / (count - 1));
+        out += '<path d="M' + (cx - 5) + ' ' + baseY + ' v-7 a5 5 0 0 1 10 0 v7 Z" fill="#41352b" ' +
+          'stroke="' + LINE + '" stroke-width="1.6" stroke-linejoin="round"/>';
+      }
+      return out;
     }
+    var doors = row(f.lower, bot);
+    if (f.upper) doors += row(f.upper, bot - HOUSE_STOREY);
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
       // 本体（左を明るく、右を暗くして角の立体感を出す）
       '<path d="M' + bl + ' ' + top + ' H' + br + ' V' + (bot - 2) +
@@ -2578,8 +2592,11 @@
         'fill="' + t.color + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
       '<path d="M' + (W / 2) + ' ' + top + ' H' + br + ' V' + (bot - 2) +
         ' a2 2 0 0 1 -2 2 H' + (W / 2) + ' Z" fill="#000" opacity="0.12"/>' +
+      // 2階建てのときは、階の境目に床の線を引く
+      (f.upper ? '<path d="M' + bl + ' ' + (bot - HOUSE_STOREY) + ' H' + br + '" stroke="' + LINE +
+        '" stroke-width="2" opacity="0.5"/>' : '') +
       // 屋根
-      '<path d="M3 ' + eave + ' L' + (W / 2) + ' 4 L' + (W - 3) + ' ' + eave + ' Z" fill="' + t.color + '" ' +
+      '<path d="M1 ' + top + ' L' + (W / 2) + ' 4 L' + (W - 1) + ' ' + top + ' Z" fill="' + t.color + '" ' +
         'stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round" style="filter:brightness(0.88)"/>' +
       doors +
     '</svg>';
@@ -3062,13 +3079,25 @@
   function cellAnchor(col, row, sp) {
     var t = (row + 0.82) / GRID_ROWS;
     var u = (col + 0.5) / GRID_COLS;
-    return { x: floorX(sp, t, u), y: floorY(sp, t), scale: floorScale(sp, t), t: t, u: u };
+    return {
+      x: floorX(sp, t, u), y: floorY(sp, t), scale: floorScale(sp, t), t: t, u: u,
+      // そのマスの左右のはし。置くものを内側へ寄せるとき、ここより外へは出さない
+      x0: floorX(sp, t, col / GRID_COLS), x1: floorX(sp, t, (col + 1) / GRID_COLS)
+    };
   }
   // 置いたものは「床の上に立っている」ように、足もとを床の点に合わせて置く。
   // 高さは上へ伸びるので、背の高いものは壁までとどく
   function standOn(el, def, a, sp) {
     var w = def.w * a.scale, h = def.h * a.scale;
-    var x = Math.min(sp.w - 2 - w / 2, Math.max(2 + w / 2, a.x));
+    // 床のはしからはみ出して、横の壁に乗ってしまわないよう内側へ寄せる。
+    // ただし寄せるのは自分のマスの中まで。そこを越えて寄せると、細い画面で
+    // となりのマスと同じ場所に丸め込まれ、別のマスなのに重なって見えてしまう。
+    // 「床から出さない」と「マスの区別を保つ」は、マスより幅の広いものでは
+    // 両立しない。どこに置いたか分からなくなるほうが困るので、区別を優先する。
+    // 実機の幅（320px以上）でははみ出さず、それより細いときだけ数px出る
+    var e = floorEdges(sp, a.t);
+    var x = Math.min(Math.max(a.x, e.l + w / 2), e.r - w / 2);
+    if (a.x0 !== undefined) x = Math.min(Math.max(x, a.x0), a.x1);
     el.style.left = (x - w / 2) + 'px';
     el.style.top = (a.y - h) + 'px';
     el.style.width = w + 'px';
