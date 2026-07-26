@@ -1,12 +1,12 @@
 {
-  "name": "手ざわり集中",
-  "short_name": "集中",
-  "description": "時間を決めて集中する。離れるとなかまが眠ってしまい、続けられるとおうちに加わる。",
+  "name": "お勉強ペット",
+  "short_name": "お勉強ペット",
+  "description": "決めた時間だけ集中する。やりきると、なかまがおうちに増えていく。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#eef2e4",
-  "theme_color": "#2b251f",
+  "background_color": "#fbf6ea",
+  "theme_color": "#fbf6ea",
   "orientation": "portrait",
   "lang": "ja",
   "icons": [

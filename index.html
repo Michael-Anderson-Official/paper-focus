@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>手ざわり集中</title>
-<meta name="description" content="時間を決めて集中する。離れるとなかまが眠ってしまい、続けられるとおうちに加わる。">
+<title>お勉強ペット</title>
+<meta name="description" content="決めた時間だけ集中する。やりきると、なかまがおうちに増えていく。">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1163,7 +1163,7 @@
   <div class="paper">
 
     <div class="app-head">
-      <span class="brand">手ざわり集中</span>
+      <span class="brand">お勉強ペット</span>
       <button type="button" class="icon-btn" id="settingsBtn" aria-label="設定">⚙</button>
     </div>
 
@@ -1361,7 +1361,7 @@
     <div class="modal" id="settingsModal">
       <div class="sheet">
         <h2>設定</h2>
-        <p class="sub">手ざわり集中のこと</p>
+        <p class="sub">お勉強ペットのこと</p>
         <div class="label">1日の目あて</div>
         <div class="chips" id="goalChips">
           <button type="button" data-goal="30">30分</button>
@@ -3646,7 +3646,11 @@
   // ============ ひかえ（バックアップ）============
   // このアプリの控えはこの端末のなかにしかない。ホーム画面のアイコンを入れ直すと
   // iOSはデータごと消すので、ファイルに書き出しておけるようにする
-  var BACKUP_APP = 'tezawari-focus';
+  // 名前を変える前に書き出した控えも読めるようにする。
+  // 書き出すときは新しい印を使い、読むときは古い印も受け付ける
+  var BACKUP_APP = 'obenkyo-pet';
+  var BACKUP_APP_OLD = ['tezawari-focus'];
+  function isOurBackup(app) { return app === BACKUP_APP || BACKUP_APP_OLD.indexOf(app) !== -1; }
   function fileStamp(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
@@ -3693,7 +3697,7 @@
       alert('いまの記録を読み出せませんでした。書き出しは取りやめます。');
       return;
     }
-    var name = '手ざわり集中-ひかえ-' + fileStamp(new Date()) + '.json';
+    var name = 'お勉強ペット-ひかえ-' + fileStamp(new Date()) + '.json';
     var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     function done() { lsSet('pf:backupAt', String(Date.now())); renderBackupStatus(); toast('書き出しました'); }
     // iPhoneでは共有シートから「ファイルに保存」できるほうが確実。
@@ -3783,8 +3787,8 @@
     reader.onload = function (e) {
       var data;
       try { data = JSON.parse(e.target.result); } catch (err) { data = null; }
-      if (!data || data.app !== BACKUP_APP || !data.items || typeof data.items !== 'object') {
-        alert('「手ざわり集中のひかえ」のファイルではないようです。');
+      if (!data || !isOurBackup(data.app) || !data.items || typeof data.items !== 'object') {
+        alert('「お勉強ペットのひかえ」のファイルではないようです。');
         return;
       }
       // 中身が空・壊れている控えで今の記録を消してしまわないよう、
