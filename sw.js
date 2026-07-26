@@ -5,7 +5,7 @@
 //   github.io オリジン上にいる。activate時の掃除は必ずこのアプリのプレフィックスだけに絞り、
 //   他アプリのキャッシュを誤って消さないようにする
 var CACHE_PREFIX = 'tezawari-focus-';   // 印は据え置き。変えると古いキャッシュが掃除されずに残る
-var CACHE = CACHE_PREFIX + 'v43';
+var CACHE = CACHE_PREFIX + 'v44';
 var SHELL = [
   './',
   './privacy.html'

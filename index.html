@@ -938,7 +938,10 @@
     /* 奥へ行くほど小さく見せる。縮める中心は足もと（そこが床に着いている点）。
        上下左右の移動と同じ速さで大きさも変えないと、歩きながら伸び縮みして見える */
     transform-origin: 50% 57px;
-    transition: left var(--walk-ms, 1200ms) linear, top var(--walk-ms, 1200ms) linear,
+    /* 跳ぶときは上下だけ効き方を変える。まっすぐ上がるのではなく、
+       いったん台より高く上がってから、落ちるように乗る */
+    transition: left var(--walk-ms, 1200ms) linear,
+                top var(--walk-ms, 1200ms) var(--top-ease, linear),
                 transform var(--walk-ms, 1200ms) linear, opacity 0.2s linear;
   }
   .room-pet .rp-fig {
@@ -949,6 +952,7 @@
   /* 進む向きに体を向ける。左へ行くときだけ左右反転する */
   .room-pet.flip .rp-fig { transform: scaleX(-1); }
   /* 歩いているあいだは、呼吸よりも速く上下にはずむ */
+  .room-pet.jumping .rp-fig { animation: none; }
   .room-pet.walking .rp-fig { animation: petStep 0.42s ease-in-out infinite; }
   .room-pet.flip.walking .rp-fig { animation: petStepFlip 0.42s ease-in-out infinite; }
   .room-pet:active .rp-fig { animation: none; transform: scale(0.94); }
@@ -2277,9 +2281,10 @@
     // 休める場所は2つ。てっぺんの見晴らし台と、真ん中の丸い穴のなか。
     // 穴のほうは、なかへ入って顔だけをのぞかせる（face に穴の位置と大きさを割合で書く）
     tower:     { name: 'キャットタワー',   price: 30, use: 'climb',   w: 52,  h: 150,
-                 perch: [{ fy: 0.147 },
-                          // from は、穴へ入る前に立つ高さ（箱の下の踏み台）
-                          { face: { fx: 0.5, fy: 0.4333, fr: 0.2115, from: 0.587 } }],
+                 // steps は、下から順に足をつく段の高さ。
+                 // てっぺんへは中段の踏み台を踏んで2回、穴へは中段まで1回で跳ぶ
+                 perch: [{ fy: 0.147, steps: [0.587, 0.147] },
+                          { face: { fx: 0.5, fy: 0.4333, fr: 0.2115 }, steps: [0.587] }],
                  group: 'なかまの道具' },
     cushion:   { name: 'クッション',       price: 15, use: 'sleep',   w: 46,  h: 22, group: 'なかまの道具' },
     scratch:   { name: 'つめとぎ',         price: 15, use: 'scratch', w: 24,  h: 56, group: 'なかまの道具' },
@@ -3341,11 +3346,23 @@
       var spots = f.perch || [{ fy: 0.06 }];
       var spot = spots[Math.floor(Math.random() * spots.length)];
       var perchY = f.y + f.h * spot.fy - PET_FOOT;
-      // 穴のなかで休む子は、まず穴の高さまで登り、そこから なかへ入る
-      var toY = spot.face ? (f.y + f.h * spot.face.from - PET_FOOT) : perchY;
+      // 段は下から順に。てっぺんへは中段を踏んで2回、穴へは中段まで1回で跳ぶ
+      var steps = spot.steps || [spot.fy];
+      var stepY = steps.map(function (fy) { return f.y + f.h * fy - PET_FOOT; });
+      var toY = stepY[stepY.length - 1];
       moveTo(el, gen, tx, baseY, function () {
         if (!alive(el, gen) || !petLifeShouldRun()) { giveUp(); return; }
-        moveTo(el, gen, tx, toY, function () {
+        hopUp(0);
+      });
+      function hopUp(i) {
+        if (!alive(el, gen) || !petLifeShouldRun()) { giveUp(); return; }
+        if (i >= stepY.length) { arrived(); return; }
+        jumpTo(el, gen, tx, stepY[i], true, function () {
+          // 段の上でひと呼吸おいてから、次の段へ跳ぶ
+          later(function () { hopUp(i + 1); }, i + 1 < stepY.length ? 260 + Math.random() * 320 : 0);
+        }, perch);
+      }
+      function arrived() {
           if (!alive(el, gen) || !petLifeShouldRun()) { giveUp(); return; }
           if (!spot.face) { restHere(); return; }
           // 穴へもぐりこむ。いちど姿を消してから、顔だけを穴にのぞかせる
@@ -3357,8 +3374,7 @@
             el.style.opacity = '';
             restHere();
           }, 240);
-        }, CLIMB_SPEED, perch);
-      });
+      }
       function restHere() {
         sleepThen(function () {
           if (!alive(el, gen)) {
@@ -3382,11 +3398,13 @@
         });
       }
       function climbDown() {
-        // 降りるときも、飛びおりずに足もとまで戻ってから歩き出す
-        moveTo(el, gen, tx, baseY, function () {
+        // 降りるのはひと跳び。猫は段を伝わずに飛びおりる
+        jumpTo(el, gen, tx, baseY, false, function () {
+          el.style.transform = 'scale(' + floorScale(lifeBounds, tFromY(lifeBounds, baseY + PET_FOOT)).toFixed(3) + ')';
+          el.style.zIndex = String(Math.round(baseY + PET_FOOT));
           release();
           later(function () { petAct(el, gen); }, 600 + Math.random() * 1200);
-        }, CLIMB_SPEED, perch);
+        }, perch);
       }
       return;
     }
@@ -3421,6 +3439,32 @@
     var footX = Math.min(e.r - 8, Math.max(e.l + 8, tx + PET_FOOT / 2));
     return { x: footX - PET_FOOT / 2, y: footY - PET_FOOT, scale: floorScale(sp, t) };
   }
+  // 台の上へ跳びのる（up=true）／跳びおりる（up=false）。
+  // 猫はよちよち登らず、ひと跳びで段を上がる
+  var JUMP_UP_EASE = 'cubic-bezier(0.3, 1.5, 0.55, 1)';    // 台より高く上がってから乗る
+  var JUMP_DOWN_EASE = 'cubic-bezier(0.45, 0, 0.75, 1)';   // 落ちるように降りる
+  function jumpTo(el, gen, tx, ty, up, done, perch) {
+    var y0 = parseFloat(el.style.top) || 0;
+    var dist = Math.abs(ty - y0);
+    var ms = Math.round(Math.min(520, 300 + dist * 1.1));
+    el.style.setProperty('--walk-ms', ms + 'ms');
+    el.style.setProperty('--top-ease', up ? JUMP_UP_EASE : JUMP_DOWN_EASE);
+    el.classList.remove('walking');
+    el.classList.add('jumping');
+    el.style.left = tx + 'px';
+    el.style.top = ty + 'px';
+    if (perch) {
+      el.style.transform = 'scale(' + perch.scale.toFixed(3) + ')';
+      el.style.zIndex = String(perch.z);
+    }
+    later(function () {
+      el.classList.remove('jumping');
+      el.style.setProperty('--top-ease', 'linear');
+      if (!alive(el, gen)) return;
+      done();
+    }, ms + 60);
+  }
+
   // 指定の場所まで歩いて、着いたら done を呼ぶ
   // perch を渡すと、大きさと重なり順をそこから取る（家具の上に乗るとき）
   function moveTo(el, gen, tx, ty, done, speed, perch) {
