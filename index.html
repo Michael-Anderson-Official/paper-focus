@@ -1036,6 +1036,26 @@
     0%, 100% { transform: translateY(-4px) scaleY(1.08) rotate(-3deg); }
     50%      { transform: translateY(-7px) scaleY(1.12) rotate(3deg); }
   }
+  /* けんか中は小刻みに揺れる。取っ組み合いは描かず、もくもくで隠す */
+  .room-pet.squabbling .rp-fig { animation: petSquabble 0.2s ease-in-out infinite; }
+  .room-pet.flip.squabbling .rp-fig { animation: petSquabbleFlip 0.2s ease-in-out infinite; }
+  @keyframes petSquabble {
+    0%, 100% { transform: translateX(-2px) rotate(-5deg); }
+    50%      { transform: translateX(2px) rotate(5deg); }
+  }
+  @keyframes petSquabbleFlip {
+    0%, 100% { transform: scaleX(-1) translateX(-2px) rotate(5deg); }
+    50%      { transform: scaleX(-1) translateX(2px) rotate(-5deg); }
+  }
+  /* けんかのもくもく */
+  .room-puff { position: absolute; width: 64px; height: 50px; pointer-events: none; }
+  .room-puff svg { width: 100%; height: 100%; display: block; animation: puffShake 0.26s ease-in-out infinite; }
+  .room-puff.pop { animation: puffPop 0.32s var(--ease); }
+  @keyframes puffPop { from { transform: scale(0.35); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes puffShake {
+    0%, 100% { transform: rotate(-4deg) scale(1); }
+    50%      { transform: rotate(4deg) scale(1.07); }
+  }
   /* ごはん中はうつむいて上下する */
   .room-pet.eating .rp-fig { animation: petEat 0.72s ease-in-out infinite; }
   @keyframes petEat {
@@ -1065,7 +1085,9 @@
     /* 詳細度で負けると止まらないので、動きのつく組み合わせを明示して打ち消す */
     .room-pet, .room-pet .rp-fig, .tail, .room-cloud,
     .room-pet.walking .rp-fig, .room-pet.flip.walking .rp-fig,
-    .room-pet.scratching .rp-fig, .room-pet.eating .rp-fig { animation: none; }
+    .room-pet.scratching .rp-fig, .room-pet.eating .rp-fig,
+    .room-pet.squabbling .rp-fig, .room-pet.flip.squabbling .rp-fig,
+    .room-puff, .room-puff.pop, .room-puff svg { animation: none; }
     .room-cloud { opacity: 0.85; }
   }
 </style>
@@ -2493,64 +2515,158 @@
   function stopPetLife() {
     lifeTimers.forEach(clearTimeout);
     lifeTimers = [];
-    furnBusy = {};   // 途中で止めた家具の使用中を持ち越さない
+    furnBusy = {}; petBusy = {};   // 途中で止めた使用中の状態を持ち越さない
     document.querySelectorAll('#roomPets > .room-pet').forEach(function (el) {
       el.classList.remove('scratching', 'eating', 'walking');
     });
   }
   function later(fn, ms) { lifeTimers.push(setTimeout(fn, ms)); }
 
+  // なかまごとの「いまの予定」の番号。けんかなど別の出来事に取られたら番号を進め、
+  // 前の予定のタイマーが後から動いて二重に歩き出すのを防ぐ
+  function genOf(el) { return el.dataset.gen || '0'; }
+  function bumpGen(el) {
+    el.dataset.gen = String(parseInt(genOf(el), 10) + 1);
+    return el.dataset.gen;
+  }
+  function alive(el, gen) { return el.isConnected && genOf(el) === gen; }
+
   function startPetLife(bounds) {
     stopPetLife();
     lifeBounds = bounds;
     if (reduceMotion) return;   // 動きを控える設定のときは、その場にいてもらう
     document.querySelectorAll('#roomPets > .room-pet').forEach(function (el) {
-      later(function () { petAct(el); }, 400 + Math.random() * 4000);   // 出だしをばらけさせる
+      el.dataset.gen = '0';
+      later(function () { petAct(el, genOf(el)); }, 400 + Math.random() * 4000);   // 出だしをばらけさせる
     });
+    scheduleSquabble();
+  }
+
+  // ---- けんか ----
+  // ときどき2匹が near寄って小競り合いをする。取っ組み合いは描かず、もくもくで隠して
+  // 終わったら気まずそうに離れる。めったに起きないほうが見たときにうれしい
+  function scheduleSquabble() {
+    later(function () { trySquabble(); scheduleSquabble(); }, 30000 + Math.random() * 40000);
+  }
+  function freePets() {
+    return [].slice.call(document.querySelectorAll('#roomPets > .room-pet'))
+      .filter(function (el) { return !petBusy[el.dataset.id]; });
+  }
+  function puffSVG() {
+    return '<svg viewBox="0 0 64 50" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="20" cy="30" r="13" fill="#efe6d2" stroke="' + LINE + '" stroke-width="2"/>' +
+      '<circle cx="44" cy="30" r="14" fill="#efe6d2" stroke="' + LINE + '" stroke-width="2"/>' +
+      '<circle cx="32" cy="21" r="14" fill="#efe6d2" stroke="' + LINE + '" stroke-width="2"/>' +
+      '<circle cx="32" cy="27" r="16" fill="#efe6d2"/>' +
+      // ぐるぐると星をのぞかせて、じゃれ合っている感じにする
+      '<path d="M25 27 q4 -5 8 -1 q3 3 -1 5 q-3 1 -4 -2" stroke="' + LINE + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      '<path d="M40 22 l2 4 l4 1 l-3 3 l1 4 l-4 -2 l-4 2 l1 -4 l-3 -3 l4 -1 Z" fill="#f0c05a" stroke="' + LINE + '" stroke-width="1.2" stroke-linejoin="round"/>' +
+      '<circle cx="13" cy="16" r="2.6" fill="#efe6d2" stroke="' + LINE + '" stroke-width="1.5"/>' +
+      '<circle cx="53" cy="14" r="3.2" fill="#efe6d2" stroke="' + LINE + '" stroke-width="1.5"/>' +
+    '</svg>';
+  }
+  function trySquabble() {
+    if (!lifeBounds || !petLifeShouldRun()) return;
+    var free = freePets();
+    if (free.length < 2) return;
+    var i = Math.floor(Math.random() * free.length);
+    var a = free[i];
+    free.splice(i, 1);
+    // いちばん近い子を相手に選ぶ。遠くから呼び寄せると不自然なので
+    var ax = parseFloat(a.style.left) || 0, ay = parseFloat(a.style.top) || 0;
+    var b = free.reduce(function (best, el) {
+      var dx = (parseFloat(el.style.left) || 0) - ax, dy = (parseFloat(el.style.top) || 0) - ay;
+      var d = dx * dx + dy * dy;
+      return (!best || d < best.d) ? { el: el, d: d } : best;
+    }, null).el;
+    startSquabble(a, b);
+  }
+  function startSquabble(a, b) {
+    var ga = bumpGen(a), gb = bumpGen(b);   // それぞれの前の予定を捨てる
+    petBusy[a.dataset.id] = true;
+    petBusy[b.dataset.id] = true;
+    // 昼寝の途中で呼ばれることがある。目を閉じたまま滑っていかないよう起こしておく
+    paintPet(a.querySelector('svg'), 1);
+    paintPet(b.querySelector('svg'), 1);
+    function done() {
+      delete petBusy[a.dataset.id];
+      delete petBusy[b.dataset.id];
+    }
+    var bd = lifeBounds;
+    var mx = ((parseFloat(a.style.left) || 0) + (parseFloat(b.style.left) || 0)) / 2;
+    var my = ((parseFloat(a.style.top) || 0) + (parseFloat(b.style.top) || 0)) / 2;
+    mx = Math.min(bd.right - 24, Math.max(bd.left + 24, mx));
+    my = Math.min(bd.bottom, Math.max(bd.top, my));
+    var arrived = 0;
+    function onArrive() {
+      if (++arrived < 2) return;
+      if (!alive(a, ga) || !alive(b, gb)) { done(); return; }
+      a.classList.add('squabbling');
+      b.classList.add('squabbling');
+      var puff = document.createElement('div');
+      puff.className = 'room-puff pop';
+      puff.style.left = (mx + 29 - 32) + 'px';
+      puff.style.top = (my - 6) + 'px';
+      puff.style.zIndex = String(Math.round(my) + 2);
+      puff.innerHTML = puffSVG();
+      $('roomPets').appendChild(puff);
+      later(function () {
+        puff.remove();
+        a.classList.remove('squabbling');
+        b.classList.remove('squabbling');
+        done();
+        // 気まずそうに、それぞれ反対の方へ離れていく
+        if (alive(a, ga)) moveTo(a, ga, mx - 78, my + 14, function () { petAct(a, ga); });
+        if (alive(b, gb)) moveTo(b, gb, mx + 78, my - 14, function () { petAct(b, gb); });
+      }, 2200 + Math.random() * 900);
+    }
+    // 向かい合わせに立たせる
+    moveTo(a, ga, mx - 30, my, onArrive);
+    moveTo(b, gb, mx + 30, my, onArrive);
   }
   // 見ていない画面で動かし続けても意味がないので、おうち以外に移ったら止める
   function petLifeShouldRun() { return currentView === 'house' && !document.hidden; }
 
   // いま誰かが使っている家具。同じ家具に2匹が重なって乗らないようにする
   var furnBusy = {};
+  var petBusy = {};   // その子がいま別の出来事（家具・けんか）に取られているか
   function freeFurniture(el) {
     return furnPlaced.filter(function (f) { return !furnBusy[f.id] || furnBusy[f.id] === el.dataset.id; });
   }
-  function petAct(el) {
-    if (!lifeBounds || !el.isConnected) return;
-    if (!petLifeShouldRun()) { later(function () { petAct(el); }, 1500); return; }
+  function petAct(el, gen) {
+    if (!lifeBounds || !alive(el, gen)) return;
+    if (petBusy[el.dataset.id]) return;   // けんかなど、別の出来事に取られている
+    if (!petLifeShouldRun()) { later(function () { petAct(el, gen); }, 1500); return; }
     var roll = Math.random();
     // 家具があるときは、そこそこの割合で家具をめざす。置いたものが使われないと意味がない
     var open = freeFurniture(el);
-    if (open.length && roll < 0.42) { petUseFurniture(el, open[Math.floor(Math.random() * open.length)]); return; }
-    if (roll < 0.52) petNap(el);
-    else if (roll < 0.64) later(function () { petAct(el); }, 1800 + Math.random() * 4000);   // その場でひと休み
-    else petWalk(el);
+    if (open.length && roll < 0.42) { petUseFurniture(el, gen, open[Math.floor(Math.random() * open.length)]); return; }
+    if (roll < 0.52) petNap(el, gen);
+    else if (roll < 0.64) later(function () { petAct(el, gen); }, 1800 + Math.random() * 4000);   // その場でひと休み
+    else petWalk(el, gen);
   }
 
   // 家具まで歩いて、その家具に合った動きをする
-  function petUseFurniture(el, f) {
+  function petUseFurniture(el, gen, f) {
     furnBusy[f.id] = el.dataset.id;
-    function release() { if (furnBusy[f.id] === el.dataset.id) delete furnBusy[f.id]; }
+    petBusy[el.dataset.id] = true;
+    function release() {
+      if (furnBusy[f.id] === el.dataset.id) delete furnBusy[f.id];
+      delete petBusy[el.dataset.id];
+    }
     // 登るものは上に乗り、それ以外は足もとへ行く
     var tx = f.x + f.w / 2 - 29;                       // なかまの絵は幅58pxなので中心を合わせる
     var ty = (f.use === 'climb') ? f.y - 34 : f.y + f.h - 44;
-    moveTo(el, tx, ty, function () {
-      if (!el.isConnected || !petLifeShouldRun()) { release(); later(function () { petAct(el); }, 1500); return; }
+    moveTo(el, gen, tx, ty, function () {
+      if (!alive(el, gen) || !petLifeShouldRun()) { release(); later(function () { petAct(el, gen); }, 1500); return; }
       var svg = el.querySelector('svg');
-      if (f.use === 'scratch') {
-        el.classList.add('scratching');
+      if (f.use === 'scratch' || f.use === 'eat') {
+        var cls = (f.use === 'scratch') ? 'scratching' : 'eating';
+        el.classList.add(cls);
         later(function () {
-          el.classList.remove('scratching');
+          el.classList.remove(cls);
           release();
-          later(function () { petAct(el); }, 600);
-        }, 2600 + Math.random() * 1500);
-      } else if (f.use === 'eat') {
-        el.classList.add('eating');
-        later(function () {
-          el.classList.remove('eating');
-          release();
-          later(function () { petAct(el); }, 600);
+          later(function () { petAct(el, gen); }, 600);
         }, 2600 + Math.random() * 1500);
       } else {
         // キャットタワーの上、クッションの上では丸くなって眠る
@@ -2558,14 +2674,14 @@
         later(function () {
           paintPet(svg, 1);
           release();
-          later(function () { petAct(el); }, 800 + Math.random() * 1500);
+          later(function () { petAct(el, gen); }, 800 + Math.random() * 1500);
         }, 7000 + Math.random() * 9000);
       }
     });
   }
 
   // 指定の場所まで歩いて、着いたら done を呼ぶ
-  function moveTo(el, tx, ty, done) {
+  function moveTo(el, gen, tx, ty, done) {
     var b = lifeBounds;
     tx = Math.min(b.right, Math.max(b.left, tx));
     ty = Math.min(b.bottom + 40, Math.max(b.top - 40, ty));   // 家具の上に乗るぶんは範囲より少し外へ出てよい
@@ -2578,7 +2694,11 @@
     el.style.left = tx + 'px';
     el.style.top = ty + 'px';
     el.style.zIndex = String(Math.round(ty));
-    later(function () { el.classList.remove('walking'); done(); }, ms + 150);
+    later(function () {
+      if (!alive(el, gen)) return;   // 途中で別の出来事に取られていたら、この予定は捨てる
+      el.classList.remove('walking');
+      done();
+    }, ms + 150);
   }
 
   // ほかの子とどれだけ離れているか。近すぎる行き先は選ばないようにするために使う
@@ -2592,7 +2712,7 @@
     });
     return min;
   }
-  function petWalk(el) {
+  function petWalk(el, gen) {
     var b = lifeBounds;
     var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
     // 遠くへ一気に行かず、今いる場所のまわりを選ぶ。部屋の端は超えない。
@@ -2606,7 +2726,7 @@
       if (gap >= 56) break;   // じゅうぶん離れていれば、それ以上は探さない
     }
     var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
-    if (dist < 6) { later(function () { petAct(el); }, 1500); return; }
+    if (dist < 6) { later(function () { petAct(el, gen); }, 1500); return; }
     var ms = Math.round(dist / WALK_SPEED * 1000);
     el.style.setProperty('--walk-ms', ms + 'ms');
     el.classList.toggle('flip', tx < x0);
@@ -2615,17 +2735,18 @@
     el.style.top = ty + 'px';
     el.style.zIndex = String(Math.round(ty));
     later(function () {
+      if (!alive(el, gen)) return;
       el.classList.remove('walking');
-      petAct(el);
+      petAct(el, gen);
     }, ms + 200);
   }
 
-  function petNap(el) {
+  function petNap(el, gen) {
     var svg = el.querySelector('svg');
     paintPet(svg, 0);   // 目を閉じてZzzを出す
     later(function () {
       paintPet(svg, 1);
-      later(function () { petAct(el); }, 800 + Math.random() * 2000);
+      later(function () { petAct(el, gen); }, 800 + Math.random() * 2000);
     }, 5000 + Math.random() * 8000);
   }
 
