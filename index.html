@@ -923,7 +923,14 @@
   .room-furniture { position: absolute; inset: 0; }
   .room-furn { position: absolute; cursor: pointer; }
   .room-furn svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(60, 45, 25, 0.28)); }
+  /* 指でつまんで動かせるようにする。touch-action を切らないと、
+     引っぱったときにページのほうがスクロールしてしまう */
+  .room-furn, .room-house-obj { touch-action: none; }
   .room-furn:active { transform: translateY(1px); }
+  .room-furn.dragging, .room-house-obj.dragging {
+    transition: none; opacity: 0.92; transform: none;
+    filter: drop-shadow(0 8px 12px rgba(60, 45, 25, 0.42));
+  }
   .room-pets { position: absolute; inset: 0; }
   /* 歩く速さは1匹ずつ違うので、移動にかかる時間は --walk-ms で個別に渡す */
   .room-pet {
@@ -1028,6 +1035,15 @@
   }
   .rg-cell:active { background: rgba(255, 255, 255, 0.5); }
   .rg-cell.taken { background: rgba(63, 52, 44, 0.14); border-style: solid; opacity: 0.5; cursor: default; }
+  /* 指で動かしている最中のマス目。たたく対象ではないので、指の下を素通りさせる */
+  .rg-cell.drag { pointer-events: none; background: rgba(255, 255, 255, 0.12); }
+  /* いま指がのっているマス。ここに置けるなら緑、ふさがっていれば赤 */
+  .rg-cell.drag.drop {
+    background: rgba(122, 178, 100, 0.5); border: 2.5px solid #4e8a3a; opacity: 1;
+  }
+  .rg-cell.drag.drop.no {
+    background: rgba(202, 116, 100, 0.42); border-color: #b0604e;
+  }
   .place-bar {
     position: absolute; left: 8px; right: 8px; top: 8px; z-index: 601;
     display: flex; align-items: center; gap: 10px;
@@ -2898,13 +2914,20 @@
       el.style.height = '';   // 名前のぶんは中身にまかせる
       el.innerHTML = '<div class="rh-art" style="height:' + (size.art * a.scale) + 'px">' + houseSVG(h.species, h.cap) + '</div>' +
         '<div class="rh-cap">' + houseLabel(h) + '（' + occ + '/' + h.cap + '）</div>';
-      el.title = houseLabel(h) + '・タップで広げる／動かす';
-      el.addEventListener('click', function () { openHouseMenu(h.id); });
+      el.title = houseLabel(h) + '・引っぱって動かす／タップで広げる';
+      el.addEventListener('pointerdown', function (ev) { beginDragWatch(ev, el, 'house', h.id, size); });
       layer.appendChild(el);
     });
   }
 
   function renderHouse() {
+    // 描き直すと、いまつかんでいる要素ごと作り直されて指から離れてしまう。
+    // 画面が回った・部屋を移ったなどで描き直しが入ったら、つかむのをやめる
+    if (dragging) {
+      dragging.el.classList.remove('dragging');
+      dragging = null;
+      hideDragGrid();
+    }
     var garden = readGarden();
     var houses = readHouses();
     var assign = assignPetsToHouses(garden, houses);
@@ -3018,8 +3041,8 @@
       el.dataset.id = f.id;
       var box = standOn(el, def, a, sp);
       el.innerHTML = furnitureSVG(f.kind);
-      el.title = def.name + '・タップで動かす／しまう';
-      el.addEventListener('click', function () { openFurnMenu(f.id, f.kind); });
+      el.title = def.name + '・引っぱって動かす／タップでしまう';
+      el.addEventListener('pointerdown', function (ev) { beginDragWatch(ev, el, 'furn', f.id, def, f.kind); });
       layer.appendChild(el);
       // なかまが使いに行く先は、画面に出ている大きさで持つ（奥のものは小さい）
       furnPlaced.push({
@@ -3626,14 +3649,67 @@
     $('placeBarText').textContent = label + 'を置くマスをえらんでください';
     for (var row = 0; row < GRID_ROWS; row++) {
       for (var col = 0; col < GRID_COLS; col++) {
-        layer.appendChild(buildPlaceCell(col, row, roomSpace));
+        layer.appendChild(buildPlaceCell(col, row, roomSpace, null));
       }
     }
   }
+  // 指で動かしている最中は、どこへ置こうとしているかが分かるようにマス目を出す。
+  // たたいて選ぶわけではないので、枠は指の下を素通りさせる
+  function showDragGrid(exceptId) {
+    var layer = $('roomGrid');
+    layer.innerHTML = '';
+    if (!roomSpace) return;
+    layer.hidden = false;
+    for (var row = 0; row < GRID_ROWS; row++) {
+      for (var col = 0; col < GRID_COLS; col++) {
+        var cell = buildPlaceCell(col, row, roomSpace, exceptId);
+        cell.classList.add('drag');
+        cell.disabled = false;   // 見せるだけ。押せなくする必要はない
+        layer.appendChild(cell);
+      }
+    }
+  }
+  function hideDragGrid() {
+    var layer = $('roomGrid');
+    layer.innerHTML = '';
+    layer.hidden = true;
+  }
+  // いま指がのっているマスだけを塗る。置けるなら緑、ふさがっていれば赤
+  function clearDropCells() {
+    var layer = $('roomGrid');
+    for (var i = 0; i < layer.children.length; i++) {
+      layer.children[i].classList.remove('drop', 'no');
+    }
+  }
+  function markDropCell(col, row, ok) {
+    clearDropCells();
+    var cell = $('roomGrid').children[row * GRID_COLS + col];
+    if (!cell) return;
+    cell.classList.add('drop');
+    if (!ok) cell.classList.add('no');
+  }
+  // その点が床の上かどうか。壁の上や部屋の外で離したときに、
+  // いちばん近い端のマスへ勝手に置いてしまわないために見る
+  function pointOnFloor(sp, x, y, pad) {
+    var m = pad || 0;
+    if (y < sp.wallH - m || y > sp.bottom + m) return false;
+    var e = floorEdges(sp, tFromY(sp, y));
+    return x >= e.l - m && x <= e.r + m;
+  }
+  // 画面の点が、床のどのマスにあたるか
+  function cellFromPoint(sp, x, y) {
+    var t = tFromY(sp, y);
+    var row = Math.min(GRID_ROWS - 1, Math.max(0, Math.floor(t * GRID_ROWS)));
+    var e = floorEdges(sp, t);
+    var u = (x - e.l) / Math.max(1, e.r - e.l);
+    var col = Math.min(GRID_COLS - 1, Math.max(0, Math.floor(u * GRID_COLS)));
+    return { col: col, row: row };
+  }
   // マスは床の一区画なので、四角ではなく台形になる。
   // 四隅を出して、その形に切り抜いた枠を置く
-  function buildPlaceCell(col, row, sp) {
-    var taken = cellTaken(currentRoom, col, row, placing.id || null);
+  function buildPlaceCell(col, row, sp, exceptId) {
+    var taken = cellTaken(currentRoom, col, row,
+      (exceptId !== null && exceptId !== undefined) ? exceptId : (placing && placing.id) || null);
     var t0 = row / GRID_ROWS, t1 = (row + 1) / GRID_ROWS;
     var u0 = col / GRID_COLS, u1 = (col + 1) / GRID_COLS;
     var pts = [
@@ -3682,6 +3758,101 @@
     toast(moving ? '動かしました' : '置きました');
   }
   $('placeCancel').addEventListener('click', stopPlacing);
+
+  // ---- 指でつまんで動かす ----
+  // 置いてあるものは、たたけばメニュー、引っぱればその場で動かせる。
+  // どちらかは指が動いたかどうかで決める（少しでも動いたら「動かす」とみなす）
+  var DRAG_SLOP = 6;   // これ以上動いたら、たたいたのではなく引っぱったと見る
+  var dragging = null;
+  function beginDragWatch(ev, el, what, id, def, kind) {
+    if (placing || ev.button === 1 || ev.button === 2) return;   // 置いている最中は割りこませない
+    if (dragging) return;   // すでに別の指がつかんでいる。あとから触った指は見ない
+    if (!roomSpace) return;
+    dragging = {
+      el: el, what: what, id: id, def: def, kind: kind, moved: false,
+      pointerId: ev.pointerId,        // この指だけを追う
+      room: currentRoom,              // つかんだときの部屋。ここ以外へは置かない
+      startX: ev.clientX, startY: ev.clientY, scene: $('roomScene'),
+      col: null, row: null, ok: false
+    };
+    try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+  }
+  function dragMove(ev) {
+    var d = dragging;
+    if (!d || ev.pointerId !== d.pointerId) return;
+    if (!d.moved) {
+      if (Math.abs(ev.clientX - d.startX) < DRAG_SLOP && Math.abs(ev.clientY - d.startY) < DRAG_SLOP) return;
+      d.moved = true;
+      d.el.classList.add('dragging');
+      d.el.style.zIndex = '900';   // 引っぱっている間はいちばん手前
+      showDragGrid(d.id);
+    }
+    ev.preventDefault();
+    var r = d.scene.getBoundingClientRect();
+    var x = ev.clientX - r.left, y = ev.clientY - r.top;
+    var sp = roomSpace;
+    // 指の位置を足もとに見立てて、その奥ゆきの大きさで置く
+    var t = tFromY(sp, y);
+    var sc = floorScale(sp, t);
+    var w = d.def.w * sc, h = d.def.h * sc;
+    d.el.style.left = (x - w / 2) + 'px';
+    d.el.style.top = (y - h) + 'px';
+    d.el.style.width = w + 'px';
+    if (d.what === 'house') {
+      var art = d.el.querySelector('.rh-art');
+      if (art) art.style.height = (d.def.art * sc) + 'px';
+    } else {
+      d.el.style.height = h + 'px';
+    }
+    // 床の外（壁の上・部屋の外）では、どのマスも選ばない
+    if (!pointOnFloor(sp, x, y, 12)) {
+      d.col = null; d.row = null; d.ok = false;
+      clearDropCells();
+      return;
+    }
+    var c = cellFromPoint(sp, x, y);
+    d.col = c.col; d.row = c.row;
+    d.ok = !cellTaken(currentRoom, c.col, c.row, d.id);
+    markDropCell(c.col, c.row, d.ok);
+  }
+  function dragEnd(ev) {
+    var d = dragging;
+    if (!d || ev.pointerId !== d.pointerId) return;
+    dragging = null;
+    try { d.el.releasePointerCapture(ev.pointerId); } catch (e) {}
+    d.el.classList.remove('dragging');
+    hideDragGrid();
+    if (!d.moved) {
+      // 動かしていない＝たたいただけ。メニューを開く
+      if (d.what === 'house') openHouseMenu(d.id);
+      else openFurnMenu(d.id, d.kind);
+      return;
+    }
+    // つかんだあとに部屋を移っていたら、その部屋へ勝手に持っていかない
+    var ok = false;
+    if (d.ok && d.col !== null && d.room === currentRoom) {
+      ok = (d.what === 'house')
+        ? moveHouse(d.id, d.room, d.col, d.row)
+        : moveFurniture(d.id, d.room, d.col, d.row);
+    }
+    renderHouse();   // 置けても置けなくても描き直す（置けなければ元の場所へ戻る）
+    if (!ok) toast('そこには置けません');
+  }
+  function dragCancel(ev) {
+    var d = dragging;
+    if (!d) return;
+    if (ev && ev.pointerId !== undefined && ev.pointerId !== d.pointerId) return;
+    dragging = null;
+    d.el.classList.remove('dragging');
+    hideDragGrid();
+    // おうちを見ていないときに描き直すと、見えていない画面をいじることになる。
+    // 戻ってきたときに描き直されるので、ここでは何もしない
+    if (currentView === 'house') renderHouse();
+  }
+  // つまんだものを離す・取り消すのは、部屋のどこで起きても拾えるようにする
+  window.addEventListener('pointermove', dragMove, { passive: false });
+  window.addEventListener('pointerup', dragEnd);
+  window.addEventListener('pointercancel', dragCancel);
 
   // ---- 置いてあるハウスをどうするか ----
   var houseModal = $('houseModal');
@@ -3821,6 +3992,9 @@
     // 家具を置いている最中におうちを離れたら、置くのはとりやめ。
     // 戻ってきたときにマス目だけ残っていると何をしていたのか分からなくなる
     if (placing && name !== 'house') { placing = null; renderPlaceGrid(); }
+    // つまんだまま別のタブへ移ったときも同じ。そのまま指を離すと、
+    // 見えていないところで置き場所が変わってしまう
+    if (dragging) dragCancel();
     if (!VIEWS[name]) return;
     currentView = name;
     Object.keys(VIEWS).forEach(function (k) {
