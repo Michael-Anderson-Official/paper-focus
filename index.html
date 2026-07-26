@@ -2818,13 +2818,6 @@
     var f = (y - sp.wallH) / Math.max(1, sp.bottom - sp.wallH);
     return Math.pow(Math.min(1, Math.max(0, f)), 1 / DEPTH_POW);
   }
-  // 床からはみ出さないところへ引きもどす
-  function clampToFloor(sp, x, y, pad) {
-    var m = pad || 0;
-    var yy = Math.min(sp.bottom - m, Math.max(sp.wallH + 6, y));
-    var e = floorEdges(sp, tFromY(sp, yy));
-    return { x: Math.min(e.r - m, Math.max(e.l + m, x)), y: yy };
-  }
   var currentRoom = (function () {
     var r = lsGet('pf:currentRoom', 'living');
     return isRoomKey(r) ? r : 'living';
@@ -3432,8 +3425,9 @@
   // 行き先を床のなかへ引きもどし、その奥ゆきでの大きさを返す。
   // 位置は絵の左上で持っているので、いちど足もとに直してから判断する
   function settleTarget(tx, ty, sp) {
-    // 家具の上に乗るぶんは、床のいちばん奥より上に出てよい
-    var footY = Math.min(sp.bottom, Math.max(sp.wallH - 70, ty + PET_FOOT));
+    // 足もとは必ず床の上。ここを緩めると、なかまが床の線より上（奥の壁）を歩いてしまう。
+    // 家具の上に乗るときは、この関数を通さずに置き場所をそのまま使っている
+    var footY = Math.min(sp.bottom, Math.max(sp.wallH + 4, ty + PET_FOOT));
     var t = tFromY(sp, footY);
     var e = floorEdges(sp, t);
     var footX = Math.min(e.r - 8, Math.max(e.l + 8, tx + PET_FOOT / 2));
