@@ -53,7 +53,12 @@
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; }
+  /* iOSは入力欄にフォーカスすると、キーボードを避けるためページごとスクロールする。
+     閉じても位置が戻らず画面が固まったように見えるので、body自体を固定して
+     そもそもスクロールできないようにする */
   body {
+    position: fixed;
+    inset: 0;
     margin: 0;
     font-family: 'Klee One', 'system-fallback', sans-serif;
     background: var(--paper-3);
@@ -69,6 +74,10 @@
 
   /* ============ 本体の枠（紙） ============ */
   .book { position: relative; width: min(100vw, 460px); height: min(100vh, 860px); }
+  @supports (height: 100dvh) {
+    /* dvh は今まさに見えている高さ。キーボードが出ても はみ出さない */
+    .book { height: min(100dvh, 860px); }
+  }
   .paper {
     position: absolute; inset: 0;
     background-color: var(--paper);
@@ -3134,7 +3143,11 @@
   // ============ モーダルの開閉 ============
   // 開いているシートを覚えておき、集中をはじめるときに全部閉じる
   function openModal(el) { el.classList.add('show'); }
-  function closeModal(el) { el.classList.remove('show'); }
+  function closeModal(el) {
+    el.classList.remove('show');
+    // キーボードでずれたままになることがあるので、閉じたら必ず先頭へ戻す
+    if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+  }
   function closeAllModals() {
     document.querySelectorAll('.modal.show').forEach(function (m) { m.classList.remove('show'); });
   }
@@ -3589,7 +3602,6 @@
     $('nameEditBtn').style.display = on ? 'none' : '';
     if (on) {
       $('nameInput').value = currentName || '';
-      setTimeout(function () { $('nameInput').focus(); }, 60);
     }
   }
   function openNameModal(g) {
