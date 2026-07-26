@@ -638,19 +638,63 @@
     white-space: nowrap;
   }
   .room-house-obj:active { transform: translateY(1px); }
-  .room-wall { position: absolute; top: 0; left: 0; right: 0; height: 190px; background: linear-gradient(180deg, #e9e0c8, #ddd0ae); }
-  .room-floor-bg {
-    position: absolute; top: 190px; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(90deg, #c9a877 0, #c9a877 38px, #bd9a68 38px, #bd9a68 40px);
+  /* 部屋は1点透視の箱として描く。奥の壁・左右の壁・床の4面があると、
+     置いたものが「床の上に立っている」ことが目で分かる。
+     --wall-h（床が始まる高さ）と --bi（奥の壁が左右にせまくなる幅）はJSが入れる */
+  .room-scene { --wall-h: 190px; --bi: 0px; }
+  .room-wall, .room-side, .room-floor-bg { position: absolute; inset: 0; }
+  .room-wall {
+    background: var(--wall-bg);
+    clip-path: polygon(var(--bi) 0, calc(100% - var(--bi)) 0,
+                       calc(100% - var(--bi)) var(--wall-h), var(--bi) var(--wall-h));
   }
-  .room-scene.room-kitchen .room-wall { background: linear-gradient(180deg, #dce8e6, #c9dbd6); }
-  .room-scene.room-kitchen .room-floor-bg { background: repeating-linear-gradient(90deg, #cfd9d6 0, #cfd9d6 38px, #bcc9c5 38px, #bcc9c5 40px); }
-  .room-scene.room-bedroom .room-wall { background: linear-gradient(180deg, #e6dce8, #d8c9dd); }
-  .room-scene.room-bedroom .room-floor-bg { background: repeating-linear-gradient(90deg, #d9c9dc 0, #d9c9dc 38px, #c9b6cc 38px, #c9b6cc 40px); }
-  .room-scene.room-genkan .room-wall { background: linear-gradient(180deg, #e2ded2, #cfc7b4); }
-  .room-scene.room-genkan .room-floor-bg { background: repeating-linear-gradient(45deg, #c9c2ae 0, #c9c2ae 20px, #bab293 20px, #bab293 22px); }
+  /* 左右の壁。奥へ向かってすぼまる面なので、明るさを変えて奥の壁と見分ける */
+  .room-side { background: var(--wall-bg); }
+  .room-side.left {
+    filter: brightness(0.945);
+    clip-path: polygon(0 0, var(--bi) 0, var(--bi) var(--wall-h), 0 100%);
+  }
+  .room-side.right {
+    filter: brightness(0.88);
+    clip-path: polygon(100% 0, calc(100% - var(--bi)) 0,
+                       calc(100% - var(--bi)) var(--wall-h), 100% 100%);
+  }
+  .room-floor-bg {
+    background: var(--floor-bg);
+    clip-path: polygon(var(--bi) var(--wall-h), calc(100% - var(--bi)) var(--wall-h),
+                       100% 100%, 0 100%);
+  }
+  /* 床板。奥の一点へ集まる線をJSが引く。これがいちばん奥ゆきを感じさせる */
+  .room-floor-lines { position: absolute; inset: 0; pointer-events: none; }
+  .room-floor-lines svg { width: 100%; height: 100%; display: block; }
+  /* 幅木。壁と床のつなぎ目にこれがあると、部屋が箱として立って見える */
+  .room-baseboard {
+    position: absolute; left: 0; right: 0; top: calc(var(--wall-h) - 9px); height: 9px;
+    pointer-events: none; background: rgba(63, 52, 44, 0.17);
+    border-bottom: 1.5px solid rgba(63, 52, 44, 0.3);
+    clip-path: polygon(var(--bi) 0, calc(100% - var(--bi)) 0, calc(100% - var(--bi)) 100%, var(--bi) 100%);
+  }
+  /* 壁と床の境目に影を落として、床が奥へ続いて見えるようにする */
+  .room-floor-shade {
+    position: absolute; left: 0; right: 0; top: var(--wall-h); height: 46px;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(60, 45, 25, 0.16), rgba(60, 45, 25, 0));
+    clip-path: polygon(var(--bi) 0, calc(100% - var(--bi)) 0, 100% 100%, 0 100%);
+  }
+  .room-scene {
+    --wall-bg: linear-gradient(180deg, #e9e0c8, #ddd0ae);
+    --floor-bg: linear-gradient(180deg, #c4a06d, #cfae7d);
+  }
+  .room-scene.room-kitchen { --wall-bg: linear-gradient(180deg, #dce8e6, #c9dbd6); --floor-bg: linear-gradient(180deg, #c3d0cc, #d2dcd9); }
+  .room-scene.room-bedroom { --wall-bg: linear-gradient(180deg, #e6dce8, #d8c9dd); --floor-bg: linear-gradient(180deg, #cdbad1, #dbcbde); }
+  .room-scene.room-genkan { --wall-bg: linear-gradient(180deg, #e2ded2, #cfc7b4); --floor-bg: linear-gradient(180deg, #bdb59d, #cbc4ae); }
 
-  /* 庭は屋外なので、壁と床ではなく空と芝生にする。空の色は窓の外と同じ変数を使う */
+  /* 庭は屋外なので、壁と床ではなく空と芝生にする。空の色は窓の外と同じ変数を使う。
+     囲まれた部屋ではないので、左右の壁・床板・境目の影は出さない */
+  .room-scene.room-garden .room-side,
+  .room-scene.room-garden .room-floor-lines,
+  .room-scene.room-garden .room-baseboard,
+  .room-scene.room-garden .room-floor-shade { display: none; }
   .room-scene.room-garden .room-wall {
     background: linear-gradient(180deg, var(--sky-top, #a9d6ea), var(--sky-bot, #dfeed8));
     transition: background 2s linear;
@@ -698,14 +742,17 @@
      空の色・太陽や月の位置は、JSが #roomScene に置く変数から受け取る。
      同じ変数を玄関のドアのガラスと、庭の空でも使う */
   .room-window {
-    position: absolute; top: 16px; width: 80px; height: 94px;
+    /* 窓は壁の上のほうに掛ける。壁の高さに合わせて大きさも変えないと、
+       画面の低い端末で壁からはみ出して上が切れてしまう */
+    position: absolute; top: calc(var(--wall-h) * 0.1); width: 80px; height: 94px;
+    transform-origin: 50% 0; transform: scale(var(--wall-k, 1));
     border: 4px solid #f3ece0; border-radius: 5px;
     box-shadow: 0 2px 8px rgba(60, 45, 25, 0.2), inset 0 0 0 1px rgba(120, 100, 60, 0.18);
     overflow: hidden;
     background: #26324e;
   }
   /* 部屋ごとに家具とぶつからない場所へ置く */
-  .room-scene.room-living .room-window { right: 22px; top: 20px; }
+  .room-scene.room-living .room-window { right: 22px; }
   .room-scene.room-kitchen .room-window { left: 50%; margin-left: -40px; }
   .room-scene.room-bedroom .room-window { left: 50%; margin-left: -40px; }
 
@@ -749,8 +796,12 @@
 
   /* ---- 玄関のドア ---- */
   .room-door {
-    position: absolute; left: 50%; margin-left: -46px; top: 24px;
+    /* ドアは床まで届いているのがあたりまえ。下端を床の線にそろえたうえで、
+       壁の高さに合わせて縮める（縮む中心を下端にすると、床に着いたまま小さくなる） */
+    position: absolute; left: 50%; margin-left: -46px;
+    top: calc(var(--wall-h) - 161px);
     width: 92px; height: 152px;
+    transform-origin: 50% 100%; transform: scale(var(--wall-k, 1));
     background: linear-gradient(100deg, #b58a5c, #a37a4e 55%, #96703f);
     border: 3px solid #7d5c38; border-radius: 4px 4px 2px 2px;
     box-shadow: 0 4px 10px rgba(60, 45, 25, 0.28), inset 0 0 0 6px rgba(255, 255, 255, 0.06);
@@ -877,7 +928,11 @@
   /* 歩く速さは1匹ずつ違うので、移動にかかる時間は --walk-ms で個別に渡す */
   .room-pet {
     position: absolute; text-align: center; cursor: pointer; width: 58px;
-    transition: left var(--walk-ms, 1200ms) linear, top var(--walk-ms, 1200ms) linear;
+    /* 奥へ行くほど小さく見せる。縮める中心は足もと（そこが床に着いている点）。
+       上下左右の移動と同じ速さで大きさも変えないと、歩きながら伸び縮みして見える */
+    transform-origin: 50% 57px;
+    transition: left var(--walk-ms, 1200ms) linear, top var(--walk-ms, 1200ms) linear,
+                transform var(--walk-ms, 1200ms) linear;
   }
   .room-pet .rp-fig {
     display: block; width: 57px; height: 57px; margin: 0 auto;
@@ -965,10 +1020,11 @@
   @keyframes tailSway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(7deg); } }
   /* 家具を置くときだけ出るマス目。なかまより前（なかまは足もとの高さで最大500）*/
   .room-grid { position: absolute; inset: 0; z-index: 600; }
+  /* マスは床の一区画。奥ほどせまい台形になるので、形はJSが切り抜きで与える */
   .rg-cell {
     position: absolute; margin: 0; padding: 0; -webkit-appearance: none; appearance: none;
-    background: rgba(255, 255, 255, 0.22); border: 1.5px dashed rgba(63, 52, 44, 0.42);
-    border-radius: 8px; cursor: pointer;
+    background: rgba(255, 255, 255, 0.26); border: 1.5px dashed rgba(63, 52, 44, 0.42);
+    cursor: pointer;
   }
   .rg-cell:active { background: rgba(255, 255, 255, 0.5); }
   .rg-cell.taken { background: rgba(63, 52, 44, 0.14); border-style: solid; opacity: 0.5; cursor: default; }
@@ -1090,6 +1146,8 @@
         </div>
         <div class="room-scene room-living" id="roomScene">
           <div class="room-wall"></div>
+          <div class="room-side left"></div>
+          <div class="room-side right"></div>
           <div class="room-window">
             <div class="rw-sky"></div>
             <div class="rw-stars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -1110,6 +1168,9 @@
           <div class="room-cloud c1"></div>
           <div class="room-cloud c2"></div>
           <div class="room-floor-bg"></div>
+          <div class="room-floor-lines" id="roomFloorLines"></div>
+          <div class="room-floor-shade"></div>
+          <div class="room-baseboard"></div>
           <!-- 生垣・木・柵は地面をまたいで立つので、床より後ろに書いて隠れないようにする -->
           <div class="room-hedge"></div>
           <div class="room-tree"></div>
@@ -2192,7 +2253,7 @@
   // use があるものは なかまが自分で使いに行く。無いものは置いて眺めるだけの飾り。
   // group はお店での並び。部屋ごとの決まりは無く、どれをどの部屋に置いてもよい
   var FURNITURE = {
-    tower:     { name: 'キャットタワー',   price: 30, use: 'climb',   w: 48,  h: 96, group: 'なかまの道具' },
+    tower:     { name: 'キャットタワー',   price: 30, use: 'climb',   w: 52,  h: 150, group: 'なかまの道具' },
     cushion:   { name: 'クッション',       price: 15, use: 'sleep',   w: 46,  h: 22, group: 'なかまの道具' },
     scratch:   { name: 'つめとぎ',         price: 15, use: 'scratch', w: 24,  h: 56, group: 'なかまの道具' },
     bowl:      { name: 'ごはん皿',         price: 20, use: 'eat',     w: 36,  h: 16, group: 'なかまの道具' },
@@ -2203,10 +2264,10 @@
     lamp:      { name: 'スタンドライト',   price: 10, use: null,      w: 22,  h: 32, group: 'へやの家具' },
     counter:   { name: 'キッチン台',       price: 22, use: 'climb',   w: 86,  h: 60, group: 'へやの家具' },
     shelf:     { name: '食器だな',         price: 12, use: null,      w: 80,  h: 34, group: 'へやの家具' },
-    fridge:    { name: '冷蔵庫',           price: 25, use: null,      w: 44,  h: 88, group: 'へやの家具' },
+    fridge:    { name: '冷蔵庫',           price: 25, use: null,      w: 46,  h: 124, group: 'へやの家具' },
     bed:       { name: 'ベッド',           price: 25, use: 'sleep',   w: 88,  h: 70, group: 'へやの家具' },
     nightstand:{ name: 'ナイトテーブル',   price: 10, use: null,      w: 30,  h: 30, group: 'へやの家具' },
-    wardrobe:  { name: 'クローゼット',     price: 25, use: 'climb',   w: 50,  h: 100, group: 'へやの家具' },
+    wardrobe:  { name: 'クローゼット',     price: 25, use: 'climb',   w: 54,  h: 140, group: 'へやの家具' },
     shoebox:   { name: 'くつばこ',         price: 18, use: 'climb',   w: 68,  h: 74, group: 'へやの家具' },
     umbrella:  { name: 'かさ立て',         price: 8,  use: null,      w: 26,  h: 54, group: 'へやの家具' },
     doormat:   { name: '玄関マット',       price: 8,  use: 'sleep',   w: 76,  h: 26, group: 'へやの家具' }
@@ -2346,12 +2407,12 @@
         '</svg>';
       // 冷蔵庫
       case 'fridge':
-        return '<svg viewBox="0 0 44 88" xmlns="http://www.w3.org/2000/svg">' +
-          '<rect x="3" y="3" width="38" height="82" rx="5" fill="#f6f0e4"' + sw + '/>' +
-          '<path d="M22 3 h14 a5 5 0 0 1 5 5 v72 a5 5 0 0 1 -5 5 H22 Z" fill="#000" opacity="0.1"/>' +
-          '<path d="M3 32 H41" stroke="' + L + '" stroke-width="2" opacity="0.55"/>' +
-          '<rect x="32" y="14" width="4" height="12" rx="2" fill="#8f7a5c"' + sw15 + '/>' +
-          '<rect x="32" y="40" width="4" height="12" rx="2" fill="#8f7a5c"' + sw15 + '/>' +
+        return '<svg viewBox="0 0 46 124" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="3" width="40" height="118" rx="5" fill="#f6f0e4"' + sw + '/>' +
+          '<path d="M23 3 h15 a5 5 0 0 1 5 5 v108 a5 5 0 0 1 -5 5 H23 Z" fill="#000" opacity="0.1"/>' +
+          '<path d="M3 44 H43" stroke="' + L + '" stroke-width="2" opacity="0.55"/>' +
+          '<rect x="33" y="22" width="4" height="14" rx="2" fill="#8f7a5c"' + sw15 + '/>' +
+          '<rect x="33" y="54" width="4" height="14" rx="2" fill="#8f7a5c"' + sw15 + '/>' +
         '</svg>';
       // ベッド。掛けぶとん・折り返し・まくら
       case 'bed':
@@ -2370,12 +2431,12 @@
         '</svg>';
       // クローゼット。とびらが2枚
       case 'wardrobe':
-        return '<svg viewBox="0 0 50 100" xmlns="http://www.w3.org/2000/svg">' +
-          '<rect x="3" y="3" width="44" height="94" rx="5" fill="#d8c6de"' + sw + '/>' +
-          '<rect x="7" y="8" width="15" height="84" rx="3" fill="#ece2ee"' + sw15 + '/>' +
-          '<rect x="28" y="8" width="15" height="84" rx="3" fill="#c9b2d2"' + sw15 + '/>' +
-          '<rect x="18" y="46" width="3.5" height="11" rx="1.8" fill="#7c5f86"' + sw15 + '/>' +
-          '<rect x="28.5" y="46" width="3.5" height="11" rx="1.8" fill="#7c5f86"' + sw15 + '/>' +
+        return '<svg viewBox="0 0 54 140" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="3" width="48" height="134" rx="5" fill="#d8c6de"' + sw + '/>' +
+          '<rect x="7" y="9" width="17" height="122" rx="3" fill="#ece2ee"' + sw15 + '/>' +
+          '<rect x="30" y="9" width="17" height="122" rx="3" fill="#c9b2d2"' + sw15 + '/>' +
+          '<rect x="19.5" y="64" width="3.5" height="13" rx="1.8" fill="#7c5f86"' + sw15 + '/>' +
+          '<rect x="31" y="64" width="3.5" height="13" rx="1.8" fill="#7c5f86"' + sw15 + '/>' +
         '</svg>';
       // くつばこ。3段
       case 'shoebox':
@@ -2408,13 +2469,22 @@
     var art = roomFurnSVG(kind, L);
     if (art) return art;
     if (kind === 'tower') {
-      return '<svg viewBox="0 0 48 96" xmlns="http://www.w3.org/2000/svg">' +
-        '<rect x="6" y="82" width="36" height="11" rx="3" fill="#c9a876" stroke="' + L + '" stroke-width="2"/>' +
-        '<rect x="20" y="40" width="8" height="44" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
-        '<rect x="6" y="30" width="36" height="11" rx="3" fill="#d9b98a" stroke="' + L + '" stroke-width="2"/>' +
-        '<rect x="20" y="14" width="8" height="18" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
-        '<ellipse cx="24" cy="11" rx="17" ry="8" fill="#e6cba0" stroke="' + L + '" stroke-width="2"/>' +
-        '<ellipse cx="24" cy="10" rx="11" ry="4.5" fill="#000" opacity="0.1"/>' +
+      return '<svg viewBox="0 0 52 150" xmlns="http://www.w3.org/2000/svg">' +
+        // 土台
+        '<rect x="6" y="134" width="40" height="12" rx="3" fill="#c9a876"' + ' stroke="' + L + '" stroke-width="2"/>' +
+        // 下の柱と段（この段は爪とぎの巻き柱）
+        '<rect x="21" y="98" width="10" height="38" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
+        '<path d="M22 102 h8 M22 108 h8 M22 114 h8 M22 120 h8 M22 126 h8 M22 132 h8" ' +
+          'stroke="rgba(63,52,44,0.3)" stroke-width="1.4" stroke-linecap="round"/>' +
+        '<rect x="4" y="88" width="44" height="12" rx="3" fill="#d9b98a" stroke="' + L + '" stroke-width="2"/>' +
+        // 中の柱と、くぐれる箱
+        '<rect x="21" y="62" width="10" height="28" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
+        '<rect x="6" y="50" width="40" height="30" rx="4" fill="#e0c091" stroke="' + L + '" stroke-width="2"/>' +
+        '<circle cx="26" cy="65" r="9" fill="#41352b" stroke="' + L + '" stroke-width="1.6"/>' +
+        // 上の柱と、いちばん上の見晴らし台
+        '<rect x="21" y="26" width="10" height="26" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
+        '<ellipse cx="26" cy="22" rx="19" ry="9" fill="#e6cba0" stroke="' + L + '" stroke-width="2"/>' +
+        '<ellipse cx="26" cy="20.5" rx="12" ry="5" fill="#000" opacity="0.1"/>' +
       '</svg>';
     }
     if (kind === 'cushion') {
@@ -2667,8 +2737,57 @@
   }
 
   // ============ おうち ============
-  // 幅320pxの狭い端末でも .room-scene（overflow:hidden）からはみ出ないだけの余白を残した値
-  var FLOOR_COLS = 3, FLOOR_CELL_W = 100, FLOOR_CELL_H = 78, FLOOR_TOP = 250, FLOOR_LEFT = 18;
+  // 部屋は1点透視の箱として扱う。
+  //   奥ゆき t: 0=いちばん奥（壁ぎわ）/ 1=いちばん手前
+  //   横 u:   0=左端 / 1=右端
+  // 奥へ行くほど床は狭く、置いたものは小さく、間隔も詰まって見える。
+  // この決まりを1か所に閉じこめて、家具もハウスもなかまも同じ空間に立たせる
+  var ROOM_BACK_INSET = 0.13;   // 奥の壁は左右にこれだけ引っこむ（画面幅に対する割合）
+  var DEPTH_POW = 1.45;         // 奥ほど詰まって見えるよう、奥ゆきを曲げる強さ
+  var SCALE_BACK = 0.92, SCALE_FRONT = 1.45;   // 奥と手前での大きさの比
+  var WALL_RATIO = 0.38;        // 部屋の高さのうち、壁が占める割合
+  var roomSpace = null;         // いまの部屋の寸法。歩く処理からも見る
+
+  var WALL_REF = 255;   // このくらいの壁の高さを目安に、家具の大きさを決めてある
+  function makeRoomSpace(sceneW, sceneH, isGarden) {
+    var refWall = Math.round(Math.min(Math.max(sceneH * WALL_RATIO, 140), 260));
+    // 庭は屋外で、生垣と柵が地平線の役をしている。そこに高さを合わせる
+    var wallH = isGarden ? 190 : refWall;
+    return {
+      w: sceneW, h: sceneH,
+      wallH: Math.min(wallH, Math.max(60, sceneH - 90)),   // 床が潰れない範囲で
+      inset: isGarden ? 0 : Math.round(sceneW * ROOM_BACK_INSET),
+      bottom: sceneH,
+      // 画面が小さいと部屋も小さくなる。置いたものの大きさを部屋に合わせないと、
+      // 小さい端末でキャットタワーが天井を突きぬけたように見えてしまう。
+      // 庭も同じ倍率にして、部屋を移ってもなかまの大きさが変わらないようにする
+      k: refWall / WALL_REF
+    };
+  }
+  function depthAt(t) { return Math.pow(Math.min(1, Math.max(0, t)), DEPTH_POW); }
+  function floorY(sp, t) { return sp.wallH + (sp.bottom - sp.wallH) * depthAt(t); }
+  function floorScale(sp, t) { return (SCALE_BACK + (SCALE_FRONT - SCALE_BACK) * depthAt(t)) * sp.k; }
+  // その奥ゆきでの床の左右のはし
+  function floorEdges(sp, t) {
+    var d = depthAt(t);
+    return { l: sp.inset * (1 - d), r: sp.w - sp.inset * (1 - d) };
+  }
+  function floorX(sp, t, u) {
+    var e = floorEdges(sp, t);
+    return e.l + (e.r - e.l) * u;
+  }
+  // 画面のyから奥ゆきを逆に求める（なかまが歩くときに使う）
+  function tFromY(sp, y) {
+    var f = (y - sp.wallH) / Math.max(1, sp.bottom - sp.wallH);
+    return Math.pow(Math.min(1, Math.max(0, f)), 1 / DEPTH_POW);
+  }
+  // 床からはみ出さないところへ引きもどす
+  function clampToFloor(sp, x, y, pad) {
+    var m = pad || 0;
+    var yy = Math.min(sp.bottom - m, Math.max(sp.wallH + 6, y));
+    var e = floorEdges(sp, tFromY(sp, yy));
+    return { x: Math.min(e.r - m, Math.max(e.l + m, x)), y: yy };
+  }
   var currentRoom = (function () {
     var r = lsGet('pf:currentRoom', 'living');
     return isRoomKey(r) ? r : 'living';
@@ -2723,6 +2842,16 @@
     scene.style.setProperty('--orb-glow', s.glow);
   }
 
+  var PET_FOOT = 57;   // なかまの絵の高さ。足もとの位置を出すのに使う
+  // 足もと(x, y)を床の点に合わせて置く。奥ほど小さく見えるように縮める
+  function placePet(el, x, y, sp) {
+    var sc = floorScale(sp, tFromY(sp, y));
+    el.style.left = (x - PET_FOOT / 2) + 'px';
+    el.style.top = (y - PET_FOOT) + 'px';
+    el.style.transform = 'scale(' + sc.toFixed(3) + ')';
+    el.style.zIndex = String(Math.round(y));   // 足もとが手前にあるものほど上に重ねる
+    return el;
+  }
   function buildRoomPet(g) {
     var el = document.createElement('div');
     el.className = 'room-pet';
@@ -2755,21 +2884,19 @@
     return el;
   }
   // ハウスも家具と同じマス目に置く。どこに建てるかは自分で決める
-  function renderHousesInRoom(roomHouses, assign, area) {
+  function renderHousesInRoom(roomHouses, assign, sp) {
     var layer = $('roomHouses');
     layer.innerHTML = '';
     roomHouses.forEach(function (h) {
       var size = houseSize(h.cap);
       var occ = (assign.occupants[h.id] || []).length;
-      var pos = cellPos(h.col, h.row, size, area);
+      var a = cellAnchor(h.col, h.row, sp);
       var el = document.createElement('div');
       el.className = 'room-house-obj';
       el.dataset.id = h.id;
-      el.style.left = pos.x + 'px';
-      el.style.top = pos.y + 'px';
-      el.style.width = size.w + 'px';
-      el.style.zIndex = String(Math.round(pos.y + size.h));   // 足もとの高さで前後を決める
-      el.innerHTML = '<div class="rh-art" style="height:' + size.art + 'px">' + houseSVG(h.species, h.cap) + '</div>' +
+      var box = standOn(el, size, a, sp);
+      el.style.height = '';   // 名前のぶんは中身にまかせる
+      el.innerHTML = '<div class="rh-art" style="height:' + (size.art * a.scale) + 'px">' + houseSVG(h.species, h.cap) + '</div>' +
         '<div class="rh-cap">' + houseLabel(h) + '（' + occ + '/' + h.cap + '）</div>';
       el.title = houseLabel(h) + '・タップで広げる／動かす';
       el.addEventListener('click', function () { openHouseMenu(h.id); });
@@ -2806,51 +2933,47 @@
     // 歩ける範囲は、実際に描かれた部屋の大きさから決める。
     // 画面の高さいっぱいに広がるので、匹数から高さを計算することはしない
     var sceneW = scene.clientWidth || 340;
-    // 庭は柵ぎわに花壇と池があるので、その下からを歩く場所にする
-    var topEdge = FLOOR_TOP - (currentRoom === 'garden' ? 12 : 40);
-    // ハウスも家具も自分でマスに置くので、置いた数で部屋の高さは変わらない。
-    // マス目がいつも同じ大きさになるよう、床の高さを決め打ちにする。
-    // 高さを測るのは必ずそのあと（前の部屋の高さのまま測ると歩く範囲がずれる）
+    // 部屋の高さを決めてから測る（前の部屋の高さのまま測ると空間がずれる）
     scene.style.minHeight = ROOM_MIN_H + 'px';
     var sceneH = scene.clientHeight || ROOM_MIN_H;
-    var bounds = {
-      left: 10,
-      right: Math.max(30, sceneW - 68),
-      top: topEdge,
-      bottom: Math.max(topEdge + 40, sceneH - 74)
-    };
+    var isGarden = (currentRoom === 'garden');
+    var sp = makeRoomSpace(sceneW, sceneH, isGarden);
+    roomSpace = sp;
+    // 壁の高さと奥のせまさをCSSへ渡す。壁・左右の壁・床の形がこれで決まる
+    scene.style.setProperty('--wall-h', sp.wallH + 'px');
+    scene.style.setProperty('--bi', sp.inset + 'px');
+    scene.style.setProperty('--wall-k', sp.k.toFixed(3));
+    renderFloorLines(sp, isGarden);
+
     // 最初の居場所はidから決める（開くたびに散らばり方が変わらないように）。
     // ただし素直にidから1点だけ選ぶと重なることがあるので、候補をいくつか出して
-    // すでに置いた子からいちばん離れているものを採る
+    // すでに置いた子からいちばん離れているものを採る。
+    // 場所は床の上の（奥ゆき・横）で決め、そこから画面の位置に直す
     var placed = [];
     floorEntries.forEach(function (g) {
       var seed = hashStr(g.id);
-      var bx = bounds.left, by = bounds.top, bestGap = -1;
+      var bx = 0, by = 0, bestGap = -1;
       for (var k = 0; k < 8; k++) {
         var r1 = (Math.imul(seed ^ (k * 0x9e3779b9), 0x85ebca6b) >>> 0) / 4294967296;
         var r2 = (Math.imul(seed ^ (k * 0xc2b2ae35), 0x27d4eb2f) >>> 0) / 4294967296;
-        var cx = bounds.left + r1 * (bounds.right - bounds.left);
-        var cy = bounds.top + r2 * (bounds.bottom - bounds.top);
+        var t = 0.12 + r2 * 0.82;
+        var cy = floorY(sp, t);
+        var cx = floorX(sp, t, 0.08 + r1 * 0.84);
         var gap = Infinity;
-        placed.forEach(function (p) {
-          var d = Math.sqrt((p[0] - cx) * (p[0] - cx) + (p[1] - cy) * (p[1] - cy));
+        placed.forEach(function (q) {
+          var d = Math.sqrt((q[0] - cx) * (q[0] - cx) + (q[1] - cy) * (q[1] - cy));
           if (d < gap) gap = d;
         });
         if (gap > bestGap) { bestGap = gap; bx = cx; by = cy; }
         if (gap >= 58) break;
       }
       placed.push([bx, by]);
-      var el = buildRoomPet(g);
-      el.style.left = bx + 'px';
-      el.style.top = by + 'px';
-      el.style.zIndex = String(Math.round(by));   // 手前にいる子ほど上に重ねる
-      petsLayer.appendChild(el);
+      petsLayer.appendChild(placePet(buildRoomPet(g), bx, by, sp));
     });
-    var area = computeGridArea(bounds, sceneW, sceneH);
-    renderHousesInRoom(roomHouses, assign, area);
-    renderFurniture(area);
+    renderHousesInRoom(roomHouses, assign, sp);
+    renderFurniture(sp);
     renderPlaceGrid();
-    startPetLife(bounds);
+    startPetLife(sp);
 
     // 家具だけ置いた部屋を「何もありません」と言わない
     var isEmpty = (roomHouseCount === 0 && floorEntries.length === 0 && furnPlaced.length === 0);
@@ -2863,47 +2986,75 @@
   // ---- 家具を部屋に置く ----
   // マス目で持っているので、描くときに今の部屋の広さから実寸へ直す。
   // 端末の幅が変わっても同じ置き方に見える
-  var furnPlaced = [];   // { id, kind, use, x, y, w, h }
-  var gridArea = null;   // { left, top, right, bottom, cw, ch }
-  function computeGridArea(bounds, sceneW, sceneH) {
-    var left = 8, right = Math.max(left + 60, sceneW - 8);
-    var top = bounds.top, bottom = Math.max(top + 60, sceneH - 8);
-    return {
-      left: left, top: top, right: right, bottom: bottom,
-      cw: (right - left) / GRID_COLS, ch: (bottom - top) / GRID_ROWS
-    };
+  var furnPlaced = [];   // { id, kind, use, x, y, w, h } 画面に出ている実寸で持つ
+  // マスの足もと（横は真ん中、奥ゆきはマスのやや手前寄り）。
+  // 手前寄りにしておくと、後ろの段に置いたものと重なりにくい
+  function cellAnchor(col, row, sp) {
+    var t = (row + 0.82) / GRID_ROWS;
+    var u = (col + 0.5) / GRID_COLS;
+    return { x: floorX(sp, t, u), y: floorY(sp, t), scale: floorScale(sp, t), t: t, u: u };
   }
-  // マスのなかで、横は真ん中・下は床につくように置く。
-  // キャットタワーのような背の高いものはマスからはみ出すので、部屋の外へ出ないよう抑える
-  function cellPos(col, row, def, area) {
-    var x = area.left + (col + 0.5) * area.cw - def.w / 2;
-    var y = area.top + (row + 1) * area.ch - def.h;
-    x = Math.min(Math.max(x, area.left), Math.max(area.left, area.right - def.w));
-    y = Math.min(Math.max(y, 2), Math.max(2, area.bottom - def.h));
-    return { x: x, y: y };
+  // 置いたものは「床の上に立っている」ように、足もとを床の点に合わせて置く。
+  // 高さは上へ伸びるので、背の高いものは壁までとどく
+  function standOn(el, def, a, sp) {
+    var w = def.w * a.scale, h = def.h * a.scale;
+    var x = Math.min(sp.w - 2 - w / 2, Math.max(2 + w / 2, a.x));
+    el.style.left = (x - w / 2) + 'px';
+    el.style.top = (a.y - h) + 'px';
+    el.style.width = w + 'px';
+    el.style.height = h + 'px';
+    el.style.zIndex = String(Math.round(a.y));   // 足もとが手前にあるものほど上に重ねる
+    return { x: x - w / 2, y: a.y - h, w: w, h: h };
   }
-  function renderFurniture(area) {
-    gridArea = area;
+  function renderFurniture(sp) {
     var layer = $('roomFurniture');
     layer.innerHTML = '';
     furnPlaced = [];
     readFurniture().filter(function (f) { return f.room === currentRoom; }).forEach(function (f) {
       var def = FURNITURE[f.kind];
-      var pos = cellPos(f.col, f.row, def, gridArea);
+      var a = cellAnchor(f.col, f.row, sp);
       var el = document.createElement('div');
       el.className = 'room-furn';
       el.dataset.id = f.id;
-      el.style.left = pos.x + 'px';
-      el.style.top = pos.y + 'px';
-      el.style.width = def.w + 'px';
-      el.style.height = def.h + 'px';
-      el.style.zIndex = String(Math.round(pos.y + def.h));   // 足もとの高さで前後を決める
+      var box = standOn(el, def, a, sp);
       el.innerHTML = furnitureSVG(f.kind);
       el.title = def.name + '・タップで動かす／しまう';
       el.addEventListener('click', function () { openFurnMenu(f.id, f.kind); });
       layer.appendChild(el);
-      furnPlaced.push({ id: f.id, kind: f.kind, use: def.use, x: pos.x, y: pos.y, w: def.w, h: def.h });
+      // なかまが使いに行く先は、画面に出ている大きさで持つ（奥のものは小さい）
+      furnPlaced.push({
+        id: f.id, kind: f.kind, use: def.use, x: box.x, y: box.y, w: box.w, h: box.h,
+        // 登ったなかまは、この家具と同じ奥ゆきにいる。大きさと重なり順はここから取る
+        scale: a.scale, z: Math.round(a.y)
+      });
     });
+  }
+
+  // 奥の一点へ集まる床板を引く。これがいちばん奥ゆきを感じさせる
+  function renderFloorLines(sp, isGarden) {
+    var host = $('roomFloorLines');
+    if (isGarden) { host.innerHTML = ''; return; }
+    var n = 9, out = '';
+    for (var i = 1; i < n; i++) {
+      var u = i / n;
+      var bx = sp.inset + (sp.w - sp.inset * 2) * u;   // 奥のはし
+      var fx = sp.w * u;                                // 手前のはし
+      out += '<line x1="' + bx.toFixed(1) + '" y1="' + sp.wallH + '" x2="' + fx.toFixed(1) +
+        '" y2="' + sp.bottom + '" stroke="rgba(60,45,25,0.13)" stroke-width="1.5"/>';
+    }
+    // 左右の壁と床のつなぎ目（幅木の続き）。ここが見えると床の広がりが分かる
+    out += '<path d="M' + sp.inset + ' ' + sp.wallH + ' L0 ' + sp.bottom +
+      ' M' + (sp.w - sp.inset) + ' ' + sp.wallH + ' L' + sp.w + ' ' + sp.bottom + '" ' +
+      'stroke="rgba(63,52,44,0.3)" stroke-width="2.5" fill="none"/>';
+    // 板の継ぎ目。奥ほど詰まって見えるよう、奥ゆきの決まりに合わせて置く
+    for (var k = 1; k <= 4; k++) {
+      var t = k / 5;
+      var y = floorY(sp, t), e = floorEdges(sp, t);
+      out += '<line x1="' + e.l.toFixed(1) + '" y1="' + y.toFixed(1) + '" x2="' + e.r.toFixed(1) +
+        '" y2="' + y.toFixed(1) + '" stroke="rgba(60,45,25,0.08)" stroke-width="1.5"/>';
+    }
+    host.innerHTML = '<svg viewBox="0 0 ' + sp.w + ' ' + sp.h + '" preserveAspectRatio="none" ' +
+      'xmlns="http://www.w3.org/2000/svg">' + out + '</svg>';
   }
 
   // ---- なかまの暮らし ----
@@ -2933,9 +3084,10 @@
   }
   function alive(el, gen) { return el.isConnected && genOf(el) === gen; }
 
-  function startPetLife(bounds) {
+  // なかまの暮らしは、部屋の空間（1点透視の寸法）の上で動く
+  function startPetLife(sp) {
     stopPetLife();
-    lifeBounds = bounds;
+    lifeBounds = sp;
     if (reduceMotion) return;   // 動きを控える設定のときは、その場にいてもらう
     document.querySelectorAll('#roomPets > .room-pet').forEach(function (el) {
       el.dataset.gen = '0';
@@ -2994,11 +3146,11 @@
       delete petBusy[a.dataset.id];
       delete petBusy[b.dataset.id];
     }
-    var bd = lifeBounds;
-    var mx = ((parseFloat(a.style.left) || 0) + (parseFloat(b.style.left) || 0)) / 2;
-    var my = ((parseFloat(a.style.top) || 0) + (parseFloat(b.style.top) || 0)) / 2;
-    mx = Math.min(bd.right - 24, Math.max(bd.left + 24, mx));
-    my = Math.min(bd.bottom, Math.max(bd.top, my));
+    var mid = settleTarget(
+      ((parseFloat(a.style.left) || 0) + (parseFloat(b.style.left) || 0)) / 2,
+      ((parseFloat(a.style.top) || 0) + (parseFloat(b.style.top) || 0)) / 2,
+      lifeBounds);
+    var mx = mid.x, my = mid.y;
     var arrived = 0;
     function onArrive() {
       if (++arrived < 2) return;
@@ -3107,6 +3259,9 @@
     // 登るものは上に乗り、それ以外は足もとへ行く
     var tx = f.x + f.w / 2 - 29;                       // なかまの絵は幅58pxなので中心を合わせる
     var ty = (f.use === 'climb') ? f.y - 34 : f.y + f.h - 44;
+    // 家具の上にいても、その子は家具と同じ奥ゆきにいる。
+    // 乗った高さから大きさを出すと急に縮み、重なり順も家具の後ろへ回ってしまう
+    var perch = { scale: f.scale, z: f.z + 1 };
     moveTo(el, gen, tx, ty, function () {
       if (!alive(el, gen) || !petLifeShouldRun()) { release(); later(function () { petAct(el, gen); }, 1500); return; }
       var svg = el.querySelector('svg');
@@ -3127,14 +3282,25 @@
           later(function () { petAct(el, gen); }, 800 + Math.random() * 1500);
         }, 7000 + Math.random() * 9000);
       }
-    });
+    }, null, perch);
   }
 
+  // 行き先を床のなかへ引きもどし、その奥ゆきでの大きさを返す。
+  // 位置は絵の左上で持っているので、いちど足もとに直してから判断する
+  function settleTarget(tx, ty, sp) {
+    // 家具の上に乗るぶんは、床のいちばん奥より上に出てよい
+    var footY = Math.min(sp.bottom, Math.max(sp.wallH - 70, ty + PET_FOOT));
+    var t = tFromY(sp, footY);
+    var e = floorEdges(sp, t);
+    var footX = Math.min(e.r - 8, Math.max(e.l + 8, tx + PET_FOOT / 2));
+    return { x: footX - PET_FOOT / 2, y: footY - PET_FOOT, scale: floorScale(sp, t) };
+  }
   // 指定の場所まで歩いて、着いたら done を呼ぶ
-  function moveTo(el, gen, tx, ty, done, speed) {
-    var b = lifeBounds;
-    tx = Math.min(b.right, Math.max(b.left, tx));
-    ty = Math.min(b.bottom + 40, Math.max(b.top - 40, ty));   // 家具の上に乗るぶんは範囲より少し外へ出てよい
+  // perch を渡すと、大きさと重なり順をそこから取る（家具の上に乗るとき）
+  function moveTo(el, gen, tx, ty, done, speed, perch) {
+    var g = settleTarget(tx, ty, lifeBounds);
+    tx = g.x; ty = g.y;
+    el.style.transform = 'scale(' + ((perch && perch.scale) || g.scale).toFixed(3) + ')';
     var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
     var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
     var ms = Math.max(300, Math.round(dist / (speed || WALK_SPEED) * 1000));
@@ -3143,7 +3309,7 @@
     el.classList.add('walking');
     el.style.left = tx + 'px';
     el.style.top = ty + 'px';
-    el.style.zIndex = String(Math.round(ty));
+    el.style.zIndex = String((perch && perch.z) || Math.round(ty + PET_FOOT));
     later(function () {
       if (!alive(el, gen)) return;   // 途中で別の出来事に取られていたら、この予定は捨てる
       el.classList.remove('walking');
@@ -3163,16 +3329,15 @@
     return min;
   }
   function petWalk(el, gen) {
-    var b = lifeBounds;
+    var sp = lifeBounds;
     var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
-    // 遠くへ一気に行かず、今いる場所のまわりを選ぶ。部屋の端は超えない。
+    // 遠くへ一気に行かず、今いる場所のまわりを選ぶ。床の外へは出ない。
     // 重なって見えないよう、ほかの子から離れた行き先を何回か引き直して選ぶ
-    var tx = x0, ty = y0, best = -1;
+    var tx = x0, ty = y0, best = -1, sc = 1;
     for (var i = 0; i < 5; i++) {
-      var cx = Math.min(b.right, Math.max(b.left, x0 + (Math.random() - 0.5) * 190));
-      var cy = Math.min(b.bottom, Math.max(b.top, y0 + (Math.random() - 0.5) * 110));
-      var gap = nearestGap(el, cx, cy);
-      if (gap > best) { best = gap; tx = cx; ty = cy; }
+      var g = settleTarget(x0 + (Math.random() - 0.5) * 190, y0 + (Math.random() - 0.5) * 110, sp);
+      var gap = nearestGap(el, g.x, g.y);
+      if (gap > best) { best = gap; tx = g.x; ty = g.y; sc = g.scale; }
       if (gap >= 56) break;   // じゅうぶん離れていれば、それ以上は探さない
     }
     var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
@@ -3183,7 +3348,8 @@
     el.classList.add('walking');
     el.style.left = tx + 'px';
     el.style.top = ty + 'px';
-    el.style.zIndex = String(Math.round(ty));
+    el.style.transform = 'scale(' + sc.toFixed(3) + ')';
+    el.style.zIndex = String(Math.round(ty + PET_FOOT));
     later(function () {
       if (!alive(el, gen)) return;
       el.classList.remove('walking');
@@ -3452,29 +3618,47 @@
   function renderPlaceGrid() {
     var layer = $('roomGrid'), bar = $('placeBar');
     layer.innerHTML = '';
-    if (!placing || !gridArea) { layer.hidden = true; bar.hidden = true; return; }
+    if (!placing || !roomSpace) { layer.hidden = true; bar.hidden = true; return; }
     var label = placingName();
     if (!label) { layer.hidden = true; bar.hidden = true; return; }
     layer.hidden = false;
     bar.hidden = false;
     $('placeBarText').textContent = label + 'を置くマスをえらんでください';
-    var area = gridArea;
     for (var row = 0; row < GRID_ROWS; row++) {
       for (var col = 0; col < GRID_COLS; col++) {
-        layer.appendChild(buildPlaceCell(col, row, area));
+        layer.appendChild(buildPlaceCell(col, row, roomSpace));
       }
     }
   }
-  function buildPlaceCell(col, row, area) {
+  // マスは床の一区画なので、四角ではなく台形になる。
+  // 四隅を出して、その形に切り抜いた枠を置く
+  function buildPlaceCell(col, row, sp) {
     var taken = cellTaken(currentRoom, col, row, placing.id || null);
+    var t0 = row / GRID_ROWS, t1 = (row + 1) / GRID_ROWS;
+    var u0 = col / GRID_COLS, u1 = (col + 1) / GRID_COLS;
+    var pts = [
+      [floorX(sp, t0, u0), floorY(sp, t0)],
+      [floorX(sp, t0, u1), floorY(sp, t0)],
+      [floorX(sp, t1, u1), floorY(sp, t1)],
+      [floorX(sp, t1, u0), floorY(sp, t1)]
+    ];
+    var xs = pts.map(function (q) { return q[0]; }), ys = pts.map(function (q) { return q[1]; });
+    var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys);
+    var w = Math.max(1, Math.max.apply(null, xs) - x0), h = Math.max(1, Math.max.apply(null, ys) - y0);
+    var poly = pts.map(function (q) {
+      return ((q[0] - x0) / w * 100).toFixed(2) + '% ' + ((q[1] - y0) / h * 100).toFixed(2) + '%';
+    }).join(', ');
     var cell = document.createElement('button');
     cell.type = 'button';
     cell.className = 'rg-cell' + (taken ? ' taken' : '');
     cell.disabled = taken;
-    cell.style.left = area.left + col * area.cw + 'px';
-    cell.style.top = area.top + row * area.ch + 'px';
-    cell.style.width = area.cw + 'px';
-    cell.style.height = area.ch + 'px';
+    cell.style.left = x0 + 'px';
+    cell.style.top = y0 + 'px';
+    cell.style.width = w + 'px';
+    cell.style.height = h + 'px';
+    cell.style.clipPath = 'polygon(' + poly + ')';
+    // 手前の段ほど枠が大きい。奥の段を上に重ねて、たたく先を取り合わないようにする
+    cell.style.zIndex = String(GRID_ROWS - row);
     cell.setAttribute('aria-label',
       '左から' + (col + 1) + '・おくから' + (row + 1) + 'のマス' + (taken ? '（ふさがっています）' : ''));
     cell.addEventListener('click', function () { commitPlace(col, row); });
@@ -3667,6 +3851,19 @@
       renderHouse();
     });
   });
+
+  // 画面を回したり幅が変わると、部屋の寸法（壁の高さ・床の台形）が変わる。
+  // 描き直さないと、家具やなかまが床の外に取り残され、マスのたたく場所もずれる
+  var resizeTimer = null;
+  function onRoomResize() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      resizeTimer = null;
+      if (currentView === 'house') renderHouse();
+    }, 180);
+  }
+  window.addEventListener('resize', onRoomResize);
+  window.addEventListener('orientationchange', onRoomResize);
 
   // 部屋えらびのシートは無くした。ハウスも家具も、置きたい部屋を開いて
   // マスを直にたたくほうが手数が少なく、置いた姿もその場で見える
