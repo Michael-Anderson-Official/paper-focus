@@ -1916,7 +1916,9 @@
     };
     if (Number.isFinite(paid) && paid > 0) rec.paid = paid;
     arr.push(rec);
-    return writeGarden(arr);
+    // 迎えた直後に名前をつけられるよう、どの子を足したか分かるように返す。
+    // 失敗時は null なので、これまでどおり真偽値としても使える
+    return writeGarden(arr) ? rec : null;
   }
   function renameGardenEntry(id, name) {
     var arr = readGarden();
@@ -1955,9 +1957,10 @@
     var price = petPrice(type, key);
     if (readMileage() < price) return false;
     var before = readGarden();
-    if (!addToGarden(0, { type: type, key: key }, 'shop', price)) return false;
-    if (!spendMileage(price)) { writeGarden(before); return false; }
-    return true;
+    var rec = addToGarden(0, { type: type, key: key }, 'shop', price);
+    if (!rec) return null;
+    if (!spendMileage(price)) { writeGarden(before); return null; }
+    return rec;
   }
 
   // ---- 1日の目あて ----
@@ -2923,9 +2926,11 @@
       buyBtn.textContent = fmtHours(price) + 'で迎える';
       buyBtn.disabled = mileage < price;
       buyBtn.addEventListener('click', function () {
-        if (!buyPet(type, v.key)) { toast('迎えられませんでした'); return; }
+        var got = buyPet(type, v.key);
+        if (!got) { toast('迎えられませんでした'); return; }
         toast('迎えました');
         onBuy();
+        offerNaming(got.id);
       });
       card.appendChild(buyBtn);
     } else {
@@ -3621,6 +3626,14 @@
     var g = readGarden().filter(function (x) { return x.id === namingId; })[0];
     setNameEditing(true, g ? g.name : '');
   });
+  // 迎えたその場で名前をつけられるようにする。
+  // 毛色えらびが開いていれば先に閉じる（シートが重なると閉じ方が分かりにくい）
+  function offerNaming(id) {
+    var g = readGarden().filter(function (x) { return x.id === id; })[0];
+    if (!g) return;
+    closeModal(colorModal);
+    setTimeout(function () { openNameModal(g); }, 280);   // 開閉が重ならないように待つ
+  }
   function closeName() { closeModal(nameModal); namingId = null; }
   $('nameCancel').addEventListener('click', closeName);
   dismissOnBackdrop(nameModal, function () { namingId = null; });
@@ -3628,7 +3641,7 @@
     if (!namingId) return;
     var ok = renameGardenEntry(namingId, $('nameInput').value);
     closeName();
-    renderHouse();
+    RENDERERS[currentView]();
     renderHome();
     toast(ok ? '名前をきめました' : '保存できませんでした');
   });
