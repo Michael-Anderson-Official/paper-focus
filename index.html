@@ -581,6 +581,14 @@
     font-size: var(--t-sm); color: var(--ink-3); letter-spacing: 0.08em;
   }
   .grid-head:first-child { margin-top: 0; }
+  /* 犬や鳥が増えても迷わないよう、まず種類でひとくくりにする */
+  .species-head {
+    font-size: 15px; color: var(--ink-1); margin: 22px 0 2px;
+    padding-bottom: 6px; border-bottom: 1.5px solid var(--edge);
+  }
+  .species-head:first-child { margin-top: 0; }
+  .species-head::after { display: none; }
+  .species-head + .grid-head { margin-top: 10px; }
   .grid-head::after {
     content: ''; flex: 1; height: 1px; background: var(--edge);
   }
@@ -1144,6 +1152,30 @@
     animation-delay: var(--pet-delay, 0s);
   }
   @keyframes tailSway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(7deg); } }
+  /* 家具を置くときだけ出るマス目。なかまより前（なかまは足もとの高さで最大500）*/
+  .room-grid { position: absolute; inset: 0; z-index: 600; }
+  .rg-cell {
+    position: absolute; margin: 0; padding: 0; -webkit-appearance: none; appearance: none;
+    background: rgba(255, 255, 255, 0.22); border: 1.5px dashed rgba(63, 52, 44, 0.42);
+    border-radius: 8px; cursor: pointer;
+  }
+  .rg-cell:active { background: rgba(255, 255, 255, 0.5); }
+  .rg-cell.taken { background: rgba(63, 52, 44, 0.14); border-style: solid; opacity: 0.5; cursor: default; }
+  .place-bar {
+    position: absolute; left: 8px; right: 8px; top: 8px; z-index: 601;
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px 9px 13px; border-radius: 12px;
+    background: rgba(255, 253, 248, 0.96); border: 1px solid var(--edge);
+    box-shadow: 0 4px 14px rgba(63, 52, 44, 0.16);
+    font-size: 13px; color: var(--ink-1);
+  }
+  .place-bar[hidden] { display: none; }
+  .place-bar span { flex: 1; min-width: 0; }
+  .place-bar button {
+    flex: none; -webkit-appearance: none; appearance: none; cursor: pointer;
+    padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--edge); background: var(--paper-3); color: var(--ink-2); font-size: 13px;
+  }
   .room-empty {
     position: absolute; top: 218px; left: 0; right: 0;
     margin: 0; padding: 0 var(--s5);
@@ -1291,6 +1323,12 @@
           <div class="room-furniture" id="roomFurniture"></div>
           <div class="room-pets" id="roomPets"></div>
           <div class="room-empty" id="roomEmpty" style="display:none;"></div>
+          <!-- 家具を置くときだけ出るマス目。なかまより前に出す必要があるので同じ部屋のなかに置く -->
+          <div class="room-grid" id="roomGrid" hidden></div>
+          <div class="place-bar" id="placeBar" hidden>
+            <span id="placeBarText"></span>
+            <button type="button" id="placeCancel">とりやめ</button>
+          </div>
         </div>
       </div>
 
@@ -1427,15 +1465,18 @@
       </div>
     </div>
 
-    <!-- ============ 家具の置き場所を選ぶ ============ -->
-    <div class="modal" id="spotModal">
+    <!-- ============ 置いてある家具をどうするか ============ -->
+    <div class="modal" id="furnModal">
       <div class="sheet">
-        <h2 id="spotTitle">どこに置きますか？</h2>
-        <p class="sub" id="spotSub"></p>
-        <div class="chips grid2" id="spotChips"></div>
+        <h2 id="furnTitle">家具</h2>
+        <p class="sub">動かすか、しまうかをえらんでください。</p>
+        <div class="chips grid2">
+          <button type="button" id="furnMove">動かす</button>
+          <button type="button" id="furnStore">しまう</button>
+        </div>
         <div class="sheet-btns">
           <span class="spacer"></span>
-          <button type="button" class="btn-quiet" id="spotCancel">とじる</button>
+          <button type="button" class="btn-quiet" id="furnClose">とじる</button>
         </div>
       </div>
     </div>
@@ -1606,7 +1647,8 @@
     // tone は毛色の呼び名で、品種名を持たない子を図鑑で見分けるためのもの
   };
   var SPECIES_NAME = { cat: '猫' };
-  var LINE = '#3f342c';   // 絵の輪郭。太めの濃い線でかたちを立たせる
+  var LINE = '#3f342c';
+  var clipSeq = 0;   // 模様の切り抜きに使うIDの連番   // 絵の輪郭。太めの濃い線でかたちを立たせる
 
   function petVariant(type, key) {
     var list = PET_VARIANTS[type] || [];
@@ -1639,8 +1681,7 @@
         return '<path d="M17 44 Q25 41 33 44 M16 50 Q25 47 34 50" stroke="rgba(0,0,0,0.38)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
           '<path d="M20 21 L25 15 L30 21" stroke="rgba(0,0,0,0.42)" stroke-width="2" fill="none" stroke-linecap="round"/>';
       case 'tufted-tabby':
-        return '<path d="M17 45 Q25 42 33 45 M17 51 Q25 48 33 51" stroke="rgba(0,0,0,0.32)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
-          '<path d="M14 16 L10 8 M36 16 L40 8" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>';
+        return '<path d="M17 45 Q25 42 33 45 M17 51 Q25 48 33 51" stroke="rgba(0,0,0,0.32)" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
       case 'spots':
         return ['14,42', '22,46', '30,43', '36,48', '18,54', '28,56', '34,52'].map(function (pt) {
           var xy = pt.split(',');
@@ -1657,6 +1698,8 @@
       // ラグドール。ポイントに長毛のふさふさを重ねる
       case 'points-fluffy':
         return catPattern('points', c, accent) + catPattern('fluffy', c);
+      // 以下、体からわざとはみ出す飾り（耳のポイント・耳の房・長毛のふさふさ）は
+      // outsidePattern が描く。ここには口もとなど、体のなかに収まるぶんだけを残す
       // エキゾチックショートヘアのぺちゃ顔。ほおのふくらみを描く
       case 'flat':
         return '<ellipse cx="16.5" cy="30" rx="5" ry="4.4" fill="#fff" opacity="0.16"/>' +
@@ -1665,36 +1708,32 @@
       case 'sphynx':
         return '<path d="M19 17.5 Q25 15.5 31 17.5 M20 21 Q25 19.5 30 21" stroke="rgba(90,60,55,0.45)" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
           '<path d="M17 38 Q25 41 33 38" stroke="rgba(90,60,55,0.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
-      // シャムのポイント。耳と口もとが濃くなる。濃さの色は毛色ごとに変える
+      // シャムのポイント。ここは口もとだけ（耳は outsidePattern）
       case 'points':
-        var pt = accent || '#5a4030';
-        return '<path d="M12.5 25 L15.5 8 L23.5 20 Z" fill="' + pt + '"/><path d="M37.5 25 L34.5 8 L26.5 20 Z" fill="' + pt + '"/>' +
-          '<ellipse cx="25" cy="32.5" rx="7.5" ry="5.6" fill="' + pt + '" opacity="0.78"/>';
-      // メインクーンのブラック。縞は出さず、房のある耳だけを描く
+        return '<ellipse cx="25" cy="32.5" rx="7.5" ry="5.6" fill="' + (accent || '#5a4030') + '" opacity="0.78"/>';
+      // メインクーンのブラック。縞は出さない（房は earPattern が描く）
       case 'tufted-solid':
-        return '<path d="M14 16 L10 8 M36 16 L40 8" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>';
+        return '';
+      // 長毛のふさふさは体の外へ出るのが姿なので、ここでは何も描かない（outsidePattern が描く）
       case 'fluffy':
-        return '<path d="M9 40 q-4 -2 -3 -7 M8 47 q-4 1 -4 -4 M9 54 q-4 3 -6 0 M41 40 q4 -2 3 -7 M42 47 q4 1 4 -4 M41 54 q4 3 6 0" ' +
-          'stroke="' + c + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+        return '';
       // 茶トラ・キジトラ・サバトラに共通の縞。背中から脇へ流れる細い横縞と、額の「M」
       case 'mackerel':
         return '<path d="M14 41 Q25 38 36 41 M13 47 Q25 44 37 47 M14.5 53 Q25 50.5 35.5 53" ' +
             'stroke="rgba(0,0,0,0.34)" stroke-width="2.3" fill="none" stroke-linecap="round"/>' +
-          '<path d="M19.5 20 L25 13.2 L30.5 20" stroke="rgba(0,0,0,0.42)" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+          // 頂点は線の太さの半分（約1.05）だけ頭の円（上端 y=13）より内側に置く。
+          // 外に出すと切り抜きで先端が平らに欠ける
+          '<path d="M19.5 20 L25 14.2 L30.5 20" stroke="rgba(0,0,0,0.42)" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
           '<path d="M16.5 23 L21 21.4 M33.5 23 L29 21.4" stroke="rgba(0,0,0,0.3)" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
       // ハチワレ。額の真ん中から鼻すじへ白が抜け、口もと・胸もと・あしも白い
       case 'hachiware':
         return '<path d="M25 13.5 L20.6 27 Q25 30.5 29.4 27 Z" fill="#f7f2e8"/>' +
           '<ellipse cx="25" cy="32.6" rx="8" ry="5.6" fill="#f7f2e8"/>' +
-          '<ellipse cx="25" cy="52" rx="9" ry="8.6" fill="#f7f2e8"/>' +
-          '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>' +
-          '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>';
+          '<ellipse cx="25" cy="52" rx="9" ry="8.6" fill="#f7f2e8"/>';   // 白いあしは outsidePattern
       // 茶白。口もと・胸もと・あしが白い
       case 'bicolor':
         return '<ellipse cx="25" cy="32.6" rx="8.5" ry="6" fill="#f7f2e8"/>' +
-          '<ellipse cx="25" cy="52" rx="9.5" ry="8.6" fill="#f7f2e8"/>' +
-          '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>' +
-          '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>';
+          '<ellipse cx="25" cy="52" rx="9.5" ry="8.6" fill="#f7f2e8"/>';   // 白いあしは outsidePattern
       // サビ猫。茶の地に黒がまだらに混ざる
       case 'tortie':
         return ['13,44,5,4', '20.5,40,4.2,3.4', '30,45,5.4,4.4', '35.5,52,4.6,3.6',
@@ -1714,9 +1753,44 @@
         return '';
     }
   }
+  // 体や頭の形から、わざとはみ出させる飾り。ここは切り抜かない。
+  // ・メインクーンの房は耳の先から飛び出しているのが正しい姿
+  // ・シャム系のポイントは耳の先まで濃い（耳は頭の円より上にある）
+  // ・長毛のふさふさは体の輪郭の外へ流れる
+  function pointEars(accent) {
+    var pt = accent || '#5a4030';
+    return '<path d="M12.5 25 L15.5 8 L23.5 20 Z" fill="' + pt + '"/>' +
+      '<path d="M37.5 25 L34.5 8 L26.5 20 Z" fill="' + pt + '"/>';
+  }
+  // 白い前あし。体の楕円より下にあるので、切り抜きに入れると下半分が欠ける。
+  // 形も位置も本体の前あしと同じなので、そのまま重ねて塗り替えるだけでよい
+  function whitePaws() {
+    return '<ellipse cx="16.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>' +
+      '<ellipse cx="33.5" cy="58.5" rx="5" ry="4.2" fill="#f7f2e8" stroke="' + LINE + '" stroke-width="1.8"/>';
+  }
+  function fluffyTufts(c) {
+    return '<path d="M9 40 q-4 -2 -3 -7 M8 47 q-4 1 -4 -4 M9 54 q-4 3 -6 0 ' +
+      'M41 40 q4 -2 3 -7 M42 47 q4 1 4 -4 M41 54 q4 3 6 0" ' +
+      'stroke="' + c + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+  }
+  function outsidePattern(pattern, c, accent) {
+    switch (pattern) {
+      case 'tufted-tabby':
+      case 'tufted-solid':
+        return '<path d="M14 16 L10 8 M36 16 L40 8" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>';
+      case 'bicolor':
+      case 'hachiware':
+      case 'mackerel-bicolor': return whitePaws();
+      case 'points': return pointEars(accent);
+      case 'fluffy': return fluffyTufts(c);
+      case 'points-fluffy': return pointEars(accent) + fluffyTufts(c);
+      default: return '';
+    }
+  }
   function petBody(type, c, pattern, accent, shape, tail) {
     switch (type) {
       case 'cat':
+        var clipId = 'petclip' + (++clipSeq);
         // shape でからだつきを変える。short=短足（マンチカン）、flat=ぺちゃ顔、sphynx=無毛で耳が大きい
         var isShort = shape === 'short', isFlat = shape === 'flat', isSphynx = shape === 'sphynx';
         var ears = (pattern === 'fold')
@@ -1752,7 +1826,15 @@
           // 頭
           '<circle cx="25" cy="26" r="13" fill="' + c + '" stroke="' + LINE + '" stroke-width="2"/>' +
           // 模様は体と頭の両方にかかる（額の縞・シャムの面など）ので、必ず頭を描いたあとに重ねる
-          catPattern(pattern, c, accent) +
+          // 体や頭にのる模様は、体の形からはみ出すことがある（三毛猫のぶち等）。
+          // 体＋頭の形で切り抜いて、必ず内側に収める
+          '<clipPath id="' + clipId + '">' +
+            '<ellipse cx="25" cy="' + bodyCy + '" rx="' + bodyRx + '" ry="' + bodyRy + '"/>' +
+            '<circle cx="25" cy="26" r="13"/>' +
+          '</clipPath>' +
+          '<g clip-path="url(#' + clipId + ')">' + catPattern(pattern, c, accent) + '</g>' +
+          // わざとはみ出させる飾りは切り抜かない
+          outsidePattern(pattern, c, accent) +
           '<ellipse cx="19.5" cy="19.5" rx="4.6" ry="3" fill="#fff" opacity="0.22"/>' +
           // ぺちゃ顔は口もとを横に広く、低く
           '<ellipse cx="25" cy="' + (isFlat ? 32.5 : 31.5) + '" rx="' + (isFlat ? 9 : 7) + '" ry="' + (isFlat ? 4 : 4.6) + '" fill="#fff" opacity="0.26"/>' +
@@ -2069,40 +2151,74 @@
     scratch: { name: 'つめとぎ',       price: 15, use: 'scratch', w: 24, h: 56 },
     bowl:    { name: 'ごはん皿',       price: 20, use: 'eat',     w: 36, h: 16 }
   };
-  // 置き場所。部屋の広さは端末で変わるので、割合で持って描くときに実寸へ直す
-  var FURN_SPOTS = [
-    { key: 'nw', name: '左おく', fx: 0.02, fy: 0.00 },
-    { key: 'ne', name: '右おく', fx: 0.74, fy: 0.00 },
-    { key: 'sw', name: '左まえ', fx: 0.02, fy: 0.58 },
-    { key: 'se', name: '右まえ', fx: 0.74, fy: 0.58 }
-  ];
+  // 置き場所は部屋を区切ったマス目で持つ。部屋の広さは端末で変わるので、
+  // 描くときに今の広さから実寸へ直す。どの端末でも同じ置き方に見える
+  var GRID_COLS = 6, GRID_ROWS = 4;
+  // 前は4か所の決め打ちだった。そのころ置いたものを近いマスへ移しておく
+  var OLD_SPOT_CELL = { nw: [0, 0], ne: [4, 0], sw: [0, 2], se: [4, 2] };
   function isFurnKind(k) { return Object.prototype.hasOwnProperty.call(FURNITURE, k); }
-  function isSpotKey(s) { return FURN_SPOTS.some(function (p) { return p.key === s; }); }
+  function isCellNum(n, max) {
+    return typeof n === 'number' && isFinite(n) && n === Math.floor(n) && n >= 0 && n < max;
+  }
   function furnValid(f) {
     return f && typeof f === 'object' && typeof f.id === 'string' && f.id &&
-      isFurnKind(f.kind) && isRoomKey(f.room) && isSpotKey(f.spot);
+      isFurnKind(f.kind) && isRoomKey(f.room) &&
+      isCellNum(f.col, GRID_COLS) && isCellNum(f.row, GRID_ROWS);
+  }
+  function furnMigrate(f) {
+    if (!f || typeof f !== 'object' || f.col !== undefined) return f;
+    var cell = typeof f.spot === 'string' ? OLD_SPOT_CELL[f.spot] : null;
+    if (!cell) return f;
+    return { id: f.id, kind: f.kind, room: f.room, col: cell[0], row: cell[1] };
   }
   function readFurniture() {
     try {
       var raw = JSON.parse(lsGet('pf:furniture', '[]'));
-      return Array.isArray(raw) ? raw.filter(furnValid) : [];
+      return Array.isArray(raw) ? raw.map(furnMigrate).filter(furnValid) : [];
     } catch (e) { return []; }
   }
   function writeFurniture(arr) { return lsSet('pf:furniture', JSON.stringify(arr)); }
-  // 同じ部屋の同じ置き場所は1つまで（重ねて置けてしまうと何が置いてあるか分からなくなる）
-  function spotTaken(room, spot) {
-    return readFurniture().some(function (f) { return f.room === room && f.spot === spot; });
+  // 1マスにひとつまで（重ねて置けてしまうと何が置いてあるか分からなくなる）。
+  // 動かすときは自分自身のマスを「ふさがっている」と数えない
+  function cellTaken(room, col, row, exceptId) {
+    return readFurniture().some(function (f) {
+      return f.room === room && f.col === col && f.row === row && f.id !== exceptId;
+    });
   }
-  function buyFurniture(kind, room, spot) {
-    if (!isFurnKind(kind) || !isRoomKey(room) || !isSpotKey(spot)) return false;
-    if (spotTaken(room, spot)) return false;
+  function buyFurniture(kind, room, col, row) {
+    if (!isFurnKind(kind) || !isRoomKey(room) || !isCellNum(col, GRID_COLS) || !isCellNum(row, GRID_ROWS)) return false;
+    if (cellTaken(room, col, row, null)) return false;
     var price = FURNITURE[kind].price;
     if (readMileage() < price) return false;
+    var id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     var before = readFurniture();
-    var arr = before.concat([{ id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: kind, room: room, spot: spot }]);
-    if (!writeFurniture(arr)) return false;
-    if (!spendMileage(price)) { writeFurniture(before); return false; }   // 引けなければ置いたぶんも戻す
+    if (!writeFurniture(before.concat([{ id: id, kind: kind, room: room, col: col, row: row }]))) return false;
+    // 同じアプリを2つ開いていると、読んでから書くまでのあいだに向こうが書くことがある。
+    // そうなると後から書いたほうが相手を消してしまうので、書いたあとに読み直して、
+    // 自分のぶんが1つだけ残っていることを確かめてから時間を払う。
+    // 確かめに落ちたら自分のぶんだけ引き上げる（丸ごと戻すと相手の家具まで消してしまう）
+    var after = readFurniture();
+    var mine = after.filter(function (f) { return f.id === id; }).length;
+    var here = after.filter(function (f) { return f.room === room && f.col === col && f.row === row; }).length;
+    if (mine !== 1 || here !== 1) { pullOutFurniture(id); return false; }
+    if (!spendMileage(price)) { pullOutFurniture(id); return false; }     // 引けなければ置いたぶんも戻す
     return true;
+  }
+  function pullOutFurniture(id) {
+    writeFurniture(readFurniture().filter(function (f) { return f.id !== id; }));
+  }
+  // 置いたあとも動かせる。買い直しではないので時間はかからない
+  function moveFurniture(id, room, col, row) {
+    if (!isRoomKey(room) || !isCellNum(col, GRID_COLS) || !isCellNum(row, GRID_ROWS)) return false;
+    if (cellTaken(room, col, row, id)) return false;
+    var arr = readFurniture(), found = false;
+    var out = arr.map(function (f) {
+      if (f.id !== id) return f;
+      found = true;
+      return { id: f.id, kind: f.kind, room: room, col: col, row: row };
+    });
+    if (!found) return false;
+    return writeFurniture(out);
   }
   function removeFurniture(id) {
     var arr = readFurniture();
@@ -2555,7 +2671,8 @@
       el.style.zIndex = String(Math.round(by));   // 手前にいる子ほど上に重ねる
       petsLayer.appendChild(el);
     });
-    renderFurniture(bounds);
+    renderFurniture(bounds, sceneW, sceneH);
+    renderPlaceGrid();
     startPetLife(bounds);
 
     // 家具だけ置いた部屋を「何もありません」と言わない
@@ -2567,23 +2684,35 @@
   }
 
   // ---- 家具を部屋に置く ----
-  // 置き場所は割合で持っているので、描くときに今の部屋の広さから実寸へ直す。
-  // 端末の幅が変わっても同じ位置関係になる
+  // マス目で持っているので、描くときに今の部屋の広さから実寸へ直す。
+  // 端末の幅が変わっても同じ置き方に見える
   var furnPlaced = [];   // { id, kind, use, x, y, w, h }
-  function spotPos(spot, bounds) {
-    var p = FURN_SPOTS.filter(function (s) { return s.key === spot; })[0] || FURN_SPOTS[0];
+  var gridArea = null;   // { left, top, right, bottom, cw, ch }
+  function computeGridArea(bounds, sceneW, sceneH) {
+    var left = 8, right = Math.max(left + 60, sceneW - 8);
+    var top = bounds.top, bottom = Math.max(top + 60, sceneH - 8);
     return {
-      x: bounds.left + p.fx * (bounds.right - bounds.left),
-      y: bounds.top + p.fy * (bounds.bottom - bounds.top)
+      left: left, top: top, right: right, bottom: bottom,
+      cw: (right - left) / GRID_COLS, ch: (bottom - top) / GRID_ROWS
     };
   }
-  function renderFurniture(bounds) {
+  // マスのなかで、横は真ん中・下は床につくように置く。
+  // キャットタワーのような背の高いものはマスからはみ出すので、部屋の外へ出ないよう抑える
+  function cellPos(col, row, def, area) {
+    var x = area.left + (col + 0.5) * area.cw - def.w / 2;
+    var y = area.top + (row + 1) * area.ch - def.h;
+    x = Math.min(Math.max(x, area.left), Math.max(area.left, area.right - def.w));
+    y = Math.min(Math.max(y, 2), Math.max(2, area.bottom - def.h));
+    return { x: x, y: y };
+  }
+  function renderFurniture(bounds, sceneW, sceneH) {
+    gridArea = computeGridArea(bounds, sceneW, sceneH);
     var layer = $('roomFurniture');
     layer.innerHTML = '';
     furnPlaced = [];
     readFurniture().filter(function (f) { return f.room === currentRoom; }).forEach(function (f) {
       var def = FURNITURE[f.kind];
-      var pos = spotPos(f.spot, bounds);
+      var pos = cellPos(f.col, f.row, def, gridArea);
       var el = document.createElement('div');
       el.className = 'room-furn';
       el.dataset.id = f.id;
@@ -2593,12 +2722,8 @@
       el.style.height = def.h + 'px';
       el.style.zIndex = String(Math.round(pos.y + def.h));   // 足もとの高さで前後を決める
       el.innerHTML = furnitureSVG(f.kind);
-      el.title = def.name + '・タップでしまう';
-      el.addEventListener('click', function () {
-        if (!confirm(def.name + 'をしまいますか？（戻すときはまた置き直しになります）')) return;
-        if (removeFurniture(f.id)) { renderHouse(); toast('しまいました'); }
-        else toast('しまえませんでした');
-      });
+      el.title = def.name + '・タップで動かす／しまう';
+      el.addEventListener('click', function () { openFurnMenu(f.id, f.kind); });
       layer.appendChild(el);
       furnPlaced.push({ id: f.id, kind: f.kind, use: def.use, x: pos.x, y: pos.y, w: def.w, h: def.h });
     });
@@ -2962,6 +3087,16 @@
     }
     PET_TYPES.forEach(function (type) {
       var breeds = breedList(type);
+      // まず種類の見出し（猫／のちに犬・鳥…）。そのなかを品種と雑種に分ける
+      var sHead = document.createElement('div');
+      sHead.className = 'grid-head species-head';
+      var sHave = 0, sAll = 0;
+      breeds.forEach(function (b) {
+        sAll += b.colors.length;
+        b.colors.forEach(function (v) { if (owned[type + ':' + v.key]) sHave++; });
+      });
+      sHead.innerHTML = (SPECIES_NAME[type] || '') + ' <b>' + sHave + '/' + sAll + '毛色</b>';
+      grid.appendChild(sHead);
       // 「品種」と「雑種の毛色」はくくり方が違うので、境目に見出しを入れる
       var groups = [
         { label: '品種', items: breeds.filter(function (b) { return b.pedigree; }) },
@@ -3049,7 +3184,7 @@
     renderShopPets(grid);
 
     var fh = document.createElement('div');
-    fh.className = 'grid-head';
+    fh.className = 'grid-head species-head';
     fh.textContent = 'ハウス';
     grid.appendChild(fh);
     PET_TYPES.forEach(function (species) {
@@ -3081,7 +3216,7 @@
     // 家具。ハウスと違って、なかまが自分で使いに行く
     var placed = readFurniture();
     var gh = document.createElement('div');
-    gh.className = 'grid-head';
+    gh.className = 'grid-head species-head';
     gh.textContent = '家具';
     grid.appendChild(gh);
     Object.keys(FURNITURE).forEach(function (kind) {
@@ -3102,50 +3237,100 @@
       btn.className = 'gc-buy';
       btn.textContent = def.price + '分で置く';
       btn.disabled = mileage < def.price;
-      btn.addEventListener('click', function () {
-        openRoomPick(def.name + 'をどの部屋に置きますか？', function (room) {
-          openSpotPick(def, room, function (spot) {
-            if (!buyFurniture(kind, room, spot)) { toast('置けませんでした'); return; }
-            renderShop();
-            renderHouse();
-            toast('置きました');
-          });
-        });
-      });
+      // 部屋えらびは挟まない。おうちに移って、置きたいマスを直にたたく
+      btn.addEventListener('click', function () { startPlacing({ kind: kind }); });
       card.appendChild(btn);
       grid.appendChild(card);
     });
   }
 
-  // ---- 家具の置き場所をえらぶ ----
-  var spotModal = $('spotModal');
-  var spotCallback = null;
-  function openSpotPick(def, room, cb) {
-    var roomName = (ROOMS.filter(function (r) { return r.key === room; })[0] || {}).name || '';
-    $('spotTitle').textContent = def.name + 'をどこに置きますか？';
-    $('spotSub').textContent = roomName + 'のなかの置き場所をえらんでください。';
-    var chips = $('spotChips');
-    chips.innerHTML = '';
-    FURN_SPOTS.forEach(function (s) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      var taken = spotTaken(room, s.key);
-      b.textContent = s.name + (taken ? '（ふさがっています）' : '');
-      b.disabled = taken;
-      if (taken) { b.style.opacity = '0.45'; }
-      b.addEventListener('click', function () {
-        var fn = spotCallback;
-        closeModal(spotModal);
-        spotCallback = null;
-        if (fn) fn(s.key);
-      });
-      chips.appendChild(b);
-    });
-    spotCallback = cb;
-    openModal(spotModal);
+  // ---- 家具をマスに置く ----
+  // { kind } なら新しく置く（このとき時間を払う）、{ id, kind } ならもう置いてあるものを動かす。
+  // どちらもマスをたたくまで確定しない。とりやめれば時間は減らない
+  var placing = null;
+  function startPlacing(p) {
+    placing = p;
+    switchView('house');
+    renderHouse();
   }
-  $('spotCancel').addEventListener('click', function () { closeModal(spotModal); spotCallback = null; });
-  dismissOnBackdrop(spotModal, function () { spotCallback = null; });
+  function stopPlacing() {
+    if (!placing) return;
+    placing = null;
+    renderPlaceGrid();
+  }
+  function renderPlaceGrid() {
+    var layer = $('roomGrid'), bar = $('placeBar');
+    layer.innerHTML = '';
+    if (!placing || !gridArea) { layer.hidden = true; bar.hidden = true; return; }
+    var def = FURNITURE[placing.kind];
+    if (!def) { layer.hidden = true; bar.hidden = true; return; }
+    layer.hidden = false;
+    bar.hidden = false;
+    $('placeBarText').textContent = def.name + 'を置くマスをえらんでください';
+    var area = gridArea;
+    for (var row = 0; row < GRID_ROWS; row++) {
+      for (var col = 0; col < GRID_COLS; col++) {
+        layer.appendChild(buildPlaceCell(col, row, area));
+      }
+    }
+  }
+  function buildPlaceCell(col, row, area) {
+    var taken = cellTaken(currentRoom, col, row, placing.id || null);
+    var cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'rg-cell' + (taken ? ' taken' : '');
+    cell.disabled = taken;
+    cell.style.left = area.left + col * area.cw + 'px';
+    cell.style.top = area.top + row * area.ch + 'px';
+    cell.style.width = area.cw + 'px';
+    cell.style.height = area.ch + 'px';
+    cell.setAttribute('aria-label',
+      '左から' + (col + 1) + '・おくから' + (row + 1) + 'のマス' + (taken ? '（ふさがっています）' : ''));
+    cell.addEventListener('click', function () { commitPlace(col, row); });
+    return cell;
+  }
+  function commitPlace(col, row) {
+    var p = placing;
+    if (!p) return;
+    var moving = !!p.id;
+    var ok = moving ? moveFurniture(p.id, currentRoom, col, row)
+                    : buyFurniture(p.kind, currentRoom, col, row);
+    if (!ok) { toast('置けませんでした'); return; }
+    placing = null;
+    renderShop();
+    renderHouse();
+    toast(moving ? '動かしました' : '置きました');
+  }
+  $('placeCancel').addEventListener('click', stopPlacing);
+
+  // ---- 置いてある家具をどうするか ----
+  var furnModal = $('furnModal');
+  var furnTargetId = null;
+  function openFurnMenu(id, kind) {
+    if (placing) return;   // 置いている最中はマスをたたくのが先
+    furnTargetId = id;
+    $('furnTitle').textContent = (FURNITURE[kind] || {}).name || '家具';
+    openModal(furnModal);
+  }
+  $('furnMove').addEventListener('click', function () {
+    var id = furnTargetId;
+    var f = readFurniture().filter(function (x) { return x.id === id; })[0];
+    closeModal(furnModal);
+    furnTargetId = null;
+    if (!f) { toast('見つかりませんでした'); return; }
+    startPlacing({ id: f.id, kind: f.kind });
+  });
+  $('furnStore').addEventListener('click', function () {
+    var id = furnTargetId;
+    closeModal(furnModal);
+    furnTargetId = null;
+    // しまっても払った時間は戻らない。置き直すだけなら「動かす」で済むと伝える
+    if (!confirm('しまいますか？（払った時間は戻りません。場所を変えるだけなら「動かす」を使ってください）')) return;
+    if (removeFurniture(id)) { renderHouse(); renderShop(); toast('しまいました'); }
+    else toast('しまえませんでした');
+  });
+  $('furnClose').addEventListener('click', function () { closeModal(furnModal); furnTargetId = null; });
+  dismissOnBackdrop(furnModal, function () { furnTargetId = null; });
 
   // ============ モーダルの開閉 ============
   // 開いているシートを覚えておき、集中をはじめるときに全部閉じる
@@ -3172,6 +3357,9 @@
   var RENDERERS = { home: renderHome, record: renderRecord, house: renderHouse, roster: renderRoster, shop: renderShop };
   var currentView = 'home';
   function switchView(name) {
+    // 家具を置いている最中におうちを離れたら、置くのはとりやめ。
+    // 戻ってきたときにマス目だけ残っていると何をしていたのか分からなくなる
+    if (placing && name !== 'house') { placing = null; renderPlaceGrid(); }
     if (!VIEWS[name]) return;
     currentView = name;
     Object.keys(VIEWS).forEach(function (k) {
