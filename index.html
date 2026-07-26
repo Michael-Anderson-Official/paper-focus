@@ -99,7 +99,9 @@
   .icon-btn:active { background: var(--paper-3); color: var(--ink-2); }
 
   /* ============ ビュー切替 ============ */
-  .views { flex: 1; position: relative; min-height: 0; }
+  /* z-index:0 で重なりの土台をつくる。こうしないと、部屋のなかまに付けた
+     大きなz-index（奥行きを出すために座標から決めている）がシートより前に出てしまう */
+  .views { flex: 1; position: relative; min-height: 0; z-index: 0; }
   .view {
     position: absolute; inset: 0;
     overflow-y: auto;
@@ -306,6 +308,37 @@
     border: 1.5px solid var(--edge); border-radius: var(--r-sm);
   }
   .label { font-size: var(--t-sm); color: var(--ink-3); margin: var(--s4) 0 var(--s2); }
+
+  /* ---- なかまの札（タップしたときのシート）---- */
+  .name-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
+  .name-pet { width: 58px; height: 66px; flex: none; }
+  .name-pet svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 2px rgba(60, 45, 25, 0.3)); }
+  .name-head-txt { min-width: 0; }
+  .name-facts {
+    background: var(--paper-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--r-sm);
+    padding: var(--s3);
+    font-size: var(--t-md);
+    line-height: 1.9;
+    color: var(--ink-2);
+  }
+  .name-facts .nf-row { display: flex; justify-content: space-between; gap: var(--s3); }
+  .name-facts .nf-key { color: var(--ink-3); flex: none; }
+  .name-facts .nf-val { text-align: right; }
+  /* 改名はめったにしないので、小さく控えめに置く */
+  .name-edit {
+    display: block; margin: var(--s3) auto 0;
+    padding: 7px 14px;
+    font-size: var(--t-sm);
+    color: var(--ink-3);
+    background: none;
+    border: 1px solid var(--edge);
+    border-radius: var(--r-full);
+    cursor: pointer;
+  }
+  .name-edit:active { background: var(--paper-3); }
+  #nameEditBox { margin-top: var(--s3); }
 
   /* ============ 知らせ ============ */
   .toast {
@@ -1050,6 +1083,34 @@
     0%, 100% { transform: scaleX(-1) translateX(-2px) rotate(5deg); }
     50%      { transform: scaleX(-1) translateX(2px) rotate(-5deg); }
   }
+  /* 勝った子は胸を張ってはずむ */
+  .room-pet.won .rp-fig { animation: petWin 0.5s ease-in-out 2; }
+  .room-pet.flip.won .rp-fig { animation: petWinFlip 0.5s ease-in-out 2; }
+  @keyframes petWin {
+    0%, 100% { transform: translateY(0) scale(1); }
+    40%      { transform: translateY(-9px) scale(1.06); }
+  }
+  @keyframes petWinFlip {
+    0%, 100% { transform: scaleX(-1) translateY(0) scale(1); }
+    40%      { transform: scaleX(-1) translateY(-9px) scale(1.06); }
+  }
+  /* 負けた子はしゅんと縮む */
+  .room-pet.lost .rp-fig { animation: petLose 0.55s ease-out forwards; }
+  .room-pet.flip.lost .rp-fig { animation: petLoseFlip 0.55s ease-out forwards; }
+  @keyframes petLose { to { transform: translateY(4px) scale(0.9); } }
+  @keyframes petLoseFlip { to { transform: scaleX(-1) translateY(4px) scale(0.9); } }
+  /* 勝ち負けのしるし */
+  .room-mark {
+    position: absolute; pointer-events: none;
+    font-size: 13px; font-weight: 700; color: #6b5334;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+    animation: markRise 1.8s ease-out forwards;
+  }
+  @keyframes markRise {
+    0%   { transform: translateY(4px); opacity: 0; }
+    20%  { transform: translateY(-2px); opacity: 1; }
+    100% { transform: translateY(-22px); opacity: 0; }
+  }
   /* けんかのもくもく */
   .room-puff { position: absolute; width: 64px; height: 50px; pointer-events: none; }
   .room-puff svg { width: 100%; height: 100%; display: block; animation: puffShake 0.26s ease-in-out infinite; }
@@ -1334,9 +1395,18 @@
     <!-- ============ 名前をつける ============ -->
     <div class="modal" id="nameModal">
       <div class="sheet">
-        <h2>名前をつける</h2>
-        <p class="sub" id="nameModalSub"></p>
-        <input type="text" id="nameInput" class="text-input" maxlength="12" placeholder="なまえ（空でもOK）">
+        <div class="name-head">
+          <div class="name-pet" id="namePetSlot"></div>
+          <div class="name-head-txt">
+            <h2 id="nameTitle" style="margin:0 0 2px"></h2>
+            <p class="sub" id="nameModalSub" style="margin:0"></p>
+          </div>
+        </div>
+        <div class="name-facts" id="nameFacts"></div>
+        <button type="button" class="name-edit" id="nameEditBtn">✏️ 名前をかえる</button>
+        <div id="nameEditBox">
+          <input type="text" id="nameInput" class="text-input" maxlength="12" placeholder="なまえ（空でもOK）">
+        </div>
         <div class="sheet-btns">
           <button type="button" class="btn-quiet" id="nameCancel">とじる</button>
           <span class="spacer"></span>
@@ -2351,7 +2421,7 @@
       ? (g.paid ? fmtHours(g.paid) + 'で迎えた' : '貯まった時間で迎えた')
       : g.minutes + '分・' + fmtDate(g.completedAt);
     el.title = [g.name, label, detail].filter(Boolean).join(' · ');
-    el.addEventListener('click', function () { openNameModal(g.id, g.name); });
+    el.addEventListener('click', function () { openNameModal(g); });
     return el;
   }
   // ハウスを部屋の奥に並べる。棚のカードではなく、部屋に置いてあるものとして見せる
@@ -2628,14 +2698,59 @@
         a.classList.remove('squabbling');
         b.classList.remove('squabbling');
         done();
-        // 気まずそうに、それぞれ反対の方へ離れていく
-        if (alive(a, ga)) moveTo(a, ga, mx - 78, my + 14, function () { petAct(a, ga); });
-        if (alive(b, gb)) moveTo(b, gb, mx + 78, my - 14, function () { petAct(b, gb); });
+        // 決着は3通り。どちらかが勝つか、引き分け
+        var roll = Math.random();
+        if (roll < 0.36) settle(a, ga, b, gb, mx, my);
+        else if (roll < 0.72) settle(b, gb, a, ga, mx, my);
+        else drawGame(a, ga, b, gb, mx, my);
       }, 2200 + Math.random() * 900);
     }
     // 向かい合わせに立たせる
     moveTo(a, ga, mx - 30, my, onArrive);
     moveTo(b, gb, mx + 30, my, onArrive);
+  }
+
+  // 頭の上に出す小さなしるし
+  function showMark(el, text) {
+    var m = document.createElement('div');
+    m.className = 'room-mark';
+    m.textContent = text;
+    m.style.left = ((parseFloat(el.style.left) || 0) + 22) + 'px';
+    m.style.top = ((parseFloat(el.style.top) || 0) - 8) + 'px';
+    m.style.zIndex = String(Math.round(parseFloat(el.style.top) || 0) + 3);
+    $('roomPets').appendChild(m);
+    later(function () { m.remove(); }, 1900);
+  }
+  // 決着がついた場合。勝った子は胸を張ってその場に残り、負けた子はしゅんとして離れる
+  function settle(win, gw, lose, gl, mx, my) {
+    if (alive(win, gw)) {
+      win.classList.add('won');
+      showMark(win, '♪');
+      later(function () {
+        win.classList.remove('won');
+        if (alive(win, gw)) petAct(win, gw);
+      }, 1100);
+    }
+    if (alive(lose, gl)) {
+      lose.classList.add('lost');
+      showMark(lose, '…');
+      // しゅんとしたあと、少し離れたところへ足早に逃げる
+      later(function () {
+        lose.classList.remove('lost');
+        if (!alive(lose, gl)) return;
+        var away = (parseFloat(lose.style.left) || 0) < mx ? -100 : 100;
+        moveTo(lose, gl, mx + away, my + 20, function () { petAct(lose, gl); }, 46);
+      }, 900);
+    }
+  }
+  // 引き分け。どちらもそっぽを向いて、反対の方へ離れていく
+  function drawGame(a, ga, b, gb, mx, my) {
+    if (alive(a, ga)) showMark(a, 'ふん');
+    if (alive(b, gb)) showMark(b, 'ふん');
+    later(function () {
+      if (alive(a, ga)) moveTo(a, ga, mx - 82, my + 14, function () { petAct(a, ga); });
+      if (alive(b, gb)) moveTo(b, gb, mx + 82, my - 14, function () { petAct(b, gb); });
+    }, 700);
   }
   // 見ていない画面で動かし続けても意味がないので、おうち以外に移ったら止める
   function petLifeShouldRun() { return currentView === 'house' && !document.hidden; }
@@ -2694,13 +2809,13 @@
   }
 
   // 指定の場所まで歩いて、着いたら done を呼ぶ
-  function moveTo(el, gen, tx, ty, done) {
+  function moveTo(el, gen, tx, ty, done, speed) {
     var b = lifeBounds;
     tx = Math.min(b.right, Math.max(b.left, tx));
     ty = Math.min(b.bottom + 40, Math.max(b.top - 40, ty));   // 家具の上に乗るぶんは範囲より少し外へ出てよい
     var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
     var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
-    var ms = Math.max(400, Math.round(dist / WALK_SPEED * 1000));
+    var ms = Math.max(300, Math.round(dist / (speed || WALK_SPEED) * 1000));
     el.style.setProperty('--walk-ms', ms + 'ms');
     el.classList.toggle('flip', tx < x0);
     el.classList.add('walking');
@@ -3455,13 +3570,42 @@
   // ============ 名前をつける ============
   var nameModal = $('nameModal');
   var namingId = null;
-  function openNameModal(id, currentName) {
-    namingId = id;
-    $('nameModalSub').textContent = currentName ? '今の名前: ' + currentName : 'まだ名前がありません';
-    $('nameInput').value = currentName || '';
-    openModal(nameModal);
-    setTimeout(function () { $('nameInput').focus(); }, 260);
+  // 日時を「7月26日 12:13」の形に
+  function fmtWhen(ms) {
+    var d = new Date(ms);
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' +
+      String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   }
+  function fact(key, val) {
+    return '<div class="nf-row"><span class="nf-key">' + key + '</span><span class="nf-val">' + val + '</span></div>';
+  }
+  // 名前があるときは編集ボタンだけ見せる。改名はめったにしないので前に出さない
+  function setNameEditing(on, currentName) {
+    $('nameEditBox').style.display = on ? '' : 'none';
+    $('nameSave').style.display = on ? '' : 'none';
+    $('nameEditBtn').style.display = on ? 'none' : '';
+    if (on) {
+      $('nameInput').value = currentName || '';
+      setTimeout(function () { $('nameInput').focus(); }, 60);
+    }
+  }
+  function openNameModal(g) {
+    namingId = g.id;
+    fillPet($('namePetSlot'), g.type, g.key, 1);
+    $('nameTitle').textContent = g.name || 'この子';
+    $('nameModalSub').textContent = petLabel(g.type, g.key);
+    var rows = fact('なかまになった日', fmtWhen(g.completedAt));
+    rows += (g.source === 'shop')
+      ? fact('迎えかた', g.paid ? fmtHours(g.paid) + 'の貯まった時間' : '貯まった時間')
+      : fact('いっしょにいた時間', g.minutes + '分');
+    $('nameFacts').innerHTML = rows;
+    setNameEditing(!g.name, g.name);   // まだ名前がないときは、そのまま入力できるようにする
+    openModal(nameModal);
+  }
+  $('nameEditBtn').addEventListener('click', function () {
+    var g = readGarden().filter(function (x) { return x.id === namingId; })[0];
+    setNameEditing(true, g ? g.name : '');
+  });
   function closeName() { closeModal(nameModal); namingId = null; }
   $('nameCancel').addEventListener('click', closeName);
   dismissOnBackdrop(nameModal, function () { namingId = null; });
