@@ -182,7 +182,7 @@
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   }
-  .dial-pet { width: 62px; height: 76px; }
+  .dial-pet { width: 68px; height: 84px; }
   .dial-pet svg { width: 100%; height: 100%; transform: none; filter: drop-shadow(0 3px 4px rgba(60, 45, 25, 0.18)); }
   .dial-pet.empty {
     display: grid; place-items: center;
@@ -323,7 +323,7 @@
 
   /* ---- なかまの札（タップしたときのシート）---- */
   .name-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
-  .name-pet { width: 58px; height: 66px; flex: none; }
+  .name-pet { width: 64px; height: 73px; flex: none; }
   .name-pet svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 2px rgba(60, 45, 25, 0.3)); }
   .name-head-txt { min-width: 0; }
   .name-facts {
@@ -533,7 +533,7 @@
     border-bottom: 1px solid var(--edge);
   }
   .log-row:last-child { border-bottom: none; }
-  .log-row .lr-pet { width: 30px; height: 34px; flex: none; }
+  .log-row .lr-pet { width: 33px; height: 37px; flex: none; }
   .log-row .lr-pet svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.3)); }
   .log-row .lr-main { flex: 1; min-width: 0; }
   .log-row .lr-name { font-size: var(--t-md); color: var(--ink); font-weight: 600; }
@@ -555,7 +555,7 @@
     display: flex; flex-direction: column; align-items: center; gap: 2px;
   }
   /* 白っぽい毛色（三毛猫・ペルシャなど）は紙の地に溶けてしまうので、うすい影で輪郭を出す */
-  .g-card svg { width: 54px; height: 60px; filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.34)); }
+  .g-card svg { width: 59px; height: 66px; filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.34)); }
   .g-card.locked svg { filter: grayscale(1) brightness(0.86); opacity: 0.42; }
   /* 毛色をえらぶシートでは、まだ迎えていない子も本当の色で見せる（見比べて選ぶ場所なので） */
   #colorGrid .g-card.locked svg { filter: drop-shadow(0 1px 1.5px rgba(60, 45, 25, 0.34)); opacity: 0.92; }
@@ -1061,7 +1061,7 @@
     transition: left var(--walk-ms, 1200ms) linear, top var(--walk-ms, 1200ms) linear;
   }
   .room-pet .rp-fig {
-    display: block; width: 52px; height: 52px; margin: 0 auto;
+    display: block; width: 57px; height: 57px; margin: 0 auto;
     animation: petBreathe 2.6s ease-in-out infinite;
     animation-delay: var(--pet-delay, 0s);
   }
@@ -1139,7 +1139,7 @@
     50%      { transform: translateY(4px) scaleY(0.94); }
   }
   .tail {
-    transform-box: view-box; transform-origin: 37px 54px;
+    transform-box: view-box; transform-origin: 38px 55px;   /* 枠に余白を足したぶん(+1,+1)ずらす */
     animation: tailSway 1.7s ease-in-out infinite;
     animation-delay: var(--pet-delay, 0s);
   }
@@ -1787,7 +1787,9 @@
   function petSVG(type, key) {
     var v = petVariant(type, key) || { color: '#c9b8a0', pattern: 'solid' };
     var fy = FACE_Y[type] || 26;
-    return '<svg viewBox="0 0 50 62" xmlns="http://www.w3.org/2000/svg">' +
+    // 描く範囲は 0〜50 / 0〜62 だが、しっぽの輪郭（太い線）や前あし、ひげが
+    // そのすぐ外まで出る。切れないよう、まわりに余白をとった枠にする
+    return '<svg viewBox="-1 -1 55 66" xmlns="http://www.w3.org/2000/svg">' +
       '<text class="pet-zzz" x="31" y="' + (fy - 16) + '" font-size="10" fill="#8a8d99">Zzz</text>' +
       '<g class="pet-body">' + petBody(type, v.color, v.pattern, v.accent, v.shape, v.tail) + '</g>' +
       // 眠っているあいだの閉じた目。のっぺらぼうに見えないよう、起きた目と入れ替える
