@@ -752,7 +752,7 @@
     background: #26324e;
   }
   /* 部屋ごとに家具とぶつからない場所へ置く */
-  .room-scene.room-living .room-window { right: 22px; }
+  .room-scene.room-living .room-window { right: calc(var(--bi) + 18px); }
   .room-scene.room-kitchen .room-window { left: 50%; margin-left: -40px; }
   .room-scene.room-bedroom .room-window { left: 50%; margin-left: -40px; }
 
@@ -939,7 +939,7 @@
        上下左右の移動と同じ速さで大きさも変えないと、歩きながら伸び縮みして見える */
     transform-origin: 50% 57px;
     transition: left var(--walk-ms, 1200ms) linear, top var(--walk-ms, 1200ms) linear,
-                transform var(--walk-ms, 1200ms) linear;
+                transform var(--walk-ms, 1200ms) linear, opacity 0.2s linear;
   }
   .room-pet .rp-fig {
     display: block; width: 57px; height: 57px; margin: 0 auto;
@@ -954,6 +954,8 @@
   .room-pet:active .rp-fig { animation: none; transform: scale(0.94); }
   .room-pet.flip:active .rp-fig { transform: scaleX(-1) scale(0.94); }
   .room-pet svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px rgba(60, 45, 25, 0.25)); }
+  /* 箱のなかに入っているあいだは、名前が箱の絵にかぶるので出さない */
+  .room-pet.nesting .pc-name, .room-pet.nesting .pc-breed { visibility: hidden; }
   .room-pet .pc-name { font-size: 10px; color: #6b4a20; font-weight: 700; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); line-height: 1.2; }
   .room-pet .pc-breed { font-size: 8px; color: #7a6a4a; line-height: 1.2; }
   @keyframes petBreathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.02); } }
@@ -2269,7 +2271,16 @@
   // use があるものは なかまが自分で使いに行く。無いものは置いて眺めるだけの飾り。
   // group はお店での並び。部屋ごとの決まりは無く、どれをどの部屋に置いてもよい
   var FURNITURE = {
-    tower:     { name: 'キャットタワー',   price: 30, use: 'climb',   w: 52,  h: 150, group: 'なかまの道具' },
+    // perch は休める場所。fy は「絵の上から何割の高さに足をつくか」。
+    // shrink があるところは、なかがくぼんでいて そこへ入りこむ場所（奥まるので小さく見える）。
+    // キャットタワーは てっぺんの見晴らし台と、真ん中の箱のなかの2か所
+    // 休める場所は2つ。てっぺんの見晴らし台と、真ん中の丸い穴のなか。
+    // 穴のほうは、なかへ入って顔だけをのぞかせる（face に穴の位置と大きさを割合で書く）
+    tower:     { name: 'キャットタワー',   price: 30, use: 'climb',   w: 52,  h: 150,
+                 perch: [{ fy: 0.147 },
+                          // from は、穴へ入る前に立つ高さ（箱の下の踏み台）
+                          { face: { fx: 0.5, fy: 0.4333, fr: 0.2115, from: 0.587 } }],
+                 group: 'なかまの道具' },
     cushion:   { name: 'クッション',       price: 15, use: 'sleep',   w: 46,  h: 22, group: 'なかまの道具' },
     scratch:   { name: 'つめとぎ',         price: 15, use: 'scratch', w: 24,  h: 56, group: 'なかまの道具' },
     bowl:      { name: 'ごはん皿',         price: 20, use: 'eat',     w: 36,  h: 16, group: 'なかまの道具' },
@@ -2278,13 +2289,16 @@
     plant:     { name: '観葉植物',         price: 10, use: null,      w: 34,  h: 60, group: 'へやの家具' },
     vase:      { name: '花びん',           price: 8,  use: null,      w: 26,  h: 44, group: 'へやの家具' },
     lamp:      { name: 'スタンドライト',   price: 10, use: null,      w: 22,  h: 32, group: 'へやの家具' },
-    counter:   { name: 'キッチン台',       price: 22, use: 'climb',   w: 86,  h: 60, group: 'へやの家具' },
+    counter:   { name: 'キッチン台',       price: 22, use: 'climb',   w: 86,  h: 60,
+                 perch: [{ fy: 0.13 }], group: 'へやの家具' },
     shelf:     { name: '食器だな',         price: 12, use: null,      w: 80,  h: 34, group: 'へやの家具' },
     fridge:    { name: '冷蔵庫',           price: 25, use: null,      w: 46,  h: 124, group: 'へやの家具' },
     bed:       { name: 'ベッド',           price: 25, use: 'sleep',   w: 88,  h: 70, group: 'へやの家具' },
     nightstand:{ name: 'ナイトテーブル',   price: 10, use: null,      w: 30,  h: 30, group: 'へやの家具' },
-    wardrobe:  { name: 'クローゼット',     price: 25, use: 'climb',   w: 54,  h: 140, group: 'へやの家具' },
-    shoebox:   { name: 'くつばこ',         price: 18, use: 'climb',   w: 68,  h: 74, group: 'へやの家具' },
+    wardrobe:  { name: 'クローゼット',     price: 25, use: 'climb',   w: 54,  h: 140,
+                 perch: [{ fy: 0.03 }], group: 'へやの家具' },
+    shoebox:   { name: 'くつばこ',         price: 18, use: 'climb',   w: 68,  h: 74,
+                 perch: [{ fy: 0.05 }], group: 'へやの家具' },
     umbrella:  { name: 'かさ立て',         price: 8,  use: null,      w: 26,  h: 54, group: 'へやの家具' },
     doormat:   { name: '玄関マット',       price: 8,  use: 'sleep',   w: 76,  h: 26, group: 'へやの家具' }
   };
@@ -2487,16 +2501,18 @@
     if (kind === 'tower') {
       return '<svg viewBox="0 0 52 150" xmlns="http://www.w3.org/2000/svg">' +
         // 土台
-        '<rect x="6" y="134" width="40" height="12" rx="3" fill="#c9a876"' + ' stroke="' + L + '" stroke-width="2"/>' +
-        // 下の柱と段（この段は爪とぎの巻き柱）
+        '<rect x="6" y="134" width="40" height="12" rx="3" fill="#c9a876" stroke="' + L + '" stroke-width="2"/>' +
+        // 下の柱。ここは爪とぎの巻き柱になっている
         '<rect x="21" y="98" width="10" height="38" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
         '<path d="M22 102 h8 M22 108 h8 M22 114 h8 M22 120 h8 M22 126 h8 M22 132 h8" ' +
           'stroke="rgba(63,52,44,0.3)" stroke-width="1.4" stroke-linecap="round"/>' +
+        // 途中の踏み台
         '<rect x="4" y="88" width="44" height="12" rx="3" fill="#d9b98a" stroke="' + L + '" stroke-width="2"/>' +
-        // 中の柱と、くぐれる箱
+        // 中の柱と、丸い穴のあいた箱。この穴からなかへ入って顔をのぞかせる
         '<rect x="21" y="62" width="10" height="28" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
         '<rect x="6" y="50" width="40" height="30" rx="4" fill="#e0c091" stroke="' + L + '" stroke-width="2"/>' +
-        '<circle cx="26" cy="65" r="9" fill="#41352b" stroke="' + L + '" stroke-width="1.6"/>' +
+        '<circle cx="26" cy="65" r="11" fill="#3b2f24" stroke="' + L + '" stroke-width="1.6"/>' +
+        '<circle cx="26" cy="66.5" r="8.5" fill="#000" opacity="0.22"/>' +
         // 上の柱と、いちばん上の見晴らし台
         '<rect x="21" y="26" width="10" height="26" fill="#b08f66" stroke="' + L + '" stroke-width="2"/>' +
         '<ellipse cx="26" cy="22" rx="19" ry="9" fill="#e6cba0" stroke="' + L + '" stroke-width="2"/>' +
@@ -2859,6 +2875,30 @@
   }
 
   var PET_FOOT = 57;   // なかまの絵の高さ。足もとの位置を出すのに使う
+  // 絵のなかで顔がどこにあるか（.rp-fig のなかの位置。単位はpx）。
+  // 穴からのぞかせるとき、この丸を穴にぴたりと重ねる
+  var FACE_CX = 27.2, FACE_CY = 24, FACE_R = 14;
+  // 顔だけを穴に見せる。まわりは切り抜いて隠すので、体は穴の奥にあるように見える
+  // 位置と大きさを、動きをつけずにその場で入れ替える
+  function snapTo(el, left, top, scale, z) {
+    el.style.setProperty('--walk-ms', '0ms');
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.transform = 'scale(' + scale.toFixed(3) + ')';
+    el.style.zIndex = String(z);
+  }
+  function showFaceInHole(el, f, face) {
+    var hx = f.x + f.w * face.fx, hy = f.y + f.h * face.fy, hr = f.w * face.fr;
+    // 穴いっぱいにすると、顔を押しつけているように見える。
+    // 少し小さくして、まわりに暗いふちを残すと「奥からのぞいている」ように見える
+    var k = hr * 0.82 / FACE_R;
+    // 縮める中心は足もと(50%, 57px)。そこからの見え方で左上を逆算する
+    snapTo(el, hx - 29 - (FACE_CX - 29) * k, hy - 57 - (FACE_CY - 57) * k, k, f.z + 1);
+    el.style.clipPath = 'circle(' + FACE_R + 'px at ' + FACE_CX + 'px ' + FACE_CY + 'px)';
+  }
+  function clearFaceInHole(el) {
+    el.style.clipPath = '';
+  }
   // 足もと(x, y)を床の点に合わせて置く。奥ほど小さく見えるように縮める
   function placePet(el, x, y, sp) {
     var sc = floorScale(sp, tFromY(sp, y));
@@ -3046,7 +3086,8 @@
       layer.appendChild(el);
       // なかまが使いに行く先は、画面に出ている大きさで持つ（奥のものは小さい）
       furnPlaced.push({
-        id: f.id, kind: f.kind, use: def.use, x: box.x, y: box.y, w: box.w, h: box.h,
+        id: f.id, kind: f.kind, use: def.use, perch: def.perch || [{ fy: 0.06 }],
+        x: box.x, y: box.y, w: box.w, h: box.h,
         // 登ったなかまは、この家具と同じ奥ゆきにいる。大きさと重なり順はここから取る
         scale: a.scale, z: Math.round(a.y)
       });
@@ -3086,7 +3127,8 @@
   var lifeTimers = [];
   var lifeBounds = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var WALK_SPEED = 26;   // 1秒あたりに進むピクセル。ゆっくり歩かせる
+  var WALK_SPEED = 26;    // 1秒あたりに進むピクセル。ゆっくり歩かせる
+  var CLIMB_SPEED = 16;   // 登り降りは歩くより遅い
 
   function stopPetLife() {
     lifeTimers.forEach(clearTimeout);
@@ -3279,15 +3321,78 @@
       if (furnBusy[f.id] === el.dataset.id) delete furnBusy[f.id];
       delete petBusy[el.dataset.id];
     }
-    // 登るものは上に乗り、それ以外は足もとへ行く
     var tx = f.x + f.w / 2 - 29;                       // なかまの絵は幅58pxなので中心を合わせる
-    var ty = (f.use === 'climb') ? f.y - 34 : f.y + f.h - 44;
     // 家具の上にいても、その子は家具と同じ奥ゆきにいる。
     // 乗った高さから大きさを出すと急に縮み、重なり順も家具の後ろへ回ってしまう
     var perch = { scale: f.scale, z: f.z + 1 };
-    moveTo(el, gen, tx, ty, function () {
-      if (!alive(el, gen) || !petLifeShouldRun()) { release(); later(function () { petAct(el, gen); }, 1500); return; }
+    function giveUp() { release(); later(function () { petAct(el, gen); }, 1500); }
+    function sleepThen(after) {
       var svg = el.querySelector('svg');
+      paintPet(svg, 0);   // 目を閉じてZzzを出す
+      later(function () {
+        paintPet(svg, 1);
+        after();
+      }, 7000 + Math.random() * 9000);
+    }
+    // 登るものは、まず足もとまで歩いてから、まっすぐ上へ登る。
+    // いきなり上をめざすと、空を斜めに滑っていくように見えてしまう
+    if (f.use === 'climb') {
+      var baseY = f.y + f.h - PET_FOOT;                 // 家具のすぐ前、床の上
+      var spots = f.perch || [{ fy: 0.06 }];
+      var spot = spots[Math.floor(Math.random() * spots.length)];
+      var perchY = f.y + f.h * spot.fy - PET_FOOT;
+      // 穴のなかで休む子は、まず穴の高さまで登り、そこから なかへ入る
+      var toY = spot.face ? (f.y + f.h * spot.face.from - PET_FOOT) : perchY;
+      moveTo(el, gen, tx, baseY, function () {
+        if (!alive(el, gen) || !petLifeShouldRun()) { giveUp(); return; }
+        moveTo(el, gen, tx, toY, function () {
+          if (!alive(el, gen) || !petLifeShouldRun()) { giveUp(); return; }
+          if (!spot.face) { restHere(); return; }
+          // 穴へもぐりこむ。いちど姿を消してから、顔だけを穴にのぞかせる
+          el.classList.add('nesting');
+          el.style.opacity = '0';
+          later(function () {
+            if (!alive(el, gen)) { el.style.opacity = ''; el.classList.remove('nesting'); release(); return; }
+            showFaceInHole(el, f, spot.face);
+            el.style.opacity = '';
+            restHere();
+          }, 240);
+        }, CLIMB_SPEED, perch);
+      });
+      function restHere() {
+        sleepThen(function () {
+          if (!alive(el, gen)) {
+            clearFaceInHole(el); el.style.opacity = ''; el.classList.remove('nesting'); release(); return;
+          }
+          if (spot.face) {
+            // 穴から出る。こちらもいちど姿を消してから、棚の上に戻る
+            el.style.opacity = '0';
+            later(function () {
+              clearFaceInHole(el);
+              el.classList.remove('nesting');
+              el.style.opacity = '';
+              if (!alive(el, gen)) { release(); return; }
+              climbDown();
+            }, 240);
+            // 消えている間に、穴の前へ位置を戻しておく
+            later(function () { snapTo(el, tx, toY, perch.scale, perch.z); }, 200);
+            return;
+          }
+          climbDown();
+        });
+      }
+      function climbDown() {
+        // 降りるときも、飛びおりずに足もとまで戻ってから歩き出す
+        moveTo(el, gen, tx, baseY, function () {
+          release();
+          later(function () { petAct(el, gen); }, 600 + Math.random() * 1200);
+        }, CLIMB_SPEED, perch);
+      }
+      return;
+    }
+    // 登らないものは足もとへ行って使う
+    moveTo(el, gen, tx, f.y + f.h - 44, function () {
+      if (!alive(el, gen) || !petLifeShouldRun()) { giveUp(); return; }
       if (f.use === 'scratch' || f.use === 'eat') {
         var cls = (f.use === 'scratch') ? 'scratching' : 'eating';
         el.classList.add(cls);
@@ -3297,13 +3402,11 @@
           later(function () { petAct(el, gen); }, 600);
         }, 2600 + Math.random() * 1500);
       } else {
-        // キャットタワーの上、クッションの上では丸くなって眠る
-        paintPet(svg, 0);
-        later(function () {
-          paintPet(svg, 1);
+        // クッションやソファの上では丸くなって眠る
+        sleepThen(function () {
           release();
           later(function () { petAct(el, gen); }, 800 + Math.random() * 1500);
-        }, 7000 + Math.random() * 9000);
+        });
       }
     }, null, perch);
   }
@@ -3321,9 +3424,13 @@
   // 指定の場所まで歩いて、着いたら done を呼ぶ
   // perch を渡すと、大きさと重なり順をそこから取る（家具の上に乗るとき）
   function moveTo(el, gen, tx, ty, done, speed, perch) {
-    var g = settleTarget(tx, ty, lifeBounds);
+    // 家具の上をめざすときは床へ引きもどさない。
+    // 引きもどすと、背の高い家具のてっぺんまで登れなくなる
+    var g = perch
+      ? { x: tx, y: ty, scale: perch.scale }
+      : settleTarget(tx, ty, lifeBounds);
     tx = g.x; ty = g.y;
-    el.style.transform = 'scale(' + ((perch && perch.scale) || g.scale).toFixed(3) + ')';
+    el.style.transform = 'scale(' + g.scale.toFixed(3) + ')';
     var x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
     var dist = Math.sqrt((tx - x0) * (tx - x0) + (ty - y0) * (ty - y0));
     var ms = Math.max(300, Math.round(dist / (speed || WALK_SPEED) * 1000));
