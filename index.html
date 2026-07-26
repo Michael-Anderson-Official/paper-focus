@@ -589,6 +589,16 @@
   .species-head:first-child { margin-top: 0; }
   .species-head::after { display: none; }
   .species-head + .grid-head { margin-top: 10px; }
+  /* お店の案内文。なぜ迎えられないのかを、品ぞろえの前に伝える */
+  .grid-note {
+    grid-column: 1 / -1; margin: 6px 0 0;
+    font-size: var(--t-sm); color: var(--ink-3); line-height: 1.6;
+  }
+  .grid-note.warn {
+    color: #8a5a3c; background: rgba(190, 130, 90, 0.1);
+    border: 1px solid rgba(190, 130, 90, 0.28); border-radius: var(--r-sm);
+    padding: 8px 10px;
+  }
   .grid-head::after {
     content: ''; flex: 1; height: 1px; background: var(--edge);
   }
@@ -1302,7 +1312,7 @@
           <button type="button" data-goal="120">120分</button>
         </div>
         <div class="label">あそびかた</div>
-        <p class="sub" style="margin-bottom:var(--s4)">時間を決めて集中をはじめると、なかまが1匹あらわれて そばで待っています。その時間ずっとこの画面から離れずにいると、集中した分だけ時間が貯まります。貯まった時間で「お店」から好きななかまを迎え、ハウスや家具を置いて おうちをつくっていきます。</p>
+        <p class="sub" style="margin-bottom:var(--s4)">時間を決めて集中をはじめると、なかまが1匹あらわれて そばで待っています。その時間ずっとこの画面から離れずにいると、集中した分だけ時間が貯まります。貯まった時間で「お店」からハウスを置き、そこへ好きななかまを迎えます。なかまはハウスに空きがないと迎えられません。家具も置いて、おうちをつくっていきます。</p>
         <div class="label">ひかえ（バックアップ）</div>
         <p class="sub" id="backupStatus" style="margin-bottom:var(--s2)"></p>
         <div style="display:flex;flex-direction:column;gap:var(--s2)">
@@ -1416,7 +1426,7 @@
           <p style="margin:0 0 10px">① 集中したい時間を決めます。</p>
           <p style="margin:0 0 10px">② なかまが1匹あらわれ、眠ったまま そばで待っています。</p>
           <p style="margin:0 0 10px">③ その時間ずっと画面から離れずにいると、集中した時間がそのまま貯まります。</p>
-          <p style="margin:0 0 10px">④ 貯まった時間で、「お店」から好きななかまを迎えます。ハウスや家具も置けます。</p>
+          <p style="margin:0 0 10px">④ 貯まった時間で、「お店」からハウスを置き、そこへ好きななかまを迎えます。家具も置けます。</p>
           <p style="margin:0;color:var(--ink-3);font-size:var(--t-sm)">ほかのアプリに移ったり画面をロックすると、その回はおしまいです。ただし、うっかり離れてもすぐ（10秒以内に）戻れば続けられます。離れていたぶんの時間は数えません。これまでの記録が消えることはありません。</p>
         </div>
         <div class="sheet-btns">
@@ -2000,15 +2010,25 @@
   }
   // 「なかまを増やす」と「時間を引く」は別々の保存になるため、片方だけ成功する事故がありうる。
   // 先に増やして、引くのに失敗したら増やしたぶんを取り消す（残高が減らないまま品物だけ増えるのを防ぐ）
+  // その種類のハウスに、あと何匹入れるか。
+  // 迎えたのに住むところが無い、という状態を作らないために使う
+  function freeHouseSlots(species) {
+    var houses = readHouses();
+    var mine = houses.filter(function (h) { return h.species === species; });
+    if (!mine.length) return 0;
+    var occ = assignPetsToHouses(readGarden(), houses).occupants;
+    var free = 0;
+    mine.forEach(function (h) { free += Math.max(0, h.cap - (occ[h.id] || []).length); });
+    return free;
+  }
   function buyPet(type, key) {
     var price = petPrice(type, key);
     if (readMileage() < price) return false;
+    if (freeHouseSlots(type) <= 0) return false;   // 住むところが無いうちは迎えられない
     var before = readGarden();
     var rec = addToGarden(0, { type: type, key: key }, 'shop', price);
     if (!rec) return null;
     if (!spendMileage(price)) { writeGarden(before); return null; }
-    // 1匹目を迎えたときだけ、その子に合ったハウスを1つ贈る
-    if (!before.length) grantFirstHouse(rec);
     return rec;
   }
 
@@ -2204,17 +2224,6 @@
       return { id: x.id, species: x.species, room: x.room, col: x.col, row: x.row, cap: cap, no: x.no };
     });
     writeHouses(arr);
-  }
-  // はじめて なかまを迎えたときに、その子に合ったハウスを1つだけ贈る。
-  // まだ1匹もいないうちに配ると、当たらなかった種類のハウスがずっと空のままに
-  // なってしまうので、1匹目が決まってから渡す
-  function grantFirstHouse(pet) {
-    if (lsGet('pf:gift', '')) return false;   // 贈るのは1回きり
-    if (readHouses().length) { lsSet('pf:gift', '1'); return false; }
-    var arr = [newHouse(pet.type, 'living', 2, 1)];
-    if (!writeHouses(arr)) return false;
-    lsSet('pf:gift', '1');
-    return true;
   }
   function moveHouse(id, room, col, row) {
     if (!isRoomKey(room) || !isCellNum(col, GRID_COLS) || !isCellNum(row, GRID_ROWS)) return false;
@@ -3564,8 +3573,10 @@
       var buyBtn = document.createElement('button');
       buyBtn.type = 'button';
       buyBtn.className = 'gc-buy';
-      buyBtn.textContent = fmtHours(price) + 'で迎える';
-      buyBtn.disabled = mileage < price;
+      // 住むところが無いうちは迎えられない。値段より先に、その理由を出す
+      var noRoom = freeHouseSlots(type) <= 0;
+      buyBtn.textContent = noRoom ? 'ハウスに空きなし' : fmtHours(price) + 'で迎える';
+      buyBtn.disabled = noRoom || mileage < price;
       buyBtn.addEventListener('click', function () {
         var got = buyPet(type, v.key);
         if (!got) { toast('迎えられませんでした'); return; }
@@ -3611,6 +3622,18 @@
       });
       sHead.innerHTML = (SPECIES_NAME[type] || '') + ' <b>' + sHave + '/' + sAll + '毛色</b>';
       grid.appendChild(sHead);
+      // お店では、住むところが無いと迎えられない。なぜ押せないのかを先に伝える
+      if (canBuy) {
+        var slots = freeHouseSlots(type);
+        var note = document.createElement('div');
+        note.className = 'grid-note';
+        note.textContent = slots > 0
+          ? (SPECIES_NAME[type] || '') + 'ハウスの空き ' + slots + '匹ぶん'
+          : 'ハウスに空きがありません。先に「' + ((HOUSE_TYPES[type] || {}).name || 'ハウス') +
+            '」を置くか、いま置いてあるハウスを広げてください。';
+        if (slots <= 0) note.classList.add('warn');
+        grid.appendChild(note);
+      }
       // 「品種」と「雑種の毛色」はくくり方が違うので、境目に見出しを入れる
       var groups = [
         { label: '品種', items: breeds.filter(function (b) { return b.pedigree; }) },
@@ -3694,9 +3717,8 @@
     var grid = $('shopGrid');
     grid.innerHTML = '';
 
-    // なかま（品種ごと。毛色が何色もある品種はたたいて選ぶ）
-    renderShopPets(grid);
-
+    // ハウスを先に出す。なかまはハウスに空きがないと迎えられないので、
+    // 先に猫を並べると、はじめての人が押せないカードを何枚もめくることになる
     var fh = document.createElement('div');
     fh.className = 'grid-head species-head';
     fh.textContent = 'ハウス';
@@ -3720,6 +3742,9 @@
       card.appendChild(buyBtn);
       grid.appendChild(card);
     });
+
+    // なかま（品種ごと。毛色が何色もある品種はたたいて選ぶ）
+    renderShopPets(grid);
 
     // 家具。「なかまの道具」は なかまが自分で使いに行くもの、
     // 「へやの家具」は部屋の飾り（ソファのように なかまも使うものもある）
@@ -4837,7 +4862,8 @@
   $('resetBtn').addEventListener('click', function () {
     if (session && session.active) return;
     if (!confirm('なかま・集中の記録・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
-    // pf:gift も戻す。消したあとは1匹目からやり直しになるので、贈り物も同じようにやり直す
+    // pf:gift は、1匹目にハウスを贈っていたころの印。いまは使っていないが、
+    // 古い保存に残っているので、全消しのときはこれも片づける
     var ok = ['pf:garden', 'pf:garden:bak', 'pf:sessions', 'pf:sessmig', 'pf:mileage',
       'pf:houses', 'pf:houses:bak', 'pf:furniture', 'pf:gift', 'pf:backupAt']
       .every(function (k) { return lsRemove(k); });
