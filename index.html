@@ -1074,7 +1074,7 @@
           </div>
         </div>
         <div class="card">
-          <h3>さいきん なかまになった子</h3>
+          <h3>さいきんの集中</h3>
           <div class="log-list" id="logList"></div>
         </div>
       </div>
@@ -1219,7 +1219,7 @@
           <button type="button" data-goal="120">120分</button>
         </div>
         <div class="label">あそびかた</div>
-        <p class="sub" style="margin-bottom:var(--s4)">時間を決めて集中をはじめると、なかまが1匹あらわれます。その時間ずっとこの画面から離れずにいると、なかまは目を覚まして懐き、おうちに加わります。集中した分だけ時間が貯まり、「図鑑」でまだ会っていない子を迎えたり、「おうち」でハウスを置いたりできます。</p>
+        <p class="sub" style="margin-bottom:var(--s4)">時間を決めて集中をはじめると、なかまが1匹あらわれて そばで待っています。その時間ずっとこの画面から離れずにいると、集中した分だけ時間が貯まります。貯まった時間で「お店」から好きななかまを迎え、ハウスや家具を置いて おうちをつくっていきます。</p>
         <div class="label">ひかえ（バックアップ）</div>
         <p class="sub" id="backupStatus" style="margin-bottom:var(--s2)"></p>
         <div style="display:flex;flex-direction:column;gap:var(--s2)">
@@ -1331,8 +1331,9 @@
         <h2 style="margin-bottom:var(--s4)">ようこそ</h2>
         <div style="text-align:left;font-size:var(--t-md);line-height:2.1;color:var(--ink-2)">
           <p style="margin:0 0 10px">① 集中したい時間を決めます。</p>
-          <p style="margin:0 0 10px">② なかまが1匹あらわれ、眠ったまま待っています。</p>
-          <p style="margin:0 0 10px">③ その時間ずっと画面から離れずにいると、目を覚まして懐き、おうちに加わります。</p>
+          <p style="margin:0 0 10px">② なかまが1匹あらわれ、眠ったまま そばで待っています。</p>
+          <p style="margin:0 0 10px">③ その時間ずっと画面から離れずにいると、集中した時間がそのまま貯まります。</p>
+          <p style="margin:0 0 10px">④ 貯まった時間で、「お店」から好きななかまを迎えます。ハウスや家具も置けます。</p>
           <p style="margin:0;color:var(--ink-3);font-size:var(--t-sm)">ほかのアプリに移ったり画面をロックすると、その回はおしまいです。ただし、うっかり離れてもすぐ（10秒以内に）戻れば続けられます。離れていたぶんの時間は数えません。これまでの記録が消えることはありません。</p>
         </div>
         <div class="sheet-btns">
@@ -1480,6 +1481,16 @@
       out.push({ breed: v.breed, pedigree: !!v.pedigree, colors: seen[v.breed] });
     });
     return out;
+  }
+  // 集中のあいだ そばにいる子。自分のなかまがいればその中から、
+  // まだ1匹もいなければ「遊びに来た子」として適当な猫を出す
+  function sessionPet() {
+    var mine = readGarden();
+    if (mine.length) {
+      var g = mine[Math.floor(Math.random() * mine.length)];
+      return { type: g.type, key: g.key };
+    }
+    return pickPet();
   }
   function pickPet() {
     var type = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
@@ -1811,6 +1822,55 @@
   }
   // paid = 迎えるのに使った時間。値段の決め方を変えても、
   // 迎えたときにいくら払ったかは変わらないので、そのときの額を記録に残す
+  // ---- 勉強した記録 ----
+  // 前は「集中し終えるとランダムでなかまが1匹もらえる」作りで、その子の記録が
+  // そのまま勉強の記録も兼ねていた。もらえる仕組みをやめたので、
+  // 勉強したことは なかまと切りはなして、ここに積む
+  function sessValid(x) {
+    return x && typeof x === 'object' && typeof x.id === 'string' && x.id &&
+      Number.isFinite(x.minutes) && x.minutes > 0 && x.minutes <= 600 &&
+      Number.isFinite(x.completedAt) && x.completedAt > 0;
+  }
+  function readSessionsRaw() {
+    try {
+      var raw = JSON.parse(lsGet('pf:sessions', '[]'));
+      return Array.isArray(raw) ? raw.filter(sessValid) : [];
+    } catch (e) { return []; }
+  }
+  // もらえる仕組みだったころの記録は、なかまのほうに残っている。
+  // そこから勉強の記録を作り直して、これまでの積み上げが消えないようにする。
+  // なかま自体はそのまま残す（すでに迎えた子を取り上げることはしない）
+  function readSessions() {
+    var out = readSessionsRaw();
+    if (lsGet('pf:sessmig', '')) return out;
+    var seen = {};
+    out.forEach(function (x) { seen[x.id] = true; });
+    var add = [];
+    readGarden().forEach(function (g) {
+      if (g.source === 'shop' || !g.minutes) return;
+      var id = 's' + g.id;
+      if (seen[id]) return;
+      add.push({ id: id, minutes: g.minutes, completedAt: g.completedAt });
+    });
+    var merged = out.concat(add).sort(function (a, b) { return a.completedAt - b.completedAt; });
+    // 移し替えられなかったときは印を立てない。次に開いたときにやり直す
+    if (writeSessions(merged)) lsSet('pf:sessmig', '1');
+    return merged;
+  }
+  function writeSessions(arr) {
+    return lsSet('pf:sessions', JSON.stringify(arr.map(function (x) {
+      return { id: x.id, minutes: x.minutes, completedAt: x.completedAt };
+    })));
+  }
+  function addSession(minutes) {
+    var arr = readSessions();
+    arr.push({
+      id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      minutes: minutes, completedAt: Date.now()
+    });
+    return writeSessions(arr);
+  }
+
   function addToGarden(minutes, pet, source, paid) {
     var arr = readGarden();
     var rec = {
@@ -1864,6 +1924,8 @@
     var rec = addToGarden(0, { type: type, key: key }, 'shop', price);
     if (!rec) return null;
     if (!spendMileage(price)) { writeGarden(before); return null; }
+    // 1匹目を迎えたときだけ、その子に合ったハウスを1つ贈る
+    if (!before.length) grantFirstHouse(rec);
     return rec;
   }
 
@@ -2060,9 +2122,9 @@
     });
     writeHouses(arr);
   }
-  // はじめて なかまができたときに、その子に合ったハウスを1つだけ贈る。
-  // まだ1匹もいないうちに配ると、6種のうち当たらなかった種類のハウスは
-  // ずっと空のままになってしまうので、1匹目が決まってから渡す
+  // はじめて なかまを迎えたときに、その子に合ったハウスを1つだけ贈る。
+  // まだ1匹もいないうちに配ると、当たらなかった種類のハウスがずっと空のままに
+  // なってしまうので、1匹目が決まってから渡す
   function grantFirstHouse(pet) {
     if (lsGet('pf:gift', '')) return false;   // 贈るのは1回きり
     if (readHouses().length) { lsSet('pf:gift', '1'); return false; }
@@ -2446,10 +2508,10 @@
   // 集中して得た記録だけを日ごとの合計分に畳む（shopで迎えた子は集中ではないので除く）。
   // 23:50に始めて日をまたいだ回は、またいだ境目で分けて両日に振り分ける
   // （開始時刻は保存していないので、終了時刻と長さから逆算する）
-  function minutesByDay(garden) {
+  function minutesByDay(sessions) {
     var map = {};
-    garden.forEach(function (g) {
-      if (g.source === 'shop' || !g.minutes) return;
+    sessions.forEach(function (g) {
+      if (!g.minutes) return;
       var endMs = g.completedAt;
       var startMs = endMs - g.minutes * 60000;
       var cursor = dayStart(startMs);
@@ -2487,7 +2549,7 @@
   var DIAL_CIRC = 2 * Math.PI * 86;
   function renderHome() {
     var garden = readGarden();
-    var map = minutesByDay(garden);
+    var map = minutesByDay(readSessions());
     var today = map[dayStart(Date.now())] || 0;
     var goal = readGoal();
 
@@ -2528,17 +2590,17 @@
     var streak = calcStreak(map);
     $('streakLine').innerHTML = streak > 0
       ? '<b>' + streak + '日</b> つづいています'
-      : (garden.length ? 'きょうから、また はじめよう' : 'はじめの1回を、はじめよう');
+      : (readSessions().length ? 'きょうから、また はじめよう' : 'はじめの1回を、はじめよう');
   }
 
   // ============ きろく ============
   function renderRecord() {
     var garden = readGarden();
-    var map = minutesByDay(garden);
+    var sessions = readSessions();
+    var map = minutesByDay(sessions);
     var days = last7Days(map);
     var today = map[dayStart(Date.now())] || 0;
     var weekMin = days.reduce(function (s, d) { return s + d.minutes; }, 0);
-    var sessions = garden.filter(function (g) { return g.source !== 'shop'; });
     var totalMin = sessions.reduce(function (s, g) { return s + g.minutes; }, 0);
     var best = sessions.reduce(function (m, g) { return Math.max(m, g.minutes); }, 0);
 
@@ -2571,35 +2633,33 @@
       chart.appendChild(col);
     });
 
+    // 一覧は「集中した回」。なかまはお店で迎えるものになったので、ここには並べない
     var list = $('logList');
     list.innerHTML = '';
-    var recent = garden.slice(-12).reverse();
+    var recent = sessions.slice(-12).reverse();
     if (!recent.length) {
-      list.innerHTML = '<div class="empty-state" style="padding:var(--s4) 0">まだ なかまがいません。</div>';
+      list.innerHTML = '<div class="empty-state" style="padding:var(--s4) 0">まだ 集中した記録がありません。</div>';
       return;
     }
-    recent.forEach(function (g) {
+    recent.forEach(function (x) {
       var row = document.createElement('div');
       row.className = 'log-row';
-      var pet = document.createElement('div');
-      pet.className = 'lr-pet';
-      fillPet(pet, g.type, g.key, 1);
       var main = document.createElement('div');
       main.className = 'lr-main';
+      var d = new Date(x.completedAt);
       var nm = document.createElement('div');
       nm.className = 'lr-name';
-      nm.textContent = g.name || petLabel(g.type, g.key);
+      nm.textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WEEKDAY[d.getDay()] + '）';
       var meta = document.createElement('div');
       meta.className = 'lr-meta';
-      // 上の行が品種名そのものになっているときは、下でもう一度くり返さない
-      var sub = g.source === 'shop' ? '貯まった時間で迎えた' : (g.name ? petLabel(g.type, g.key) : '');
-      meta.textContent = fmtDate(g.completedAt) + (sub ? '・' + sub : '');
+      // 右に分数が出るので、ここではくり返さない
+      meta.textContent = String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0') + ' まで';
       main.appendChild(nm);
       main.appendChild(meta);
       var min = document.createElement('div');
       min.className = 'lr-min';
-      min.textContent = g.source === 'shop' ? '' : g.minutes + '分';
-      row.appendChild(pet);
+      min.textContent = x.minutes + '分';
       row.appendChild(main);
       row.appendChild(min);
       list.appendChild(row);
@@ -2796,7 +2856,7 @@
     var isEmpty = (roomHouseCount === 0 && floorEntries.length === 0 && furnPlaced.length === 0);
     empty.style.display = isEmpty ? 'block' : 'none';
     empty.innerHTML = garden.length === 0
-      ? 'まだ なかまがいません。<br>ホームの「集中をはじめる」から。'
+      ? 'まだ なかまがいません。<br>集中して時間を貯め、「お店」で迎えてください。'
       : 'この部屋にはまだ何もありません。<br>「お店」でハウスや家具を置いてみよう。';
   }
 
@@ -3807,7 +3867,7 @@
   }
 
   function startSession(minutes) {
-    var pet = pickPet();
+    var pet = sessionPet();
     var svg = fillPet($('sessPetSlot'), pet.type, pet.key, 0, true);
     $('sessLabel').textContent = minutes + '分に挑戦中';
     $('sessTime').textContent = fmtClock(minutes * 60);
@@ -3875,14 +3935,15 @@
     $('settingsBtn').style.display = '';
     session = null;
     if (success) {
-      var saved = addToGarden(minutes, pet, 'session');
+      // 集中し終えても なかまはもらえない。貯まるのは時間だけで、
+      // なかまは「お店」で自分でえらんで迎える
+      var saved = addSession(minutes);
       if (saved) addMileage(minutes);
-      // 1匹目のときだけ、その子に合ったハウスを贈る
-      var gifted = saved && readGarden().length === 1 && grantFirstHouse(pet);
       RENDERERS[currentView]();
-      showResult(true, minutes, saved ? null : 'savefail', pet, gifted, pats);
+      renderHome();
+      showResult(true, minutes, saved ? null : 'savefail', pet, pats);
     } else {
-      showResult(false, minutes, reason, pet, false, pats);
+      showResult(false, minutes, reason, pet, pats);
     }
   }
   $('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
@@ -3943,18 +4004,16 @@
 
   // ============ 結果 ============
   var resultModal = $('resultModal');
-  function showResult(success, minutes, reason, pet, gifted, pats) {
+  function showResult(success, minutes, reason, pet, pats) {
     var svg = fillPet($('resultPetSlot'), pet.type, pet.key, success ? 1 : 0, true);
     var label = petLabel(pet.type, pet.key);
     if (success) {
-      $('resultTitle').textContent = gifted ? 'はじめてのなかま' : 'なつきました';
-      var gift = gifted
-        ? 'はじめてのなかまなので、' + ((HOUSE_TYPES[pet.type] || {}).name || 'ハウス') + 'を1つ贈りました。リビングに置いてあります。'
-        : '';
+      $('resultTitle').textContent = minutes + '分 集中できました';
       var patNote = pats > 0 ? '（' + pats + '回 なでました）' : '';
       $('resultBody').textContent = reason === 'savefail'
         ? label + 'と' + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : label + 'と' + minutes + '分、一緒にいられました。' + patNote + 'おうちに加わりました。' + gift;
+        : label + 'と' + minutes + '分、一緒にいられました。' + patNote +
+          '貯まった時間は ' + fmtHours(readMileage()) + '。「お店」でなかまを迎えられます。';
     } else {
       sadPet(svg);
       $('resultTitle').textContent = '眠ってしまいました';
@@ -4228,11 +4287,22 @@
       var pets = 0, mins = 0;
       try {
         var g = JSON.parse(data.items['pf:garden'] || '[]');
-        if (Array.isArray(g)) {
-          pets = g.length;
-          g.forEach(function (x) { if (x && x.source !== 'shop' && Number.isFinite(x.minutes)) mins += x.minutes; });
-        }
+        if (Array.isArray(g)) pets = g.length;
       } catch (err2) {}
+      // 集中した時間は pf:sessions から数える。
+      // それが無い古い控えは、なかまの記録が勉強の記録も兼ねていたころのものなので、
+      // これまでどおり pf:garden から数える
+      try {
+        var ss = JSON.parse(data.items['pf:sessions'] || 'null');
+        if (Array.isArray(ss)) {
+          ss.forEach(function (x) { if (x && Number.isFinite(x.minutes)) mins += x.minutes; });
+        } else {
+          var og = JSON.parse(data.items['pf:garden'] || '[]');
+          if (Array.isArray(og)) {
+            og.forEach(function (x) { if (x && x.source !== 'shop' && Number.isFinite(x.minutes)) mins += x.minutes; });
+          }
+        }
+      } catch (err3) {}
       var now = readGarden().length;
       if (!confirm('このひかえには なかま' + pets + '匹・集中' + fmtHours(mins) + 'ぶんが入っています。\n' +
                    'いまの記録（なかま' + now + '匹）を消して、これで置きかえます。よろしいですか？')) return;
@@ -4250,10 +4320,11 @@
   });
   $('resetBtn').addEventListener('click', function () {
     if (session && session.active) return;
-    if (!confirm('なかま・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
+    if (!confirm('なかま・集中の記録・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
     // pf:gift も戻す。消したあとは1匹目からやり直しになるので、贈り物も同じようにやり直す
-    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:houses:bak',
-      'pf:furniture', 'pf:gift', 'pf:backupAt'].every(function (k) { return lsRemove(k); });
+    var ok = ['pf:garden', 'pf:garden:bak', 'pf:sessions', 'pf:sessmig', 'pf:mileage',
+      'pf:houses', 'pf:houses:bak', 'pf:furniture', 'pf:gift', 'pf:backupAt']
+      .every(function (k) { return lsRemove(k); });
     if (!ok) { alert('消せませんでした。もう一度お試しください。'); return; }
     closeModal(settingsModal);
     renderBackupStatus();
