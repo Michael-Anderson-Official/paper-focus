@@ -4,13 +4,17 @@
 // - Cache Storageはオリジン単位で共有され、姉妹アプリ（手ざわり手帳・手ざわり計画表）も同じ
 //   github.io オリジン上にいる。activate時の掃除は必ずこのアプリのプレフィックスだけに絞り、
 //   他アプリのキャッシュを誤って消さないようにする
-var CACHE_PREFIX = 'tezawari-focus-';
-var CACHE = CACHE_PREFIX + 'v33';
+var CACHE_PREFIX = 'tezawari-focus-';   // 印は据え置き。変えると古いキャッシュが掃除されずに残る
+var CACHE = CACHE_PREFIX + 'v34';
 var SHELL = [
   './',
-  './manifest.webmanifest',
   './privacy.html'
 ];
+// manifest はアプリ名とアイコンの出どころ。キャッシュ優先で配ると
+// 名前を変えてもホーム画面に古い名前が出てしまうので、必ずネットから取り直す
+function isAlwaysFresh(url) {
+  return /manifest\.webmanifest$/.test(url.pathname);
+}
 var SCOPE_URL = self.registration.scope;   // 例: https://.../paper-focus/
 
 self.addEventListener('install', function (ev) {
@@ -57,6 +61,24 @@ self.addEventListener('fetch', function (ev) {
   }
 
   if (url.origin !== location.origin) return;
+
+  // manifest はネット優先。落ちているときだけ控えを使う
+  if (isAlwaysFresh(url)) {
+    ev.respondWith(
+      fetch(req, { cache: 'reload' }).then(function (res) {
+        if (res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (cache) { cache.put(req, copy); });
+        }
+        return res;
+      }).catch(function () {
+        return caches.open(CACHE).then(function (cache) {
+          return cache.match(req).then(function (hit) { return hit || Response.error(); });
+        });
+      })
+    );
+    return;
+  }
 
   ev.respondWith(
     caches.open(CACHE).then(function (cache) {
