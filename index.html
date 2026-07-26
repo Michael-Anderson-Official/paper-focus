@@ -627,12 +627,15 @@
   /* 部屋は残りの高さいっぱい。中身は絶対配置なので、min-height:0 で縮めるようにしておく */
   .room-scene { position: relative; overflow: hidden; border-radius: var(--r-md); box-shadow: var(--sh-1); flex: 1; min-height: 0; }
   /* ハウスは棚のカードではなく、部屋のなかに置いてあるものとして描く */
-  .room-house-obj { position: absolute; width: 56px; cursor: pointer; text-align: center; }
-  .room-house-obj .rh-art { width: 52px; height: 52px; margin: 0 auto; }
+  .room-house-obj { position: absolute; cursor: pointer; text-align: center; }
+  .room-house-obj .rh-art { width: 100%; margin: 0 auto; }
   .room-house-obj .rh-art svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(60, 45, 25, 0.3)); }
   .room-house-obj .rh-cap {
-    font-size: 9px; color: #5d4a2e; font-weight: 700;
+    font-size: 9px; height: 12px; color: #5d4a2e; font-weight: 700;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65); line-height: 1.2;
+    /* 1匹ぶんのハウスは幅が46pxしかなく、名前が2行に折れて絵から離れてしまう。
+       はみ出させてでも1行に収める（真ん中ぞろえなので左右へ均等に出る） */
+    white-space: nowrap;
   }
   .room-house-obj:active { transform: translateY(1px); }
   .room-wall { position: absolute; top: 0; left: 0; right: 0; height: 190px; background: linear-gradient(180deg, #e9e0c8, #ddd0ae); }
@@ -664,18 +667,16 @@
   .room-scene.room-garden .room-tree,
   .room-scene.room-garden .room-fence,
   .room-scene.room-garden .room-flowerbed,
-  .room-scene.room-garden .room-pond,
-  .room-scene.room-garden .room-rug {
+  .room-scene.room-garden .room-pond {
     filter: brightness(var(--land-lit, 1));
     transition: filter 2s linear;
   }
   /* 庭の星。夜だけ見える */
   .room-garden-sky { position: absolute; top: 0; left: 0; right: 0; height: 190px; pointer-events: none; }
 
-  .room-window, .room-door, .room-sofa, .room-plant,
-  .room-counter, .room-shelf, .room-fridge,
-  .room-bed, .room-nightstand, .room-lamp, .room-wardrobe,
-  .room-shoebox, .room-umbrella-stand, .room-doormat,
+  /* 家具はぜんぶ自分で買って置くものにした。ここに残っているのは
+     部屋そのもの（窓・ドア）と、庭の草木・空・芝生 */
+  .room-window, .room-door, .room-rug,
   .room-sun, .room-cloud, .room-hedge, .room-fence,
   .room-tree, .room-flowerbed, .room-pond, .room-garden-sky { display: none; }
   .room-scene.room-garden .room-garden-sky,
@@ -685,24 +686,13 @@
   .room-scene.room-garden .room-fence,
   .room-scene.room-garden .room-tree,
   .room-scene.room-garden .room-flowerbed,
+  .room-scene.room-garden .room-rug,
   .room-scene.room-garden .room-pond { display: block; }
   /* 窓は玄関と庭をのぞく部屋に出る。玄関は窓ではなくドア */
   .room-scene.room-living .room-window,
   .room-scene.room-kitchen .room-window,
   .room-scene.room-bedroom .room-window { display: block; }
-  .room-scene.room-living .room-sofa,
-  .room-scene.room-living .room-plant { display: block; }
-  .room-scene.room-kitchen .room-counter,
-  .room-scene.room-kitchen .room-shelf,
-  .room-scene.room-kitchen .room-fridge { display: block; }
-  .room-scene.room-bedroom .room-bed,
-  .room-scene.room-bedroom .room-nightstand,
-  .room-scene.room-bedroom .room-lamp,
-  .room-scene.room-bedroom .room-wardrobe { display: block; }
-  .room-scene.room-genkan .room-door,
-  .room-scene.room-genkan .room-shoebox,
-  .room-scene.room-genkan .room-umbrella-stand,
-  .room-scene.room-genkan .room-doormat { display: block; }
+  .room-scene.room-genkan .room-door { display: block; }
 
   /* ---- 窓の外（今の時刻に合わせた空）----
      空の色・太陽や月の位置は、JSが #roomScene に置く変数から受け取る。
@@ -783,178 +773,6 @@
   .room-door::after {
     content: ''; position: absolute; left: 16px; right: 16px; top: 86px; bottom: 16px;
     border: 2px solid rgba(90, 66, 38, 0.5); border-radius: 3px;
-  }
-  /* ソファ。座面（明るい上面）・前板（暗い側面）・背もたれ・肘掛けを
-     別々の面として重ね、輪郭で囲って厚みを出す */
-  .room-sofa {
-    position: absolute; left: 14px; top: 132px; width: 110px; height: 54px;
-    background: linear-gradient(180deg, #a3bad9 0 52%, #7e97ba 52%);
-    border: 2px solid var(--line);
-    border-radius: 7px 7px 6px 6px;
-    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 10px rgba(60, 45, 25, 0.22);
-  }
-  /* 背もたれ */
-  .room-sofa::before {
-    content: ''; position: absolute; left: -2px; right: -2px; top: -24px; height: 28px;
-    background: linear-gradient(180deg, #b3c6de, #8fa8c9);
-    border: 2px solid var(--line);
-    border-radius: 9px 9px 3px 3px;
-  }
-  /* 肘掛け（右側は box-shadow で複製） */
-  .room-sofa::after {
-    content: ''; position: absolute; left: -7px; top: -16px; width: 17px; height: 48px;
-    background: linear-gradient(180deg, #b8cae0, #93aacb);
-    border: 2px solid var(--line); border-radius: 8px;
-    box-shadow: 105px 0 0 0 #a5bbd7, 105px 0 0 2px var(--line);
-  }
-  /* 観葉植物。葉と鉢がはなれて見えないよう、葉を鉢の口までおろして重ねる */
-  .room-plant { position: absolute; left: 144px; top: 130px; width: 34px; height: 60px; }
-  .room-plant::before {
-    content: ''; position: absolute; bottom: 0; left: 3px; width: 27px; height: 23px;
-    background: linear-gradient(100deg, #cb9c6c 0 56%, #a8794c 56%);
-    border: 2px solid var(--line); border-radius: 3px 3px 9px 9px;
-    box-shadow: 0 3px 0 -1px rgba(63, 52, 44, 0.22);
-  }
-  .room-plant::after {
-    content: ''; position: absolute; bottom: 17px; left: 1px; width: 28px; height: 33px;
-    background: linear-gradient(100deg, #83b872 0 55%, #61985a 55%);
-    border: 2px solid var(--line);
-    border-radius: 50% 50% 42% 14%;
-  }
-  /* 窓を真ん中の上に置いたので、カウンターは下へずらしてぶつからないようにする。
-     天板を明るく、前板を暗くして厚みを見せる */
-  .room-counter {
-    position: absolute; top: 118px; right: 18px; width: 92px; height: 58px;
-    background: linear-gradient(180deg, #f6f0e4 0 34%, #d9cdb4 34%);
-    border: 2px solid var(--line); border-radius: 5px;
-    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
-  }
-  /* コンロ。天板の上に置く */
-  .room-counter::before {
-    content: ''; position: absolute; top: 4px; left: 12px; width: 15px; height: 8px;
-    border-radius: 50%; background: #8f9489;
-    border: 1.5px solid var(--line);
-    box-shadow: 30px 0 0 #8f9489, 30px 0 0 1.5px var(--line);
-  }
-  /* 引き出しの合わせ目 */
-  .room-counter::after {
-    content: ''; position: absolute; left: 8px; right: 8px; top: 38px; height: 2px;
-    background: rgba(63, 52, 44, 0.35); border-radius: 2px;
-  }
-  .room-shelf {
-    position: absolute; left: 16px; top: 34px; width: 82px; height: 9px;
-    background: #b98a5f; border: 2px solid var(--line); border-radius: 3px;
-    box-shadow: 0 3px 5px rgba(60, 45, 25, 0.22);
-  }
-  /* 棚に置いたびん */
-  .room-shelf::before {
-    content: ''; position: absolute; top: -20px; left: 8px; width: 15px; height: 20px;
-    background: linear-gradient(100deg, #d96a5e 0 58%, #b8544a 58%);
-    border: 2px solid var(--line); border-radius: 3px 3px 2px 2px;
-  }
-  /* 棚に置いた鉢 */
-  .room-shelf::after {
-    content: ''; position: absolute; top: -17px; left: 36px; width: 15px; height: 17px;
-    background: linear-gradient(100deg, #8fbf7a 0 58%, #6ea45f 58%);
-    border: 2px solid var(--line); border-radius: 50% 50% 4px 4px;
-  }
-  .room-fridge {
-    position: absolute; left: 16px; top: 100px; width: 44px; height: 88px;
-    background: linear-gradient(100deg, #f6f0e4 0 58%, #dccbb0 58%);
-    border: 2px solid var(--line); border-radius: 5px;
-    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
-  }
-  /* 扉の合わせ目 */
-  .room-fridge::before {
-    content: ''; position: absolute; left: 0; right: 0; top: 32px; height: 2px;
-    background: rgba(63, 52, 44, 0.42);
-  }
-  /* 取っ手（上下2つ） */
-  .room-fridge::after {
-    content: ''; position: absolute; right: 6px; top: 16px; width: 4px; height: 12px;
-    background: #8f7a5c; border: 1.5px solid var(--line); border-radius: 3px;
-    box-shadow: 0 30px 0 #8f7a5c, 0 30px 0 1.5px var(--line);
-  }
-  /* ベッド。掛けぶとんの上面を明るく、側面を暗くする。
-     窓は真ん中に置いてあり、その幅は端末によって変わる。左右で避けようとすると
-     狭い端末で必ずぶつかるので、ベッドとサイドテーブルは窓より下の帯に置く */
-  .room-bed {
-    position: absolute; top: 116px; left: 14px; width: 88px; height: 70px;
-    background: linear-gradient(180deg, #e59fab 0 62%, #c97b8a 62%);
-    border: 2px solid var(--line); border-radius: 9px;
-    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
-  }
-  /* まくら */
-  .room-bed::before {
-    content: ''; position: absolute; top: 7px; left: 7px; width: 28px; height: 22px;
-    background: #fbf6ea; border: 2px solid var(--line); border-radius: 7px;
-  }
-  /* めくった掛けぶとんの折り返し */
-  .room-bed::after {
-    content: ''; position: absolute; left: 6px; right: 6px; top: 36px; height: 18px;
-    background: #eee2f0; border: 2px solid var(--line); border-radius: 5px;
-  }
-  .room-nightstand {
-    position: absolute; left: 108px; top: 144px; width: 30px; height: 28px;
-    background: linear-gradient(180deg, #dcc094 0 30%, #c9a876 30%);
-    border: 2px solid var(--line); border-radius: 4px;
-    box-shadow: 0 3px 0 -1px rgba(63, 52, 44, 0.25);
-  }
-  .room-nightstand::after {
-    content: ''; position: absolute; left: 50%; margin-left: -3px; top: 15px;
-    width: 6px; height: 3px; border-radius: 2px; background: var(--line); opacity: 0.55;
-  }
-  .room-lamp { position: absolute; left: 113px; top: 118px; width: 20px; height: 26px; }
-  .room-lamp::before {
-    content: ''; position: absolute; bottom: 0; left: 7px; width: 4px; height: 13px;
-    background: #a3805a; border: 1.5px solid var(--line); border-radius: 2px;
-  }
-  .room-lamp::after {
-    content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 14px;
-    background: linear-gradient(180deg, #ffe08a, #f6c94a);
-    border: 2px solid var(--line); border-radius: 4px 4px 9px 9px;
-  }
-  .room-wardrobe {
-    position: absolute; right: 16px; top: 20px; width: 50px; height: 112px;
-    background: linear-gradient(100deg, #ece2ee 0 55%, #d0bcd6 55%);
-    border: 2px solid var(--line); border-radius: 5px;
-    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
-  }
-  .room-wardrobe::before {
-    content: ''; position: absolute; top: 2px; bottom: 2px; left: 50%; width: 2px;
-    background: rgba(63, 52, 44, 0.45); transform: translateX(-50%);
-  }
-  /* 取っ手 */
-  .room-wardrobe::after {
-    content: ''; position: absolute; left: 50%; margin-left: -8px; top: 52px;
-    width: 4px; height: 10px; border-radius: 2px; background: #9a7a9e;
-    border: 1.5px solid var(--line);
-    box-shadow: 12px 0 0 #9a7a9e, 12px 0 0 1.5px var(--line);
-  }
-  .room-shoebox {
-    position: absolute; right: 18px; top: 28px; width: 68px; height: 74px;
-    background: linear-gradient(180deg, #d9b884 0 16%, #c9a876 16%);
-    border: 2px solid var(--line); border-radius: 4px;
-    box-shadow: 0 4px 0 -1px rgba(63, 52, 44, 0.25), 0 6px 9px rgba(60, 45, 25, 0.2);
-  }
-  .room-shoebox::before, .room-shoebox::after {
-    content: ''; position: absolute; left: 5px; right: 5px; height: 2px; background: rgba(63, 52, 44, 0.42);
-  }
-  .room-shoebox::before { top: 28px; }
-  .room-shoebox::after { top: 51px; }
-  .room-umbrella-stand {
-    position: absolute; left: 22px; top: 108px; width: 24px; height: 40px;
-    background: linear-gradient(100deg, #8b9aa4 0 58%, #6f8089 58%);
-    border: 2px solid var(--line); border-radius: 4px 4px 9px 9px;
-    box-shadow: 0 3px 0 -1px rgba(63, 52, 44, 0.25);
-  }
-  .room-umbrella-stand::before { content: ''; position: absolute; bottom: 30px; left: 2px; width: 3px; height: 40px; background: #5a4a30; transform: rotate(-8deg); }
-  .room-umbrella-stand::after { content: ''; position: absolute; bottom: 60px; left: -4px; width: 16px; height: 10px; background: #c9564a; border-radius: 50% 50% 0 0; transform: rotate(-8deg); }
-  /* ドアの真下、床の上に敷く */
-  .room-doormat {
-    position: absolute; left: 50%; top: 196px; transform: translateX(-50%);
-    width: 76px; height: 26px; background: #a3a89c; border-radius: 6px;
-    box-shadow: inset 0 0 0 3px #8a8f7f, 0 2px 4px rgba(60, 45, 25, 0.18);
   }
   /* ---- 庭 ---- */
   /* 庭の太陽（夜は月）。窓の外と同じ時刻から位置を決める。
@@ -1041,18 +859,11 @@
   .room-pond::before { left: 20px; top: 8px; width: 20px; height: 8px; }
   .room-pond::after { left: 44px; top: 18px; width: 12px; height: 6px; }
 
-  /* 床のひろがりに合わせて伸びる。高さはJSで指定しない */
+  /* 部屋の敷物はお店で買うラグにしたので、ここに残っているのは庭の芝生だけ。
+     刈りそろえた広場で、なかまが遊ぶ場所の目印になる */
   .room-rug {
     position: absolute; left: 50%; top: 210px; bottom: 12px; transform: translateX(-50%);
     width: 92%; border-radius: 50%;
-    background: radial-gradient(ellipse at center, #dfc9a3 0%, #dfc9a3 62%, #d3ba8e 63%, #d3ba8e 100%);
-    box-shadow: 0 3px 6px rgba(60, 45, 25, 0.12);
-  }
-  .room-scene.room-kitchen .room-rug { background: radial-gradient(ellipse at center, #dbe6c9 0%, #dbe6c9 62%, #cddab3 63%, #cddab3 100%); }
-  .room-scene.room-bedroom .room-rug { background: radial-gradient(ellipse at center, #ecd9df 0%, #ecd9df 62%, #ddc0c9 63%, #ddc0c9 100%); }
-  .room-scene.room-genkan .room-rug { background: radial-gradient(ellipse at center, #d9d2c0 0%, #d9d2c0 62%, #c7bfa8 63%, #c7bfa8 100%); }
-  /* 庭は敷物ではなく、刈りそろえた広場。なかまが遊ぶ場所の目印になる */
-  .room-scene.room-garden .room-rug {
     background: radial-gradient(ellipse at center, #a2cb7d 0%, #a2cb7d 64%, #94c06e 65%, #94c06e 100%);
     box-shadow: 0 2px 5px rgba(50, 70, 40, 0.1);
   }
@@ -1294,17 +1105,6 @@
             </div>
             <div class="rd-knob"></div>
           </div>
-          <div class="room-sofa"></div>
-          <div class="room-plant"></div>
-          <div class="room-counter"></div>
-          <div class="room-shelf"></div>
-          <div class="room-fridge"></div>
-          <div class="room-bed"></div>
-          <div class="room-nightstand"></div>
-          <div class="room-lamp"></div>
-          <div class="room-wardrobe"></div>
-          <div class="room-shoebox"></div>
-          <div class="room-umbrella-stand"></div>
           <div class="room-garden-sky"><div class="rw-stars"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
           <div class="room-sun"></div>
           <div class="room-cloud c1"></div>
@@ -1316,7 +1116,6 @@
           <div class="room-fence"></div>
           <div class="room-rug" id="roomRug"></div>
           <!-- 花壇と池は芝生の上に置くものなので、床と広場より後ろに書いて重ねる -->
-          <div class="room-doormat"></div>
           <div class="room-flowerbed"></div>
           <div class="room-pond"></div>
           <div class="room-houses" id="roomHouses"></div>
@@ -1453,6 +1252,7 @@
           </div>
         </div>
         <div class="name-facts" id="nameFacts"></div>
+        <button type="button" class="name-edit" id="nameHouseBtn">🏠 すみかをかえる</button>
         <button type="button" class="name-edit" id="nameEditBtn">✏️ 名前をかえる</button>
         <div id="nameEditBox">
           <input type="text" id="nameInput" class="text-input" maxlength="12" placeholder="なまえ（空でもOK）">
@@ -1461,6 +1261,35 @@
           <button type="button" class="btn-quiet" id="nameCancel">とじる</button>
           <span class="spacer"></span>
           <button type="button" class="btn-quiet primary" id="nameSave">きめる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 置いてあるハウスをどうするか ============ -->
+    <div class="modal" id="houseModal">
+      <div class="sheet">
+        <h2 id="houseTitle">ハウス</h2>
+        <p class="sub" id="houseSub"></p>
+        <div class="chips grid2">
+          <button type="button" id="houseExpand">広げる</button>
+          <button type="button" id="houseMove">動かす</button>
+        </div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet" id="houseClose">とじる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ なかまをどのハウスに住まわせるか ============ -->
+    <div class="modal" id="livesModal">
+      <div class="sheet">
+        <h2 id="livesTitle">どのハウスに住みますか？</h2>
+        <p class="sub" id="livesSub"></p>
+        <div class="chips" id="livesChips"></div>
+        <div class="sheet-btns">
+          <span class="spacer"></span>
+          <button type="button" class="btn-quiet" id="livesClose">とじる</button>
         </div>
       </div>
     </div>
@@ -1491,24 +1320,6 @@
         <div class="sheet-btns">
           <span class="spacer"></span>
           <button type="button" class="btn-quiet" id="colorClose">とじる</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ 部屋を選ぶ ============ -->
-    <div class="modal" id="roomPickModal">
-      <div class="sheet">
-        <h2 id="roomPickTitle">どの部屋に置きますか？</h2>
-        <div class="chips grid2" id="roomPickChips">
-          <button type="button" data-room="genkan">玄関</button>
-          <button type="button" data-room="living">リビング</button>
-          <button type="button" data-room="kitchen">キッチン</button>
-          <button type="button" data-room="bedroom">寝室</button>
-          <button type="button" data-room="garden">庭</button>
-        </div>
-        <div class="sheet-btns">
-          <span class="spacer"></span>
-          <button type="button" class="btn-quiet" id="roomPickCancel">とじる</button>
         </div>
       </div>
     </div>
@@ -1938,6 +1749,17 @@
     var variants = PET_VARIANTS[type];
     return { type: type, key: variants[Math.floor(h / PET_TYPES.length) % variants.length].key };
   }
+  // 読めなかった記録の控え。書き出し・復元は pf: で始まる印をぜんぶ運ぶので、
+  // 控えもいっしょについてくる
+  // 退避できたかどうかを返す。控えに書けなかったのに整えた側を書き戻すと、
+  // 本体からも控えからも消えてしまうので、呼ぶ側はこの返り値を見てから書き戻すこと
+  function stashDropped(key, dropped) {
+    if (!dropped || !dropped.length) return true;
+    var bak = [];
+    try { bak = JSON.parse(lsGet(key, '[]')); } catch (e) { bak = []; }
+    if (!Array.isArray(bak)) bak = [];
+    return lsSet(key, JSON.stringify(bak.concat(dropped).slice(-200)));
+  }
   function readGarden() {
     try {
       var raw = JSON.parse(lsGet('pf:garden', '[]'));
@@ -1960,17 +1782,14 @@
         var minutes = (source === 'shop') ? 0 : g.minutes;
         if (g.name !== name || g.source !== source || g.minutes !== minutes) changed = true;
         var paid = (Number.isFinite(g.paid) && g.paid > 0 && g.paid <= MAX_MILEAGE) ? g.paid : null;
-        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source, origin: origin, paid: paid };
+        // 住まいは「どのハウスに所属させるか」。決めていない子は null（おまかせ）
+        var house = (typeof g.house === 'string' && g.house) ? g.house : null;
+        return { id: g.id, minutes: minutes, completedAt: g.completedAt, type: type, key: key, name: name, source: source, origin: origin, paid: paid, house: house };
       });
       // 読めなかった記録を捨てて上書きすると、原因が一時的なものでも二度と戻せない。
       // 捨てるぶんは必ず控えに退避してから、整えた側を書き戻す
-      if (dropped.length) {
-        var bak = [];
-        try { bak = JSON.parse(lsGet('pf:garden:bak', '[]')); } catch (e2) { bak = []; }
-        if (!Array.isArray(bak)) bak = [];
-        lsSet('pf:garden:bak', JSON.stringify(bak.concat(dropped).slice(-200)));
-      }
-      if (changed || dropped.length) writeGarden(out);
+      var stashed = stashDropped('pf:garden:bak', dropped);
+      if (stashed && (changed || dropped.length)) writeGarden(out);
       return out;
     } catch (e) { return []; }
   }
@@ -1985,6 +1804,7 @@
         name: g.name, source: g.source
       };
       if (Number.isFinite(g.paid) && g.paid > 0) o.paid = g.paid;
+      if (g.house) o.house = g.house;
       return o;
     });
     return lsSet('pf:garden', JSON.stringify(stored));
@@ -2058,6 +1878,13 @@
     lsSet('pf:goal', String(v));
   }
 
+  // 置き場所は部屋を区切ったマス目で持つ。部屋の広さは端末で変わるので、
+  // 描くときに今の広さから実寸へ直す。どの端末でも同じ置き方に見える
+  var GRID_COLS = 6, GRID_ROWS = 4;
+  function isCellNum(n, max) {
+    return typeof n === 'number' && isFinite(n) && n === Math.floor(n) && n >= 0 && n < max;
+  }
+
   // ---- 部屋・ハウス ----
   var ROOMS = [
     { key: 'genkan', name: '玄関' }, { key: 'living', name: 'リビング' },
@@ -2065,22 +1892,107 @@
     { key: 'garden', name: '庭' }
   ];
   var HOUSE_TYPES = {
-    cat: { name: '猫用ハウス', color: '#c98a52' }
+    cat: { name: '猫ハウス', color: '#c98a52' }
   };
-  var HOUSE_CAPACITY = 3;
+  // 部屋の下限の高さ。ハウスも家具も自分でマスに置くので、置いた数で高さは変わらない。
+  // 大きくしすぎると背の低い端末でおうちが縦にスクロールしてしまうので、
+  // ここは最低限にとどめ、あとは画面の高さいっぱいに広がるのにまかせる
+  var ROOM_MIN_H = 280;
+  // ハウスは1匹ぶんから始めて、あとから1匹ずつ広げる。広げると見た目も大きくなる
+  var HOUSE_CAP_MAX = 6;
   var HOUSE_PRICE = 60;
+  var HOUSE_EXPAND_PRICE = 40;
+  var OLD_HOUSE_CAPACITY = 3;   // 前は1軒に3匹まで入った
   function isRoomKey(k) { return ROOMS.some(function (r) { return r.key === k; }); }
+  function isCapNum(n) {
+    return typeof n === 'number' && n === Math.floor(n) && n >= 1 && n <= HOUSE_CAP_MAX;
+  }
   // 形がまともかどうかだけを見る（種類が今あるかどうかは別で判断する）
   function houseShapeValid(h) {
     return h && typeof h === 'object' && typeof h.id === 'string' && h.id &&
-      typeof h.species === 'string' && h.species && isRoomKey(h.room);
+      typeof h.species === 'string' && h.species && isRoomKey(h.room) &&
+      isCellNum(h.col, GRID_COLS) && isCellNum(h.row, GRID_ROWS) && isCapNum(h.cap) &&
+      typeof h.no === 'number' && h.no >= 1;
+  }
+  // 前は部屋の奥に自動で並べていて、置き場所も広さも持っていなかった。
+  // マス目と広さを補って、これまで置いたハウスがそのまま使えるようにする
+  function houseMigrate(h, i) {
+    if (!h || typeof h !== 'object') return h;
+    return {
+      id: h.id, species: h.species, room: h.room, col: h.col, row: h.row,
+      // すでに置いてあるハウスは3匹ぶんのまま。あとから狭くすると住んでいる子が追い出される
+      cap: isCapNum(h.cap) ? h.cap : OLD_HOUSE_CAPACITY,
+      no: (typeof h.no === 'number' && h.no >= 1) ? h.no : i + 1
+    };
+  }
+  // 置き場所を持たない古い記録に、その部屋のあいているマスを配る。
+  // 番号順に決め打ちすると、同じく移し替えられた家具（左おく＝0,0 など）と必ず重なるので、
+  // すでに使われているマスを先に集めてから、空いているところへ入れる
+  function fillHouseCells(list) {
+    var taken = {};
+    var key = function (room, col, row) { return room + ':' + col + ',' + row; };
+    var mark = function (room, col, row) { taken[key(room, col, row)] = true; };
+    readFurniture().forEach(function (f) { mark(f.room, f.col, f.row); });
+    list.forEach(function (h) {
+      if (h && isRoomKey(h.room) && isCellNum(h.col, GRID_COLS) && isCellNum(h.row, GRID_ROWS)) {
+        mark(h.room, h.col, h.row);
+      }
+    });
+    return list.map(function (h) {
+      if (!h || typeof h !== 'object') return h;
+      if (isCellNum(h.col, GRID_COLS) && isCellNum(h.row, GRID_ROWS)) return h;
+      if (!isRoomKey(h.room)) return h;
+      var col = 0, row = 0;
+      outer:
+      for (var r = 0; r < GRID_ROWS; r++) {
+        for (var c = 0; c < GRID_COLS; c++) {
+          if (!taken[key(h.room, c, r)]) { col = c; row = r; break outer; }
+        }
+      }
+      // ぜんぶ埋まっていたら重なってしまうが、置き場所を決められずに消すよりはよい
+      mark(h.room, col, row);
+      h.col = col; h.row = row;
+      return h;
+    });
   }
   function isLivingSpecies(s) { return PET_TYPES.indexOf(s) !== -1; }
+  function houseNeedsFix(h) {
+    return !h || typeof h !== 'object' ||
+      !isCellNum(h.col, GRID_COLS) || !isCellNum(h.row, GRID_ROWS) ||
+      !isCapNum(h.cap) || typeof h.no !== 'number' || h.no < 1;
+  }
   function readHousesRaw() {
     try {
       var raw = JSON.parse(lsGet('pf:houses', '[]'));
-      return Array.isArray(raw) ? raw.filter(houseShapeValid) : [];
+      if (!Array.isArray(raw)) return [];
+      var need = raw.some(houseNeedsFix);
+      var migrated = fillHouseCells(raw.map(houseMigrate));
+      var out = [], dropped = [];
+      migrated.forEach(function (h, i) {
+        if (houseShapeValid(h)) out.push(h); else dropped.push(raw[i]);
+      });
+      // 読めなかったハウスは、あとで書き込むときにまとめて消えてしまう。
+      // なかまの記録と同じで、捨てるぶんは必ず控えに退避してから、整えた側を書き戻す。
+      // 書き戻さずに残すと、描き直すたびに同じ記録を控えへ足しつづけ、
+      // 控えの上限にぶつかって前に退避した別の記録を押し出してしまう
+      var stashedH = stashDropped('pf:houses:bak', dropped);
+      // 補った置き場所もここで書き戻す。読むたびに空きマスを数え直していると、
+      // 家具を1つ置いただけで古いハウスが別のマスへ勝手に動いてしまう
+      if (stashedH && (need || dropped.length)) lsSet('pf:houses', JSON.stringify(out));
+      return out;
     } catch (e) { return []; }
+  }
+  function houseName(h) { return (HOUSE_TYPES[h.species] || {}).name || 'ハウス'; }
+  function houseLabel(h) { return houseName(h) + h.no; }
+  // 1匹ぶんふえるごとに横へ広がり、屋根もその幅なりに高くなる。
+  // 絵と同じ寸法で置くので、入り口やとびらの大きさは広さによらず一定に見える
+  var HOUSE_CAP_H = 12;   // 絵の下に出す名前ぶんの高さ
+  function houseSize(cap) {
+    var n = Math.max(1, Math.min(HOUSE_CAP_MAX, cap || 1));
+    var art = 42 + (n - 1) * 3;
+    // h は名前もふくめた全体の高さ。ここを絵だけの高さにすると、
+    // いちばん下の段に建てたとき名前が部屋の外にはみ出して切れる
+    return { w: 42 + (n - 1) * 15, art: art, h: art + HOUSE_CAP_H };
   }
   // 画面に出すのは、いま扱っている種類のハウスだけ
   function readHouses() {
@@ -2091,14 +2003,62 @@
     var hidden = readHousesRaw().filter(function (h) { return !isLivingSpecies(h.species); });
     return lsSet('pf:houses', JSON.stringify(hidden.concat(arr)));
   }
-  function buyHouse(species, room) {
+  // 通し番号は消したハウスの番号を使い回さない。「猫ハウス2」がいつまでも同じ小屋を指すように
+  function nextHouseNo() {
+    var mx = 0;
+    readHousesRaw().forEach(function (h) { if (h.no > mx) mx = h.no; });
+    return mx + 1;
+  }
+  function newHouse(species, room, col, row) {
+    return {
+      id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      species: species, room: room, col: col, row: row, cap: 1, no: nextHouseNo()
+    };
+  }
+  function buyHouse(species, room, col, row) {
     if (PET_TYPES.indexOf(species) === -1 || !isRoomKey(room)) return false;
+    if (!isCellNum(col, GRID_COLS) || !isCellNum(row, GRID_ROWS)) return false;
+    if (cellTaken(room, col, row, null)) return false;
     if (readMileage() < HOUSE_PRICE) return false;
-    var before = readHouses();
-    var arr = before.concat([{ id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), species: species, room: room }]);
-    if (!writeHouses(arr)) return false;
-    if (!spendMileage(HOUSE_PRICE)) { writeHouses(before); return false; }   // 買えなかったので置いたぶんも戻す
+    var h = newHouse(species, room, col, row);
+    if (!writeHouses(readHouses().concat([h]))) return false;
+    // 家具と同じで、2つ開いていると同じマスにかち合うことがある。
+    // 書いたあとに読み直して、自分のぶんが1つだけ残っているのを確かめてから払う
+    var after = readHouses();
+    var mine = after.filter(function (x) { return x.id === h.id; }).length;
+    var here = after.filter(function (x) { return x.room === room && x.col === col && x.row === row; }).length;
+    if (mine !== 1 || here !== 1) { pullOutHouse(h.id); return false; }
+    if (!spendMileage(HOUSE_PRICE)) { pullOutHouse(h.id); return false; }
     return true;
+  }
+  function pullOutHouse(id) {
+    writeHouses(readHouses().filter(function (h) { return h.id !== id; }));
+  }
+  // 1匹ぶん広げる。広げたぶんは戻せない（狭くすると住んでいる子が追い出される）。
+  // 買うときと同じ順で、先に広げて、ねらいどおりになったのを見てから払う。
+  // 先に払うと、書き込みに失敗したときや別の画面と かち合ったときに引かれ損になる
+  function expandHouse(id) {
+    var before = readHouses();
+    var h = before.filter(function (x) { return x.id === id; })[0];
+    if (!h || h.cap >= HOUSE_CAP_MAX) return false;
+    if (readMileage() < HOUSE_EXPAND_PRICE) return false;
+    var want = h.cap + 1;
+    var arr = before.map(function (x) {
+      if (x.id !== id) return x;
+      return { id: x.id, species: x.species, room: x.room, col: x.col, row: x.row, cap: want, no: x.no };
+    });
+    if (!writeHouses(arr)) return false;
+    var after = readHouses().filter(function (x) { return x.id === id; })[0];
+    if (!after || after.cap !== want) return false;   // 別の画面に上書きされた。払わない
+    if (!spendMileage(HOUSE_EXPAND_PRICE)) { setHouseCap(id, h.cap); return false; }
+    return true;
+  }
+  function setHouseCap(id, cap) {
+    var arr = readHouses().map(function (x) {
+      if (x.id !== id) return x;
+      return { id: x.id, species: x.species, room: x.room, col: x.col, row: x.row, cap: cap, no: x.no };
+    });
+    writeHouses(arr);
   }
   // はじめて なかまができたときに、その子に合ったハウスを1つだけ贈る。
   // まだ1匹もいないうちに配ると、6種のうち当たらなかった種類のハウスは
@@ -2106,60 +2066,93 @@
   function grantFirstHouse(pet) {
     if (lsGet('pf:gift', '')) return false;   // 贈るのは1回きり
     if (readHouses().length) { lsSet('pf:gift', '1'); return false; }
-    var arr = [{
-      id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      species: pet.type, room: 'living'
-    }];
+    var arr = [newHouse(pet.type, 'living', 2, 1)];
     if (!writeHouses(arr)) return false;
     lsSet('pf:gift', '1');
     return true;
   }
-  function moveHouse(id, room) {
-    if (!isRoomKey(room)) return false;
+  function moveHouse(id, room, col, row) {
+    if (!isRoomKey(room) || !isCellNum(col, GRID_COLS) || !isCellNum(row, GRID_ROWS)) return false;
+    if (cellTaken(room, col, row, id)) return false;
     var arr = readHouses();
     var hit = false;
-    arr.forEach(function (h) { if (h.id === id) { h.room = room; hit = true; } });
+    arr.forEach(function (h) { if (h.id === id) { h.room = room; h.col = col; h.row = row; hit = true; } });
     if (!hit) return false;
     return writeHouses(arr);
   }
-  // 新しい子を優先、ハウスは置いた順に埋める。入りきらない子は unhoused
+  // 住まいの割りふり。
+  // 1) 自分でハウスを選んだ子を先に入れる（選んだ先が消えた・満員なら自動にまわす）
+  // 2) 残りは新しい子から順に、置いた順のハウスへ詰める
+  // 入りきらない子は unhoused（リビングをうろうろする）
   function assignPetsToHouses(garden, houses) {
-    var housesBySpecies = {};
-    houses.forEach(function (h) { (housesBySpecies[h.species] = housesBySpecies[h.species] || []).push(h); });
-    var petsBySpecies = {};
-    garden.slice().reverse().forEach(function (g) { (petsBySpecies[g.type] = petsBySpecies[g.type] || []).push(g); });
+    var byId = {};
+    houses.forEach(function (h) { byId[h.id] = h; });
     var occupants = {};
     houses.forEach(function (h) { occupants[h.id] = []; });
+    var rest = [];
+    // 新しい子ほど先に住まいを取れるようにする（並びは gardenの逆順）
+    garden.slice().reverse().forEach(function (g) {
+      var h = g.house ? byId[g.house] : null;
+      if (h && h.species === g.type && occupants[h.id].length < h.cap) occupants[h.id].push(g);
+      else rest.push(g);
+    });
+    var housesBySpecies = {};
+    houses.forEach(function (h) { (housesBySpecies[h.species] = housesBySpecies[h.species] || []).push(h); });
     var unhoused = [];
-    Object.keys(petsBySpecies).forEach(function (species) {
-      var hs = housesBySpecies[species] || [];
-      var hi = 0;
-      petsBySpecies[species].forEach(function (g) {
-        while (hi < hs.length && occupants[hs[hi].id].length >= HOUSE_CAPACITY) hi++;
-        if (hi < hs.length) occupants[hs[hi].id].push(g);
-        else unhoused.push(g);
-      });
+    rest.forEach(function (g) {
+      var hs = housesBySpecies[g.type] || [];
+      var into = null;
+      for (var i = 0; i < hs.length; i++) {
+        if (occupants[hs[i].id].length < hs[i].cap) { into = hs[i]; break; }
+      }
+      if (into) occupants[into.id].push(g);
+      else unhoused.push(g);
     });
     return { occupants: occupants, unhoused: unhoused };
+  }
+  // なかまの住まいを決める（houseId が空なら「おまかせ」に戻す）
+  function setPetHouse(petId, houseId) {
+    var houses = readHouses();
+    if (houseId && !houses.some(function (h) { return h.id === houseId; })) return false;
+    var arr = readGarden();
+    var hit = false;
+    arr.forEach(function (g) {
+      if (g.id !== petId) return;
+      hit = true;
+      g.house = houseId || null;
+    });
+    if (!hit) return false;
+    return writeGarden(arr);
   }
   // ---- 家具 ----
   // 置いて終わりの飾りではなく、なかまの行き先になるもの。
   // 猫はときどき家具をめざして歩き、そこで登る・丸まる・爪をとぐ・食べる
+  // use があるものは なかまが自分で使いに行く。無いものは置いて眺めるだけの飾り。
+  // group はお店での並び。部屋ごとの決まりは無く、どれをどの部屋に置いてもよい
   var FURNITURE = {
-    tower:   { name: 'キャットタワー', price: 30, use: 'climb',   w: 48, h: 96 },
-    cushion: { name: 'クッション',     price: 15, use: 'sleep',   w: 46, h: 22 },
-    scratch: { name: 'つめとぎ',       price: 15, use: 'scratch', w: 24, h: 56 },
-    bowl:    { name: 'ごはん皿',       price: 20, use: 'eat',     w: 36, h: 16 }
+    tower:     { name: 'キャットタワー',   price: 30, use: 'climb',   w: 48,  h: 96, group: 'なかまの道具' },
+    cushion:   { name: 'クッション',       price: 15, use: 'sleep',   w: 46,  h: 22, group: 'なかまの道具' },
+    scratch:   { name: 'つめとぎ',         price: 15, use: 'scratch', w: 24,  h: 56, group: 'なかまの道具' },
+    bowl:      { name: 'ごはん皿',         price: 20, use: 'eat',     w: 36,  h: 16, group: 'なかまの道具' },
+    sofa:      { name: 'ソファ',           price: 25, use: 'sleep',   w: 96,  h: 70, group: 'へやの家具' },
+    rug:       { name: 'ラグ',             price: 12, use: 'sleep',   w: 92,  h: 44, group: 'へやの家具' },
+    plant:     { name: '観葉植物',         price: 10, use: null,      w: 34,  h: 60, group: 'へやの家具' },
+    vase:      { name: '花びん',           price: 8,  use: null,      w: 26,  h: 44, group: 'へやの家具' },
+    lamp:      { name: 'スタンドライト',   price: 10, use: null,      w: 22,  h: 32, group: 'へやの家具' },
+    counter:   { name: 'キッチン台',       price: 22, use: 'climb',   w: 86,  h: 60, group: 'へやの家具' },
+    shelf:     { name: '食器だな',         price: 12, use: null,      w: 80,  h: 34, group: 'へやの家具' },
+    fridge:    { name: '冷蔵庫',           price: 25, use: null,      w: 44,  h: 88, group: 'へやの家具' },
+    bed:       { name: 'ベッド',           price: 25, use: 'sleep',   w: 88,  h: 70, group: 'へやの家具' },
+    nightstand:{ name: 'ナイトテーブル',   price: 10, use: null,      w: 30,  h: 30, group: 'へやの家具' },
+    wardrobe:  { name: 'クローゼット',     price: 25, use: 'climb',   w: 50,  h: 100, group: 'へやの家具' },
+    shoebox:   { name: 'くつばこ',         price: 18, use: 'climb',   w: 68,  h: 74, group: 'へやの家具' },
+    umbrella:  { name: 'かさ立て',         price: 8,  use: null,      w: 26,  h: 54, group: 'へやの家具' },
+    doormat:   { name: '玄関マット',       price: 8,  use: 'sleep',   w: 76,  h: 26, group: 'へやの家具' }
   };
-  // 置き場所は部屋を区切ったマス目で持つ。部屋の広さは端末で変わるので、
-  // 描くときに今の広さから実寸へ直す。どの端末でも同じ置き方に見える
-  var GRID_COLS = 6, GRID_ROWS = 4;
+  var FURN_GROUPS = ['なかまの道具', 'へやの家具'];
   // 前は4か所の決め打ちだった。そのころ置いたものを近いマスへ移しておく
   var OLD_SPOT_CELL = { nw: [0, 0], ne: [4, 0], sw: [0, 2], se: [4, 2] };
   function isFurnKind(k) { return Object.prototype.hasOwnProperty.call(FURNITURE, k); }
-  function isCellNum(n, max) {
-    return typeof n === 'number' && isFinite(n) && n === Math.floor(n) && n >= 0 && n < max;
-  }
   function furnValid(f) {
     return f && typeof f === 'object' && typeof f.id === 'string' && f.id &&
       isFurnKind(f.kind) && isRoomKey(f.room) &&
@@ -2179,11 +2172,10 @@
   }
   function writeFurniture(arr) { return lsSet('pf:furniture', JSON.stringify(arr)); }
   // 1マスにひとつまで（重ねて置けてしまうと何が置いてあるか分からなくなる）。
-  // 動かすときは自分自身のマスを「ふさがっている」と数えない
+  // ハウスと家具は同じマス目を分け合う。動かすときは自分自身のマスを数えない
   function cellTaken(room, col, row, exceptId) {
-    return readFurniture().some(function (f) {
-      return f.room === room && f.col === col && f.row === row && f.id !== exceptId;
-    });
+    var hit = function (x) { return x.room === room && x.col === col && x.row === row && x.id !== exceptId; };
+    return readFurniture().some(hit) || readHouses().some(hit);
   }
   function buyFurniture(kind, room, col, row) {
     if (!isFurnKind(kind) || !isRoomKey(room) || !isCellNum(col, GRID_COLS) || !isCellNum(row, GRID_ROWS)) return false;
@@ -2226,8 +2218,133 @@
     if (out.length === arr.length) return false;
     return writeFurniture(out);
   }
+  // 部屋の備え付けだったもの。前はどの部屋にも勝手に出ていたが、
+  // お店で買って好きなマスに置くものにした。色は前の見た目を引き継いでいる
+  function roomFurnSVG(kind, L) {
+    var sw = ' stroke="' + L + '" stroke-width="2" stroke-linejoin="round"';
+    var sw15 = ' stroke="' + L + '" stroke-width="1.5" stroke-linejoin="round"';
+    switch (kind) {
+      // ソファ。背もたれ・肘掛け・座面を別の面として重ねて厚みを出す
+      case 'sofa':
+        return '<svg viewBox="0 0 96 70" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="4" y="6" width="88" height="30" rx="8" fill="#b3c6de"' + sw + '/>' +
+          '<rect x="2" y="18" width="17" height="46" rx="8" fill="#b8cae0"' + sw + '/>' +
+          '<rect x="77" y="18" width="17" height="46" rx="8" fill="#a5bbd7"' + sw + '/>' +
+          '<rect x="14" y="32" width="68" height="16" rx="5" fill="#a3bad9"' + sw + '/>' +
+          '<rect x="14" y="46" width="68" height="16" rx="5" fill="#7e97ba"' + sw + '/>' +
+        '</svg>';
+      // 床に敷くラグ。まるく、ふちを濃くする
+      case 'rug':
+        return '<svg viewBox="0 0 92 44" xmlns="http://www.w3.org/2000/svg">' +
+          '<ellipse cx="46" cy="22" rx="44" ry="20" fill="#cddab3"' + sw + '/>' +
+          '<ellipse cx="46" cy="22" rx="35" ry="13.5" fill="#dbe6c9"/>' +
+        '</svg>';
+      // 観葉植物。葉が鉢の口までおりていて、はなれて見えない
+      case 'plant':
+        return '<svg viewBox="0 0 34 60" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M17 40 q-14 -6 -13 -21 q13 1 13 21 Z" fill="#83b872"' + sw + '/>' +
+          '<path d="M17 40 q14 -6 13 -21 q-13 1 -13 21 Z" fill="#61985a"' + sw + '/>' +
+          '<path d="M17 40 q-4 -14 0 -26 q4 12 0 26 Z" fill="#72a866"' + sw15 + '/>' +
+          '<path d="M5 37 h24 l-3 20 a3 3 0 0 1 -3 2 h-12 a3 3 0 0 1 -3 -2 Z" fill="#cb9c6c"' + sw + '/>' +
+          '<path d="M17 37 h12 l-3 20 a3 3 0 0 1 -3 2 h-6 Z" fill="#000" opacity="0.12"/>' +
+        '</svg>';
+      // 花びん。玄関に置くと空気が変わる
+      case 'vase':
+        return '<svg viewBox="0 0 26 44" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M13 22 q-7 -5 -6 -12 q6 1 6 12 Z" fill="#7fae6c"' + sw15 + '/>' +
+          '<path d="M13 22 q6 -6 6.5 -14 q-5 3 -6.5 14 Z" fill="#8fbf7a"' + sw15 + '/>' +
+          '<circle cx="7" cy="10" r="4.5" fill="#e8899a"' + sw15 + '/>' +
+          '<circle cx="18.5" cy="7" r="4" fill="#f0b45e"' + sw15 + '/>' +
+          '<path d="M7 20 h12 q4 6 3 13 a5 5 0 0 1 -5 8 h-8 a5 5 0 0 1 -5 -8 q-1 -7 3 -13 Z" fill="#9fc6d8"' + sw + '/>' +
+          '<path d="M13 20 h6 q4 6 3 13 a5 5 0 0 1 -5 8 h-4 Z" fill="#000" opacity="0.12"/>' +
+        '</svg>';
+      // スタンドライト
+      case 'lamp':
+        return '<svg viewBox="0 0 22 32" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="9" y="14" width="4" height="14" fill="#a3805a"' + sw15 + '/>' +
+          '<ellipse cx="11" cy="29" rx="7" ry="2.6" fill="#a3805a"' + sw15 + '/>' +
+          '<path d="M4 15 L7 3 h8 l3 12 Z" fill="#ffe08a"' + sw + '/>' +
+        '</svg>';
+      // キッチン台。天板を明るく、前板を暗くして厚みを見せる
+      case 'counter':
+        return '<svg viewBox="0 0 86 60" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="8" width="80" height="18" rx="4" fill="#f6f0e4"' + sw + '/>' +
+          '<rect x="3" y="24" width="80" height="32" rx="4" fill="#d9cdb4"' + sw + '/>' +
+          '<ellipse cx="22" cy="16" rx="8" ry="4" fill="#8f9489"' + sw15 + '/>' +
+          '<ellipse cx="52" cy="16" rx="8" ry="4" fill="#8f9489"' + sw15 + '/>' +
+          '<path d="M10 40 H76" stroke="rgba(63,52,44,0.35)" stroke-width="2"/>' +
+        '</svg>';
+      // 食器だな。棚板の上にびんと鉢がのっている
+      case 'shelf':
+        return '<svg viewBox="0 0 80 34" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="8" y="4" width="14" height="18" rx="2" fill="#d96a5e"' + sw15 + '/>' +
+          '<rect x="34" y="7" width="14" height="15" rx="2" fill="#8fbf7a"' + sw15 + '/>' +
+          '<circle cx="62" cy="15" r="7" fill="#e8c98a"' + sw15 + '/>' +
+          '<rect x="2" y="21" width="76" height="9" rx="3" fill="#b98a5f"' + sw + '/>' +
+        '</svg>';
+      // 冷蔵庫
+      case 'fridge':
+        return '<svg viewBox="0 0 44 88" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="3" width="38" height="82" rx="5" fill="#f6f0e4"' + sw + '/>' +
+          '<path d="M22 3 h14 a5 5 0 0 1 5 5 v72 a5 5 0 0 1 -5 5 H22 Z" fill="#000" opacity="0.1"/>' +
+          '<path d="M3 32 H41" stroke="' + L + '" stroke-width="2" opacity="0.55"/>' +
+          '<rect x="32" y="14" width="4" height="12" rx="2" fill="#8f7a5c"' + sw15 + '/>' +
+          '<rect x="32" y="40" width="4" height="12" rx="2" fill="#8f7a5c"' + sw15 + '/>' +
+        '</svg>';
+      // ベッド。掛けぶとん・折り返し・まくら
+      case 'bed':
+        return '<svg viewBox="0 0 88 70" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="8" width="82" height="34" rx="8" fill="#e59fab"' + sw + '/>' +
+          '<rect x="3" y="40" width="82" height="22" rx="8" fill="#c97b8a"' + sw + '/>' +
+          '<rect x="9" y="34" width="70" height="16" rx="5" fill="#eee2f0"' + sw + '/>' +
+          '<rect x="9" y="12" width="28" height="20" rx="6" fill="#fbf6ea"' + sw + '/>' +
+        '</svg>';
+      // ナイトテーブル
+      case 'nightstand':
+        return '<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="2" y="4" width="26" height="7" rx="3" fill="#dcc094"' + sw + '/>' +
+          '<rect x="2" y="9" width="26" height="19" rx="3" fill="#c9a876"' + sw + '/>' +
+          '<rect x="11" y="17" width="8" height="3" rx="1.5" fill="' + L + '" opacity="0.55"/>' +
+        '</svg>';
+      // クローゼット。とびらが2枚
+      case 'wardrobe':
+        return '<svg viewBox="0 0 50 100" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="3" width="44" height="94" rx="5" fill="#d8c6de"' + sw + '/>' +
+          '<rect x="7" y="8" width="15" height="84" rx="3" fill="#ece2ee"' + sw15 + '/>' +
+          '<rect x="28" y="8" width="15" height="84" rx="3" fill="#c9b2d2"' + sw15 + '/>' +
+          '<rect x="18" y="46" width="3.5" height="11" rx="1.8" fill="#7c5f86"' + sw15 + '/>' +
+          '<rect x="28.5" y="46" width="3.5" height="11" rx="1.8" fill="#7c5f86"' + sw15 + '/>' +
+        '</svg>';
+      // くつばこ。3段
+      case 'shoebox':
+        return '<svg viewBox="0 0 68 74" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="3" y="3" width="62" height="12" rx="4" fill="#d9b884"' + sw + '/>' +
+          '<rect x="3" y="13" width="62" height="58" rx="4" fill="#c9a876"' + sw + '/>' +
+          '<path d="M9 32 H59 M9 52 H59" stroke="rgba(63,52,44,0.42)" stroke-width="2"/>' +
+        '</svg>';
+      // かさ立て。かさが1本ささっている
+      case 'umbrella':
+        return '<svg viewBox="0 0 26 54" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M16 34 L13 9" stroke="#5a4a30" stroke-width="2.4" stroke-linecap="round"/>' +
+          '<path d="M13 9 q-4 0 -4 3" stroke="#5a4a30" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M4 12 q9 -12 19 -4 q-9 5 -19 4 Z" fill="#c9564a"' + sw15 + '/>' +
+          '<path d="M4 22 h18 q2 5 1.5 20 a5 5 0 0 1 -5 9 h-11 a5 5 0 0 1 -5 -9 q-0.5 -15 1.5 -20 Z" fill="#8b9aa4"' + sw + '/>' +
+          '<path d="M13 22 h9 q2 5 1.5 20 a5 5 0 0 1 -5 9 h-5.5 Z" fill="#000" opacity="0.14"/>' +
+        '</svg>';
+      // 玄関マット
+      case 'doormat':
+        return '<svg viewBox="0 0 76 26" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="2" y="3" width="72" height="20" rx="5" fill="#a3a89c"' + sw + '/>' +
+          '<rect x="8" y="8" width="60" height="10" rx="3" fill="#8a8f7f"/>' +
+        '</svg>';
+      default:
+        return '';
+    }
+  }
   function furnitureSVG(kind) {
     var L = LINE;
+    var art = roomFurnSVG(kind, L);
+    if (art) return art;
     if (kind === 'tower') {
       return '<svg viewBox="0 0 48 96" xmlns="http://www.w3.org/2000/svg">' +
         '<rect x="6" y="82" width="36" height="11" rx="3" fill="#c9a876" stroke="' + L + '" stroke-width="2"/>' +
@@ -2257,16 +2374,36 @@
     '</svg>';
   }
 
-  function houseSVG(species) {
+  // 広げるほど横に伸びる。入り口の数がそのまま「何匹入れるか」になっていて、
+  // 見ただけで広さが分かるようにしてある
+  function houseSVG(species, cap) {
     var t = HOUSE_TYPES[species] || { color: '#c9b8a0' };
-    return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
+    var n = Math.max(1, Math.min(HOUSE_CAP_MAX, cap || 1));
+    var size = houseSize(n);
+    var W = size.w, H = size.art;
+    var eave = H * 0.42;          // 屋根の裾。幅なりに屋根も高くなる
+    var top = H * 0.40, bot = H - 4;   // 本体の上下
+    var bl = 7, br = W - 7;
+    // 入り口は なかまの大きさなので、ハウスが広がっても大きさは変えない。
+    // 数がそのまま「何匹入れるか」になる
+    var doors = '';
+    var dl = 13, dr = W - 13;
+    for (var i = 0; i < n; i++) {
+      var cx = (n === 1) ? W / 2 : dl + (dr - dl) * (i / (n - 1));
+      doors += '<path d="M' + (cx - 5) + ' ' + bot + ' v-7 a5 5 0 0 1 10 0 v7 Z" fill="#41352b" ' +
+        'stroke="' + LINE + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
       // 本体（左を明るく、右を暗くして角の立体感を出す）
-      '<path d="M8.5 19 h23 v15 a2 2 0 0 1 -2 2 h-19 a2 2 0 0 1 -2 -2 Z" fill="' + t.color + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
-      '<path d="M20 19 h11.5 v15 a2 2 0 0 1 -2 2 H20 Z" fill="#000" opacity="0.12"/>' +
+      '<path d="M' + bl + ' ' + top + ' H' + br + ' V' + (bot - 2) +
+        ' a2 2 0 0 1 -2 2 h-' + (br - bl - 4) + ' a2 2 0 0 1 -2 -2 Z" ' +
+        'fill="' + t.color + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M' + (W / 2) + ' ' + top + ' H' + br + ' V' + (bot - 2) +
+        ' a2 2 0 0 1 -2 2 H' + (W / 2) + ' Z" fill="#000" opacity="0.12"/>' +
       // 屋根
-      '<path d="M4.5 20 L20 6.5 L35.5 20 Z" fill="' + t.color + '" stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round" style="filter:brightness(0.88)"/>' +
-      // 入口
-      '<path d="M15 36 v-7 a5 5 0 0 1 10 0 v7 Z" fill="#41352b" stroke="' + LINE + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<path d="M3 ' + eave + ' L' + (W / 2) + ' 4 L' + (W - 3) + ' ' + eave + ' Z" fill="' + t.color + '" ' +
+        'stroke="' + LINE + '" stroke-width="2" stroke-linejoin="round" style="filter:brightness(0.88)"/>' +
+      doors +
     '</svg>';
   }
 
@@ -2557,44 +2694,27 @@
     el.addEventListener('click', function () { openNameModal(g); });
     return el;
   }
-  // ハウスを部屋の奥に並べる。棚のカードではなく、部屋に置いてあるものとして見せる
-  var HOUSE_W = 58, HOUSE_ROW_H = 74;
-  // ハウスはいくつでも置けるので、1行に入りきらなければ折り返して段を増やす。
-  // 段の数だけ帯が縦に伸びるので、その高さを返して歩く場所を下げてもらう
-  function renderHousesInRoom(roomHouses, assign, houseY, sceneW) {
+  // ハウスも家具と同じマス目に置く。どこに建てるかは自分で決める
+  function renderHousesInRoom(roomHouses, assign, area) {
     var layer = $('roomHouses');
     layer.innerHTML = '';
-    if (!roomHouses.length) return 0;
-    var left = 10, right = Math.max(left + HOUSE_W, sceneW - 8);
-    var perRow = Math.max(1, Math.floor((right - left) / HOUSE_W));
-    var rows = Math.ceil(roomHouses.length / perRow);
-    roomHouses.forEach(function (h, i) {
-      var t = HOUSE_TYPES[h.species] || { name: h.species };
+    roomHouses.forEach(function (h) {
+      var size = houseSize(h.cap);
       var occ = (assign.occupants[h.id] || []).length;
-      var row = Math.floor(i / perRow);
-      var col = i % perRow;
-      var inRow = Math.min(perRow, roomHouses.length - row * perRow);
-      var rowW = inRow * HOUSE_W;
-      var x = left + Math.max(0, ((right - left) - rowW) / 2) + col * HOUSE_W;
-      var y = houseY + row * HOUSE_ROW_H;
+      var pos = cellPos(h.col, h.row, size, area);
       var el = document.createElement('div');
       el.className = 'room-house-obj';
       el.dataset.id = h.id;
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
-      el.style.zIndex = String(Math.round(y + 52));
-      el.innerHTML = '<div class="rh-art">' + houseSVG(h.species) + '</div>' +
-        '<div class="rh-cap">' + t.name + '（' + occ + '/' + HOUSE_CAPACITY + '）</div>';
-      el.title = t.name + '・タップで部屋を移動';
-      el.addEventListener('click', function () {
-        openRoomPick('このハウスをどの部屋に移しますか？', function (room) {
-          if (moveHouse(h.id, room)) { renderHouse(); toast('移しました'); }
-          else toast('移せませんでした');
-        });
-      });
+      el.style.left = pos.x + 'px';
+      el.style.top = pos.y + 'px';
+      el.style.width = size.w + 'px';
+      el.style.zIndex = String(Math.round(pos.y + size.h));   // 足もとの高さで前後を決める
+      el.innerHTML = '<div class="rh-art" style="height:' + size.art + 'px">' + houseSVG(h.species, h.cap) + '</div>' +
+        '<div class="rh-cap">' + houseLabel(h) + '（' + occ + '/' + h.cap + '）</div>';
+      el.title = houseLabel(h) + '・タップで広げる／動かす';
+      el.addEventListener('click', function () { openHouseMenu(h.id); });
       layer.appendChild(el);
     });
-    return rows * HOUSE_ROW_H;
   }
 
   function renderHouse() {
@@ -2628,16 +2748,11 @@
     var sceneW = scene.clientWidth || 340;
     // 庭は柵ぎわに花壇と池があるので、その下からを歩く場所にする
     var topEdge = FLOOR_TOP - (currentRoom === 'garden' ? 12 : 40);
-    // ハウスは床のいちばん奥に並べる。入りきらなければ段が増えるので、
-    // その帯の高さぶんだけ歩く場所を下げて重ならないようにする
-    var HOUSE_Y = 196;
-    var houseBand = renderHousesInRoom(roomHouses, assign, HOUSE_Y, sceneW);
-    if (houseBand) topEdge = Math.max(topEdge, HOUSE_Y + houseBand);
-    // 段が増えるとハウスが下へ伸びる。狭い画面でも切れないよう、必要な高さを先に決める。
-    // 高さを測るのは必ずそのあと。前の部屋の高さのまま測ると、部屋を切り替えたときに
-    // 歩く範囲が新しい部屋からはみ出してしまう
-    scene.style.minHeight = (HOUSE_Y + houseBand + 120) + 'px';
-    var sceneH = scene.clientHeight || 400;
+    // ハウスも家具も自分でマスに置くので、置いた数で部屋の高さは変わらない。
+    // マス目がいつも同じ大きさになるよう、床の高さを決め打ちにする。
+    // 高さを測るのは必ずそのあと（前の部屋の高さのまま測ると歩く範囲がずれる）
+    scene.style.minHeight = ROOM_MIN_H + 'px';
+    var sceneH = scene.clientHeight || ROOM_MIN_H;
     var bounds = {
       left: 10,
       right: Math.max(30, sceneW - 68),
@@ -2671,7 +2786,9 @@
       el.style.zIndex = String(Math.round(by));   // 手前にいる子ほど上に重ねる
       petsLayer.appendChild(el);
     });
-    renderFurniture(bounds, sceneW, sceneH);
+    var area = computeGridArea(bounds, sceneW, sceneH);
+    renderHousesInRoom(roomHouses, assign, area);
+    renderFurniture(area);
     renderPlaceGrid();
     startPetLife(bounds);
 
@@ -2705,8 +2822,8 @@
     y = Math.min(Math.max(y, 2), Math.max(2, area.bottom - def.h));
     return { x: x, y: y };
   }
-  function renderFurniture(bounds, sceneW, sceneH) {
-    gridArea = computeGridArea(bounds, sceneW, sceneH);
+  function renderFurniture(area) {
+    gridArea = area;
     var layer = $('roomFurniture');
     layer.innerHTML = '';
     furnPlaced = [];
@@ -2901,7 +3018,10 @@
   var furnBusy = {};
   var petBusy = {};   // その子がいま別の出来事（家具・けんか）に取られているか
   function freeFurniture(el) {
-    return furnPlaced.filter(function (f) { return !furnBusy[f.id] || furnBusy[f.id] === el.dataset.id; });
+    // 飾りだけの家具（花びんなど）はめざさない
+    return furnPlaced.filter(function (f) {
+      return f.use && (!furnBusy[f.id] || furnBusy[f.id] === el.dataset.id);
+    });
   }
   function petAct(el, gen) {
     if (!lifeBounds || !alive(el, gen)) return;
@@ -3191,7 +3311,7 @@
       var t = HOUSE_TYPES[species];
       var card = document.createElement('div');
       card.className = 'g-card' + (counts[species] ? ' owned' : '');
-      card.innerHTML = houseSVG(species);
+      card.innerHTML = houseSVG(species, 1);
       var nameEl = document.createElement('div');
       nameEl.className = 'gc-name';
       nameEl.textContent = t.name + (counts[species] ? '（' + counts[species] + '）' : '');
@@ -3201,25 +3321,25 @@
       buyBtn.className = 'gc-buy';
       buyBtn.textContent = fmtHours(HOUSE_PRICE) + 'で置く';
       buyBtn.disabled = mileage < HOUSE_PRICE;
-      buyBtn.addEventListener('click', function () {
-        openRoomPick('どの部屋に置きますか？', function (room) {
-          if (!buyHouse(species, room)) { toast('置けませんでした'); return; }
-          renderShop();
-          renderHouse();
-          toast('置きました');
-        });
-      });
+      // 家具と同じで、部屋えらびは挟まない。おうちへ移って建てるマスを直にたたく
+      buyBtn.addEventListener('click', function () { startPlacing({ what: 'house', species: species, cap: 1 }); });
       card.appendChild(buyBtn);
       grid.appendChild(card);
     });
 
-    // 家具。ハウスと違って、なかまが自分で使いに行く
+    // 家具。「なかまの道具」は なかまが自分で使いに行くもの、
+    // 「へやの家具」は部屋の飾り（ソファのように なかまも使うものもある）
     var placed = readFurniture();
     var gh = document.createElement('div');
     gh.className = 'grid-head species-head';
     gh.textContent = '家具';
     grid.appendChild(gh);
-    Object.keys(FURNITURE).forEach(function (kind) {
+    FURN_GROUPS.forEach(function (group) {
+    var groupHead = document.createElement('div');
+    groupHead.className = 'grid-head';
+    groupHead.textContent = group;
+    grid.appendChild(groupHead);
+    Object.keys(FURNITURE).filter(function (k) { return FURNITURE[k].group === group; }).forEach(function (kind) {
       var def = FURNITURE[kind];
       var have = placed.filter(function (f) { return f.kind === kind; }).length;
       var card = document.createElement('div');
@@ -3238,16 +3358,27 @@
       btn.textContent = def.price + '分で置く';
       btn.disabled = mileage < def.price;
       // 部屋えらびは挟まない。おうちに移って、置きたいマスを直にたたく
-      btn.addEventListener('click', function () { startPlacing({ kind: kind }); });
+      btn.addEventListener('click', function () { startPlacing({ what: 'furn', kind: kind }); });
       card.appendChild(btn);
       grid.appendChild(card);
     });
+    });
   }
 
-  // ---- 家具をマスに置く ----
-  // { kind } なら新しく置く（このとき時間を払う）、{ id, kind } ならもう置いてあるものを動かす。
+  // ---- ハウスと家具をマスに置く ----
+  // id が無ければ新しく置く（このとき時間を払う）、id があればもう置いてあるものを動かす。
   // どちらもマスをたたくまで確定しない。とりやめれば時間は減らない
   var placing = null;
+  function placingName() {
+    if (!placing) return '';
+    if (placing.what === 'house') return (HOUSE_TYPES[placing.species] || {}).name || 'ハウス';
+    return (FURNITURE[placing.kind] || {}).name || '家具';
+  }
+  function placingSize() {
+    if (!placing) return { w: 40, h: 40 };
+    if (placing.what === 'house') return houseSize(placing.cap || 1);
+    return FURNITURE[placing.kind] || { w: 40, h: 40 };
+  }
   function startPlacing(p) {
     placing = p;
     switchView('house');
@@ -3262,11 +3393,11 @@
     var layer = $('roomGrid'), bar = $('placeBar');
     layer.innerHTML = '';
     if (!placing || !gridArea) { layer.hidden = true; bar.hidden = true; return; }
-    var def = FURNITURE[placing.kind];
-    if (!def) { layer.hidden = true; bar.hidden = true; return; }
+    var label = placingName();
+    if (!label) { layer.hidden = true; bar.hidden = true; return; }
     layer.hidden = false;
     bar.hidden = false;
-    $('placeBarText').textContent = def.name + 'を置くマスをえらんでください';
+    $('placeBarText').textContent = label + 'を置くマスをえらんでください';
     var area = gridArea;
     for (var row = 0; row < GRID_ROWS; row++) {
       for (var col = 0; col < GRID_COLS; col++) {
@@ -3293,15 +3424,101 @@
     var p = placing;
     if (!p) return;
     var moving = !!p.id;
-    var ok = moving ? moveFurniture(p.id, currentRoom, col, row)
-                    : buyFurniture(p.kind, currentRoom, col, row);
+    var ok;
+    if (p.what === 'house') {
+      ok = moving ? moveHouse(p.id, currentRoom, col, row) : buyHouse(p.species, currentRoom, col, row);
+    } else {
+      ok = moving ? moveFurniture(p.id, currentRoom, col, row) : buyFurniture(p.kind, currentRoom, col, row);
+    }
     if (!ok) { toast('置けませんでした'); return; }
     placing = null;
     renderShop();
     renderHouse();
+    renderHome();
     toast(moving ? '動かしました' : '置きました');
   }
   $('placeCancel').addEventListener('click', stopPlacing);
+
+  // ---- 置いてあるハウスをどうするか ----
+  var houseModal = $('houseModal');
+  var houseTargetId = null;
+  function openHouseMenu(id) {
+    if (placing) return;   // 置いている最中はマスをたたくのが先
+    var h = readHouses().filter(function (x) { return x.id === id; })[0];
+    if (!h) return;
+    houseTargetId = id;
+    var occ = (assignPetsToHouses(readGarden(), readHouses()).occupants[id] || []).length;
+    $('houseTitle').textContent = houseLabel(h);
+    var full = h.cap >= HOUSE_CAP_MAX;
+    $('houseSub').textContent = 'いま ' + occ + ' 匹／' + h.cap + ' 匹ぶん。' +
+      (full ? 'これ以上は広げられません。' : '広げると もう1匹ぶん入ります。');
+    var ex = $('houseExpand');
+    ex.textContent = full ? '広げる（いっぱい）' : '広げる（+1匹・' + fmtHours(HOUSE_EXPAND_PRICE) + '）';
+    ex.disabled = full || readMileage() < HOUSE_EXPAND_PRICE;
+    openModal(houseModal);
+  }
+  $('houseExpand').addEventListener('click', function () {
+    var id = houseTargetId;
+    closeModal(houseModal);
+    houseTargetId = null;
+    if (!expandHouse(id)) { toast('広げられませんでした'); return; }
+    renderHouse(); renderShop(); renderHome();
+    toast('広げました');
+  });
+  $('houseMove').addEventListener('click', function () {
+    var id = houseTargetId;
+    var h = readHouses().filter(function (x) { return x.id === id; })[0];
+    closeModal(houseModal);
+    houseTargetId = null;
+    if (!h) { toast('見つかりませんでした'); return; }
+    startPlacing({ what: 'house', id: h.id, species: h.species, cap: h.cap });
+  });
+  $('houseClose').addEventListener('click', function () { closeModal(houseModal); houseTargetId = null; });
+  dismissOnBackdrop(houseModal, function () { houseTargetId = null; });
+
+  // ---- なかまのすみかをえらぶ ----
+  var livesModal = $('livesModal');
+  var livesPetId = null;
+  function openLivesPick(g) {
+    livesPetId = g.id;
+    var houses = readHouses().filter(function (h) { return h.species === g.type; });
+    var occ = assignPetsToHouses(readGarden(), readHouses()).occupants;
+    $('livesTitle').textContent = (g.name || 'この子') + 'のすみか';
+    $('livesSub').textContent = houses.length
+      ? 'いっぱいのハウスにはえらべません。'
+      : 'まだハウスがありません。「お店」で建ててください。';
+    var chips = $('livesChips');
+    chips.innerHTML = '';
+    // 「おまかせ」に戻す道も残す。空いたハウスへ勝手に入ってくれる
+    chips.appendChild(buildLivesChip(null, 'おまかせ', !g.house, false));
+    houses.forEach(function (h) {
+      var here = (occ[h.id] || []);
+      var inThis = here.some(function (x) { return x.id === g.id; });
+      var full = !inThis && here.length >= h.cap;
+      chips.appendChild(buildLivesChip(h.id, houseLabel(h) + '（' + here.length + '/' + h.cap + '）',
+        g.house === h.id, full));
+    });
+    openModal(livesModal);
+  }
+  function buildLivesChip(houseId, label, active, disabled) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    if (active) b.classList.add('active');
+    b.disabled = disabled;
+    b.addEventListener('click', function () {
+      var pid = livesPetId;
+      closeModal(livesModal);
+      livesPetId = null;
+      if (!setPetHouse(pid, houseId)) { toast('決められませんでした'); return; }
+      closeName();
+      renderHouse(); renderHome();
+      toast(houseId ? 'すみかを決めました' : 'おまかせにしました');
+    });
+    return b;
+  }
+  $('livesClose').addEventListener('click', function () { closeModal(livesModal); livesPetId = null; });
+  dismissOnBackdrop(livesModal, function () { livesPetId = null; });
 
   // ---- 置いてある家具をどうするか ----
   var furnModal = $('furnModal');
@@ -3318,7 +3535,7 @@
     closeModal(furnModal);
     furnTargetId = null;
     if (!f) { toast('見つかりませんでした'); return; }
-    startPlacing({ id: f.id, kind: f.kind });
+    startPlacing({ what: 'furn', id: f.id, kind: f.kind });
   });
   $('furnStore').addEventListener('click', function () {
     var id = furnTargetId;
@@ -3391,30 +3608,8 @@
     });
   });
 
-  // ============ 部屋を選ぶ ============
-  var roomPickModal = $('roomPickModal');
-  var roomPickCallback = null;
-  function openRoomPick(title, callback) {
-    $('roomPickTitle').textContent = title;
-    roomPickCallback = callback;
-    openModal(roomPickModal);
-  }
-  function closeRoomPick() {
-    closeModal(roomPickModal);
-    roomPickCallback = null;
-  }
-  document.querySelectorAll('#roomPickChips button').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var room = b.dataset.room;
-      var cb = roomPickCallback;
-      closeRoomPick();
-      if (cb) cb(room);
-    });
-  });
-  $('roomPickCancel').addEventListener('click', closeRoomPick);
-  dismissOnBackdrop(roomPickModal, function () { roomPickCallback = null; });
-
-  // ============ ハウスのお店 ============
+  // 部屋えらびのシートは無くした。ハウスも家具も、置きたい部屋を開いて
+  // マスを直にたたくほうが手数が少なく、置いた姿もその場で見える
 
   // ============ 時間を決める ============
   var pickerModal = $('pickerModal');
@@ -3808,10 +4003,24 @@
     rows += (g.source === 'shop')
       ? fact('迎えかた', g.paid ? fmtHours(g.paid) + 'の貯まった時間' : '貯まった時間')
       : fact('いっしょにいた時間', g.minutes + '分');
+    var houses = readHouses();
+    var mine = null;
+    var occ = assignPetsToHouses(readGarden(), houses).occupants;
+    Object.keys(occ).forEach(function (hid) {
+      if (occ[hid].some(function (x) { return x.id === g.id; })) mine = hid;
+    });
+    var hh = mine ? houses.filter(function (h) { return h.id === mine; })[0] : null;
+    rows += fact('すみか', hh ? (houseLabel(hh) + (g.house ? '' : '（おまかせ）')) : 'まだ ありません');
     $('nameFacts').innerHTML = rows;
+    // ハウスがまだ1つも無いうちは、えらぶものが無いので出さない
+    $('nameHouseBtn').style.display = houses.filter(function (h) { return h.species === g.type; }).length ? '' : 'none';
     setNameEditing(!g.name, g.name);   // まだ名前がないときは、そのまま入力できるようにする
     openModal(nameModal);
   }
+  $('nameHouseBtn').addEventListener('click', function () {
+    var g = readGarden().filter(function (x) { return x.id === namingId; })[0];
+    if (g) openLivesPick(g);
+  });
   $('nameEditBtn').addEventListener('click', function () {
     var g = readGarden().filter(function (x) { return x.id === namingId; })[0];
     setNameEditing(true, g ? g.name : '');
@@ -4043,7 +4252,8 @@
     if (session && session.active) return;
     if (!confirm('なかま・貯まった時間・ハウスをぜんぶ消します。よろしいですか？')) return;
     // pf:gift も戻す。消したあとは1匹目からやり直しになるので、贈り物も同じようにやり直す
-    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:furniture', 'pf:gift', 'pf:backupAt'].every(function (k) { return lsRemove(k); });
+    var ok = ['pf:garden', 'pf:garden:bak', 'pf:mileage', 'pf:houses', 'pf:houses:bak',
+      'pf:furniture', 'pf:gift', 'pf:backupAt'].every(function (k) { return lsRemove(k); });
     if (!ok) { alert('消せませんでした。もう一度お試しください。'); return; }
     closeModal(settingsModal);
     renderBackupStatus();
