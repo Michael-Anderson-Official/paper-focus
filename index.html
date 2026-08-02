@@ -4486,7 +4486,8 @@
     session = {
       countUp: !!countUp,
       minutes: minutes, totalMs: countUp ? 0 : minutes * 60000, startPerf: performance.now(),
-      active: true, svg: svg, pet: pet, pats: 0, mile: 0,
+      // mile=MILESTONES(減っていく方)の添字 / upMile=数え上げで15分の節目を出した回数
+      active: true, svg: svg, pet: pet, pats: 0, mile: 0, upMile: 0,
       // awayMs=経過から差し引く長さ / awayTotalMs=猶予の使いすぎを見る合計（測り方が違う）
       hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayTotalMs: 0, awayCount: 0, warned: false, warnTimer: 0
     };
@@ -4530,10 +4531,11 @@
     paintPet(session.svg, progress, true);
     $('sessFill').style.strokeDashoffset = SESS_CIRC * (1 - progress);
     setSessionBg(progress);
-    // 15分ごとに一度だけ知らせる（session.mile は何回目まで出したか）
-    while ((session.mile + 1) * UP_STEP_MS <= elapsedMs) {
-      session.mile++;
-      showCaption(fmtHours(session.mile * (UP_STEP_MS / 60000)) + ' たちました', true);
+    // 15分ごとに一度だけ知らせる。数え上げは節目の「回数」を数えるので、
+    // MILESTONES の添字である session.mile とは別に持つ（同じ変数を二つの意味で使わない）
+    while ((session.upMile + 1) * UP_STEP_MS <= elapsedMs) {
+      session.upMile++;
+      showCaption(fmtHours(session.upMile * (UP_STEP_MS / 60000)) + ' たちました', true);
     }
   }
   function requestWakeLock() {
