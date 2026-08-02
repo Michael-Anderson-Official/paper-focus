@@ -1267,14 +1267,15 @@
     <div class="modal" id="pickerModal">
       <div class="sheet">
         <h2>何分、集中しますか？</h2>
-        <p class="sub">はじめたら、この画面のままでいてください。ほかのアプリに移ったり画面をロックすると、その回はおしまいです（すぐ戻れば続けられます）。</p>
+        <p class="sub" id="pickerNote">はじめたら、この画面のままでいてください。ほかのアプリに移ったり画面をロックすると、その回はおしまいです（すぐ戻れば続けられます）。</p>
         <div class="chips" id="durationChips">
           <button type="button" data-min="15">15分</button>
           <button type="button" data-min="25">25分</button>
           <button type="button" data-min="45">45分</button>
           <button type="button" data-min="60">60分</button>
+          <button type="button" data-min="0">時間を決めない</button>
         </div>
-        <div class="field-row">
+        <div class="field-row" id="customRow">
           <input type="number" id="customMinutes" min="1" max="180" inputmode="numeric" placeholder="じゆう">
           <span>分（1〜180）</span>
         </div>
@@ -2610,6 +2611,13 @@
   function fmtClock(sec) {
     var m = Math.floor(sec / 60), s = sec % 60;
     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  // 数え上げは1時間を超えるので、超えたら h:mm:ss にする（分だけだと「75:20」になって読みにくい）
+  function fmtClockLong(sec) {
+    var h = Math.floor(sec / 3600);
+    if (h <= 0) return fmtClock(sec);
+    var m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
   }
   function fmtHours(totalMin) {
     var h = Math.floor(totalMin / 60), m = totalMin % 60;
@@ -4243,13 +4251,18 @@
 
   // ============ 時間を決める ============
   var pickerModal = $('pickerModal');
-  var chosenMinutes = 25;
+  var chosenMinutes = 25;   // 0 は「時間を決めない」＝数え上げ
+  var PICK_NOTE_DOWN = 'はじめたら、この画面のままでいてください。ほかのアプリに移ったり画面をロックすると、その回はおしまいです（すぐ戻れば続けられます）。';
+  var PICK_NOTE_UP = 'たった時間を数えていきます。ほかのアプリに移ったり画面をロックすると、そのあいだは止まり、戻ってくると続きから進みます。おしまいにするまで、いつまでも数えます。';
   function selectChip(min) {
     chosenMinutes = min;
     document.querySelectorAll('#durationChips button').forEach(function (b) {
       b.classList.toggle('active', parseInt(b.dataset.min, 10) === min);
     });
     $('customMinutes').value = '';
+    // 時間を決めないときは、分を入れる欄に意味がない。説明も入れ替える
+    $('customRow').style.display = (min === 0) ? 'none' : '';
+    $('pickerNote').textContent = (min === 0) ? PICK_NOTE_UP : PICK_NOTE_DOWN;
   }
   document.querySelectorAll('#durationChips button').forEach(function (b) {
     b.addEventListener('click', function () { selectChip(parseInt(b.dataset.min, 10)); });
@@ -4259,15 +4272,24 @@
     if (v > 0) {
       chosenMinutes = Math.min(180, v);
       document.querySelectorAll('#durationChips button').forEach(function (b) { b.classList.remove('active'); });
+      $('pickerNote').textContent = PICK_NOTE_DOWN;
     }
   });
   $('startBtn').addEventListener('click', function () {
-    selectChip(chosenMinutes || 25);
+    selectChip(pickDefault());
     openModal(pickerModal);
   });
+  // 0（時間を決めない）は || で 25 に化けるので、0 かどうかを先に見る
+  function pickDefault() { return chosenMinutes === 0 ? 0 : (chosenMinutes || 25); }
   $('pickerCancel').addEventListener('click', function () { closeModal(pickerModal); });
   dismissOnBackdrop(pickerModal);
   $('pickerStart').addEventListener('click', function () {
+    if (chosenMinutes === 0) {          // 時間を決めない＝数え上げ
+      lsSet('pf:lastMinutes', '0');
+      closeAllModals();
+      startSession(0, true);
+      return;
+    }
     if (!chosenMinutes || chosenMinutes < 1) return;
     lsSet('pf:lastMinutes', String(chosenMinutes));
     closeAllModals();
@@ -4282,6 +4304,9 @@
   var GRACE_MS = 10000;        // 1回の離脱で許す長さ。うっかり通知を踏んだ程度なら戻ってこられる
   var GRACE_TOTAL_MS = 30000;  // 1セッションで許す離脱の合計。短い離脱を繰り返す抜け道をふさぐ
   var GRACE_COUNT = 3;         // 1セッションで許す離脱の回数
+  // 数え上げ（時間を決めない）用。こちらは離れても失敗にならず、そのぶん時間が止まるだけ
+  var COUNTUP_FULL_MS = 60 * 60000;   // リングとペットが満ちるまでの長さ
+  var UP_STEP_MS = 15 * 60000;        // 節目を知らせる間隔
   var SESS_CIRC = 2 * Math.PI * 110;
   var sessionScreen = $('sessionScreen');
   var session = null;   // { minutes, totalMs, startPerf, active, svg, pet, hiddenPerf, hiddenWall, awayMs, awayTotalMs, awayCount, warned }
@@ -4436,22 +4461,31 @@
     return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
 
-  function startSession(minutes) {
+  // countUp=true なら時間を決めずに数え上げる。離れているあいだは止まり、戻ると続きから進む
+  function startSession(minutes, countUp) {
     var pet = sessionPet();
     var svg = fillPet($('sessPetSlot'), pet.type, pet.key, 0, true);
-    $('sessLabel').textContent = minutes + '分に挑戦中';
-    $('sessTime').textContent = fmtClock(minutes * 60);
+    $('sessLabel').textContent = countUp ? '時間をはかっています' : minutes + '分に挑戦中';
+    $('sessTime').textContent = countUp ? fmtClockLong(0) : fmtClock(minutes * 60);
     var fill = $('sessFill');
     fill.style.strokeDasharray = SESS_CIRC;
     fill.style.strokeDashoffset = SESS_CIRC;
     $('sessWarn').classList.remove('show');
+    $('sessWarn').textContent = countUp
+      ? 'おかえりなさい。時間は止めて待っていました'
+      : 'あぶなかった。もどってこられました';
     $('sessCaption').classList.remove('fade');
-    $('sessCaption').innerHTML = 'この画面のまま、そばにいてあげて。<br>そっと なでることもできます。';
+    $('sessCaption').innerHTML = countUp
+      ? 'この画面のまま、そばにいてあげて。<br>離れているあいだは、時間を止めて待っています。'
+      : 'この画面のまま、そばにいてあげて。<br>そっと なでることもできます。';
+    // 数え上げでは自分で切り上げるのが普通の終わり方なので、やめる＝失敗に見えない文言にする
+    $('giveUpBtn').textContent = countUp ? 'おしまいにする' : 'やめる';
     $('sessPats').textContent = '';
     paintSoundBtn();
     setSessionBg(0);
     session = {
-      minutes: minutes, totalMs: minutes * 60000, startPerf: performance.now(),
+      countUp: !!countUp,
+      minutes: minutes, totalMs: countUp ? 0 : minutes * 60000, startPerf: performance.now(),
       active: true, svg: svg, pet: pet, pats: 0, mile: 0,
       // awayMs=経過から差し引く長さ / awayTotalMs=猶予の使いすぎを見る合計（測り方が違う）
       hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayTotalMs: 0, awayCount: 0, warned: false
@@ -4473,7 +4507,9 @@
     if (document.hidden) return;   // 裏に回っている間は進捗を描かない。判定は復帰時に行う
     // 離れていたあいだは集中していない。その分は経過から差し引くので、
     // 裏に回して時間だけ稼ぐことはできない
-    var remainMs = session.totalMs - (performance.now() - session.startPerf - session.awayMs);
+    var elapsedMs = performance.now() - session.startPerf - session.awayMs;
+    if (session.countUp) { tickCountUp(elapsedMs); return; }
+    var remainMs = session.totalMs - elapsedMs;
     if (remainMs <= 0) { finishSession(true); return; }
     $('sessTime').textContent = fmtClock(Math.ceil(remainMs / 1000));
     var progress = 1 - remainMs / session.totalMs;
@@ -4486,6 +4522,20 @@
       session.mile++;
     }
   }
+  // 数え上げには終わりが無いので、リングとペットは COUNTUP_FULL_MS で満ちるようにして、
+  // それ以上は満ちたまま保つ。数字だけが伸びていく
+  function tickCountUp(elapsedMs) {
+    $('sessTime').textContent = fmtClockLong(Math.floor(Math.max(0, elapsedMs) / 1000));
+    var progress = Math.max(0, Math.min(1, elapsedMs / COUNTUP_FULL_MS));
+    paintPet(session.svg, progress, true);
+    $('sessFill').style.strokeDashoffset = SESS_CIRC * (1 - progress);
+    setSessionBg(progress);
+    // 15分ごとに一度だけ知らせる（session.mile は何回目まで出したか）
+    while ((session.mile + 1) * UP_STEP_MS <= elapsedMs) {
+      session.mile++;
+      showCaption(fmtHours(session.mile * (UP_STEP_MS / 60000)) + ' たちました', true);
+    }
+  }
   function requestWakeLock() {
     if (!('wakeLock' in navigator)) return;
     navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
@@ -4496,7 +4546,14 @@
   function finishSession(success, reason) {
     if (!session || !session.active) return;
     session.active = false;
-    var minutes = session.minutes, pet = session.pet, pats = session.pats;
+    var countUp = session.countUp;
+    // 数え上げは、そのとき数えていた長さがそのまま記録になる（分未満は切り捨て）。
+    // 離れたまま終わる経路に備えて、まだ精算していない離脱ぶんもここで引く
+    var away = session.awayMs + (session.hiddenPerf ? Math.max(0, performance.now() - session.hiddenPerf) : 0);
+    var minutes = countUp
+      ? Math.floor(Math.max(0, performance.now() - session.startPerf - away) / 60000)
+      : session.minutes;
+    var pet = session.pet, pats = session.pats;
     if (session.timer) clearInterval(session.timer);
     releaseWakeLock();
     stopAmbient();
@@ -4505,6 +4562,11 @@
     $('settingsBtn').style.display = '';
     session = null;
     if (success) {
+      // 数え上げで1分に満たないうちに切り上げたときは、記録に残さない（0分の記録は意味がない）
+      if (countUp && minutes < 1) {
+        showResult(true, 0, 'tooshort', pet, pats);
+        return;
+      }
       // 集中し終えても なかまはもらえない。貯まるのは時間だけで、
       // なかまは「お店」で自分でえらんで迎える
       var saved = addSession(minutes);
@@ -4516,7 +4578,11 @@
       showResult(false, minutes, reason, pet, pats);
     }
   }
-  $('giveUpBtn').addEventListener('click', function () { finishSession(false, 'giveup'); });
+  $('giveUpBtn').addEventListener('click', function () {
+    // 数え上げは自分で切り上げるのが普通の終わり方なので、失敗にせず そこまでを記録する
+    if (session && session.countUp) { finishSession(true); return; }
+    finishSession(false, 'giveup');
+  });
 
   // 離れた時刻を控える。すでに控えてあるなら上書きしない
   // （pagehide と visibilitychange の両方が発火しても、離脱1回として数えるため）
@@ -4535,6 +4601,24 @@
     var byWall = Date.now() - session.hiddenWall;
     session.hiddenPerf = 0;
     session.hiddenWall = 0;
+    // 数え上げは離れても失敗にしない。離れていたぶんを経過から引いて、続きから進める。
+    // 引くのは perf が実際に数えたぶんだけでよい（裏で perf が止まる端末では、
+    // そのぶんはもともと経過に入っていないため）。壁時計が巻き戻っていても、
+    // 引く量が perf 由来なので時間を稼げる隙間はなく、失敗にする理由がない
+    if (session.countUp) {
+      session.awayMs += Math.max(0, byPerf);
+      session.awayCount++;
+      requestWakeLock();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(function () {});
+      if (!session.warned) {
+        session.warned = true;   // 1回だけ知らせる
+        var w = $('sessWarn');
+        w.classList.add('show');
+        setTimeout(function () { w.classList.remove('show'); }, 2600);
+      }
+      tickSession();
+      return;
+    }
     if (byWall < 0) { finishSession(false, 'hidden'); return; }
     // 「どれだけ離れていたか」の判定と、「経過から差し引く長さ」は別物。
     // 判定は長いほうを採る（裏でperf時計が止まる端末を壁時計で捕まえるため）が、
@@ -4577,12 +4661,17 @@
   function showResult(success, minutes, reason, pet, pats) {
     var svg = fillPet($('resultPetSlot'), pet.type, pet.key, success ? 1 : 0, true);
     var label = petLabel(pet.type, pet.key);
-    if (success) {
-      $('resultTitle').textContent = minutes + '分 集中できました';
+    if (success && reason === 'tooshort') {
+      // 数え上げを1分たたずに切り上げた。失敗ではないので、しょんぼりさせない
+      $('resultTitle').textContent = 'おしまいにしました';
+      $('resultBody').textContent = 'まだ1分たっていないので、今回は記録に残していません。'
+        + '貯まった時間は ' + fmtHours(readMileage()) + ' のままです。';
+    } else if (success) {
+      $('resultTitle').textContent = fmtHours(minutes) + ' 集中できました';
       var patNote = pats > 0 ? '（' + pats + '回 なでました）' : '';
       $('resultBody').textContent = reason === 'savefail'
-        ? label + 'と' + minutes + '分、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
-        : label + 'と' + minutes + '分、一緒にいられました。' + patNote +
+        ? label + 'と' + fmtHours(minutes) + '、一緒にいられました。ただし記録の保存に失敗しました（保存容量が足りないかもしれません）。'
+        : label + 'と' + fmtHours(minutes) + '、一緒にいられました。' + patNote +
           '貯まった時間は ' + fmtHours(readMileage()) + '。「お店」でなかまを迎えられます。';
     } else {
       sadPet(svg);
@@ -4597,7 +4686,7 @@
   $('resultClose').addEventListener('click', function () { closeModal(resultModal); });
   $('resultAgain').addEventListener('click', function () {
     closeModal(resultModal);
-    selectChip(chosenMinutes || 25);
+    selectChip(pickDefault());
     openModal(pickerModal);
   });
   dismissOnBackdrop(resultModal);
@@ -4912,7 +5001,8 @@
 
   // ============ 起動 ============
   var lastMin = parseInt(lsGet('pf:lastMinutes', '25'), 10);
-  chosenMinutes = (lastMin > 0 && lastMin <= 180) ? lastMin : 25;
+  // 0 は「時間を決めない」を前回えらんだ印。> 0 の条件に混ぜると 25 に化けるので先に見る
+  chosenMinutes = (lastMin === 0) ? 0 : ((lastMin > 0 && lastMin <= 180) ? lastMin : 25);
   document.querySelectorAll('#roomTabs button').forEach(function (b) {
     b.classList.toggle('active', b.dataset.room === currentRoom);
   });
