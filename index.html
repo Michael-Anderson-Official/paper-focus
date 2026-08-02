@@ -4488,7 +4488,7 @@
       minutes: minutes, totalMs: countUp ? 0 : minutes * 60000, startPerf: performance.now(),
       active: true, svg: svg, pet: pet, pats: 0, mile: 0,
       // awayMs=経過から差し引く長さ / awayTotalMs=猶予の使いすぎを見る合計（測り方が違う）
-      hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayTotalMs: 0, awayCount: 0, warned: false
+      hiddenPerf: 0, hiddenWall: 0, awayMs: 0, awayTotalMs: 0, awayCount: 0, warned: false, warnTimer: 0
     };
     sessionScreen.classList.add('show');
     $('settingsBtn').style.display = 'none';   // セッション中は設定にキーボード操作等でも届かないようにする
@@ -4555,6 +4555,7 @@
       : session.minutes;
     var pet = session.pet, pats = session.pats;
     if (session.timer) clearInterval(session.timer);
+    clearTimeout(session.warnTimer);   // 終わったあとに知らせの消灯だけ動くのを防ぐ
     releaseWakeLock();
     stopAmbient();
     stopMoments();
@@ -4610,12 +4611,12 @@
       session.awayCount++;
       requestWakeLock();
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(function () {});
-      if (!session.warned) {
-        session.warned = true;   // 1回だけ知らせる
-        var w = $('sessWarn');
-        w.classList.add('show');
-        setTimeout(function () { w.classList.remove('show'); }, 2600);
-      }
+      // 数え上げでは戻るたびに知らせる。時間が止まっていたことが毎回わかるように。
+      // （減っていく方は1回だけ。あちらで毎回出すと、逃げ道を繰り返し教えることになる）
+      var w = $('sessWarn');
+      w.classList.add('show');
+      clearTimeout(session.warnTimer);   // 続けて離れたとき、前の消灯タイマーに消されないように
+      session.warnTimer = setTimeout(function () { w.classList.remove('show'); }, 2600);
       tickSession();
       return;
     }
